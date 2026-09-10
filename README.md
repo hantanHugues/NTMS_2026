@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NTMS 2026 — page d'inscription
 
-## Getting Started
+Landing page du **New Team Members Seminar 2026**, AIESEC in Benin.
+Lokossa, 19 – 22 novembre 2026.
 
-First, run the development server:
+## Démarrer
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
+npm run build    # build de production
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Next.js 16 (Turbopack) · React 19 · Tailwind CSS 4 · shadcn/ui (preset nova, Base UI).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `src/app/page.tsx` — l'ordre des sections de la page
+- `src/lib/content.ts` — **tout le texte du site**, un seul fichier
+- `src/lib/instagram.ts` — d'où viennent les publications Instagram
+- `src/components/site/` — une section = un composant
+- `src/components/ui/` — composants shadcn/ui et ajouts
+- `public/photos/` — photos d'événements AIESEC in Benin
+- `public/brand/` — paterne de la charte, avatar Instagram
 
-## Learn More
+## Variables d'environnement
 
-To learn more about Next.js, take a look at the following resources:
+Une seule, facultative : `INSTAGRAM_TOKEN`. Voir `.env.example`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Sans elle, la section Instagram affiche les publications listées dans
+`src/lib/instagram.ts`. Avec elle, elle affiche les six dernières,
+rafraîchies toutes les heures.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## À finir
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- brancher l'URL réelle du formulaire (`cta.href` dans `content.ts`,
+  actuellement l'ancre `#inscription`)
+- confirmer le nombre de places (180 est une valeur provisoire)
+- ajouter le numéro WhatsApp et le compte Instagram dans la section
+  contact quand ils seront connus
