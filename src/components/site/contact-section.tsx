@@ -1,6 +1,6 @@
-import { ArrowUpRight, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
+import { ContactButton } from "@/components/site/contact-button";
 import { Reveal } from "@/components/site/reveal";
-import { Button } from "@/components/ui/button";
 import { contact, event } from "@/lib/content";
 
 /**
@@ -24,22 +24,13 @@ import { contact, event } from "@/lib/content";
  * nouvel onglet. Seul le corps reste vide — c'est au lecteur d'écrire
  * sa question, un texte pré-tapé serait à effacer avant de commencer.
  *
- * On passe par la fenêtre de rédaction Gmail, PAS par `mailto:`. Un
- * `mailto:` réveille le logiciel de courrier installé sur la machine
- * (Outlook, Mail) — sur un ordinateur de bureau ça sort du navigateur,
- * et souvent sur un compte que la personne n'utilise pas. L'URL Gmail
- * ouvre un onglet ; sur téléphone, Android et iOS la renvoient
- * d'eux-mêmes vers l'application Gmail.
+ * La destination du bouton dépend de l'appareil — voir
+ * `contact-button.tsx`.
  *
  * L'adresse reste affichée en clair au-dessus, pour qui ne passe pas
  * par Gmail.
  */
 
-/** Fenêtre de rédaction Gmail, destinataire et objet pré-remplis. */
-const composeHref =
-  "https://mail.google.com/mail/?view=cm&fs=1" +
-  `&to=${encodeURIComponent(event.email)}` +
-  `&su=${encodeURIComponent(contact.mailSubject)}`;
 export function ContactSection() {
   return (
     <section
@@ -78,21 +69,7 @@ export function ContactSection() {
               </span>
             </div>
 
-            <Button
-              nativeButton={false}
-              size="lg"
-              className="mt-7 h-12 w-full rounded-full text-base"
-              render={
-                <a
-                  href={composeHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                />
-              }
-            >
-              {contact.buttonLabel}
-              <ArrowUpRight data-icon="inline-end" />
-            </Button>
+            <ContactButton />
 
             <p className="mt-8 border-t border-border pt-8 text-xs tracking-wider text-muted-foreground uppercase">
               {contact.topicsLabel}
