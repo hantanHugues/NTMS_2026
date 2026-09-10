@@ -326,9 +326,12 @@ export const cta = {
  * de partage lie a la session de celui qui a copie l'adresse.
  */
 export const instagram = {
-  kicker: "Instagram",
-  title: "Suis la conférence",
-  titleAccent: "au jour le jour.",
+  kicker: "Nos réseaux",
+  // Seul endroit du site qui vouvoie. C'est un choix de l'utilisateur,
+  // assume : l'invitation s'adresse a tout le monde, pas au lecteur
+  // qu'on tutoie depuis le debut du parcours.
+  title: "Suivez-nous sur nos réseaux",
+  titleAccent: "pour ne rien rater.",
   // Formulation NEUTRE tant que le jeton n'est pas la : sans lui, les
   // vignettes sont des photos du projet, et « nos dernieres
   // publications » serait faux.
