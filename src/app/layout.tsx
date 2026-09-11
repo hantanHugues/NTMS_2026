@@ -21,7 +21,7 @@ const bricolage = Bricolage_Grotesque({
 export const metadata: Metadata = {
   title: "NTMS 2026 — S'adapter, le nouveau métier",
   description:
-    "Le séminaire des nouveaux membres d'AIESEC in Benin. Quatre jours pour construire l'adaptabilité que le marché de l'emploi réclame déjà.",
+    "Le séminaire des nouveaux membres d'AIESEC in Benin. Cinq jours pour construire l'adaptabilité que le marché de l'emploi réclame déjà.",
 };
 
 /**

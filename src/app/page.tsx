@@ -1,3 +1,4 @@
+import { BackToTop } from "@/components/site/back-to-top";
 import { Constat } from "@/components/site/constat";
 import { ContactSection } from "@/components/site/contact-section";
 import { Hero } from "@/components/site/hero";
@@ -26,6 +27,7 @@ export default function Home() {
         <ContactSection />
       </main>
       <SiteFooter />
+      <BackToTop />
     </div>
   );
 }
