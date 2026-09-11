@@ -11,7 +11,7 @@ import {
 import { preuve } from "@/lib/content";
 
 /**
- * La preuve.
+ * La preuve .
  *
  * Galerie 3D pilotée par le défilement : les trois colonnes partent
  * basculées à 62 degrés et se redressent à mesure qu'on descend, avec
