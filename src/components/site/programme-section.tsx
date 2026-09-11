@@ -14,7 +14,7 @@ export function ProgrammeSection() {
           kicker="Le programme"
           title={
             <>
-              Quatre jours,
+              Cinq jours,
               <br className="hidden sm:block" /> une{" "}
               <span className="text-gradient">progression</span>.
             </>

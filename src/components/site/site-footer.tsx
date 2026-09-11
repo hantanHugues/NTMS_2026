@@ -21,7 +21,7 @@ export function SiteFooter() {
               {event.name}
             </span>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              {event.baseline} — {event.organisation}. Quatre jours pour bâtir
+              {event.baseline} — {event.organisation}. Cinq jours pour bâtir
               la seule compétence qui ne se démode pas.
             </p>
             <a

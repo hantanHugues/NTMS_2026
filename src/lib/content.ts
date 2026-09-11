@@ -22,8 +22,8 @@ export const event = {
   theme: "Jeunesse & employabilité : s'adapter aux nouvelles exigences du marché de l'emploi",
   themeSubject: "Jeunesse & employabilité",
   themeAngle: "s'adapter aux nouvelles exigences du marché de l'emploi",
-  dates: "19 – 22 novembre 2026",
-  startsAt: "2026-11-19T09:00:00+01:00",
+  dates: "18 – 22 novembre 2026",
+  startsAt: "2026-11-18T09:00:00+01:00",
   // LIEU OFFICIEL, communique par l'utilisateur. Comme le theme, c'est
   // une information validee — a distinguer des dates et du nombre de
   // places, qui restent des propositions.
@@ -134,7 +134,7 @@ export const constat = {
  */
 export const solution = {
   themeLabel: "Thème de l'édition",
-  lead: "Quatre jours à Lokossa, du 19 au 22 novembre 2026. Des ateliers, des mises en situation, et 180 membres qui traversent la même chose que toi.",
+  lead: "Cinq jours à Lokossa, du 18 au 22 novembre 2026. Des ateliers, des mises en situation, et 180 membres qui traversent la même chose que toi.",
   offers: [
     {
       icon: GraduationCap,
@@ -154,7 +154,7 @@ export const solution = {
     {
       icon: Compass,
       title: "Savoir de quoi tu es capable",
-      body: "Quatre jours à te voir travailler sous contrainte, avec des inconnus. Tu apprends plus sur toi que pendant un semestre entier.",
+      body: "Cinq jours à te voir travailler sous contrainte, avec des inconnus. Tu apprends plus sur toi que pendant un semestre entier.",
     },
   ],
   closing: "Tu repars avec des compétences, un réseau,",
@@ -356,7 +356,7 @@ export const contact = {
   buttonLabel: "Écrire au comité",
   topicsLabel: "Ce qu'on nous demande le plus",
   topics: [
-    "Le programme des quatre jours",
+    "Le programme des cinq jours",
     "Le trajet jusqu'à Lokossa",
     "L'hébergement et les repas",
     "Les tarifs",
