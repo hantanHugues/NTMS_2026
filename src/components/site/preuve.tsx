@@ -66,6 +66,14 @@ const PHOTO_CLASS =
 /** Fin de l'animation, en fraction du défilement de la section. */
 const SETTLED = 0.72;
 
+/*
+  Les douze photos, redistribuees en DEUX colonnes de six pour le
+  telephone. Les trois colonnes de quatre sont calees sur la largeur
+  d'un ecran d'ordinateur.
+*/
+const TOUTES = preuve.columns.flat();
+const COLONNES_TELEPHONE = [TOUTES.slice(0, 6), TOUTES.slice(6)];
+
 /** Fin du redressement : au-dela, les colonnes sont droites. */
 const REDRESSE = SETTLED * 0.58;
 
@@ -128,7 +136,7 @@ export function Preuve() {
         </ContainerAnimated>
       </ContainerStagger>
 
-      <ContainerScroll className="relative z-10 h-[420vh]">
+      <ContainerScroll className="relative z-10 h-[420vh] max-sm:hidden">
         <ContainerSticky className="h-svh pt-10">
           <GalleryContainer
             className="mx-auto max-w-[62rem] items-center gap-3 px-4 sm:px-6"
@@ -188,6 +196,38 @@ export function Preuve() {
           </GalleryContainer>
         </ContainerSticky>
       </ContainerScroll>
+
+      {/*
+        VERSION TELEPHONE — meme mise en scene, pilotee en CSS.
+        Voir `globals.css`, classes `galerie-*` : le calcul repart sur
+        le compositeur, la saccade devient impossible, et l'animation
+        court sur tout le parcours au lieu de s'arreter a 72 %.
+      */}
+      <div className="galerie-cadre relative z-10 sm:hidden">
+        <div className="galerie-bloc">
+          <div className="galerie-grille">
+            {COLONNES_TELEPHONE.map((colonne, i) => (
+              <div
+                key={i}
+                className={
+                  "galerie-col " + (i === 1 ? "galerie-col--b" : "galerie-col--a")
+                }
+              >
+                {colonne.map((photo) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={photo.src}
+                    src={photo.src}
+                    alt={photo.alt}
+                    loading="lazy"
+                    className="block aspect-3/2 w-full rounded-lg object-cover ring-1 ring-white/12"
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </section>
   );
 }

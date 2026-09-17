@@ -14,14 +14,17 @@ import {
 export const event = {
   name: "NTMS 2026",
   organisation: "AIESEC in Benin",
-  baseline: "New Team Members Seminar",
+  // Vocabulaire officiel AIESEC. Le site affichait « New Team Members
+  // Seminar », ce qui etait faux et tirait tout le texte vers le
+  // recrutement.
+  baseline: "National Training and Motivation Seminar",
   // THEME OFFICIEL, arrete par le comite et communique tel quel par
   // l'utilisateur. A ne pas reformuler : c'est la seule information de
   // contenu validee du projet, tout le reste (dates, places, programme)
   // reste une proposition a confirmer.
-  theme: "Jeunesse & employabilité : s'adapter aux nouvelles exigences du marché de l'emploi",
-  themeSubject: "Jeunesse & employabilité",
-  themeAngle: "s'adapter aux nouvelles exigences du marché de l'emploi",
+  theme: "20 ans d'existence : élever nos standards pour un meilleur impact.",
+  themeSubject: "20 ans d'existence",
+  themeAngle: "élever nos standards pour un meilleur impact.",
   dates: "18 – 22 novembre 2026",
   startsAt: "2026-11-18T09:00:00+01:00",
   // LIEU OFFICIEL, communique par l'utilisateur. Comme le theme, c'est
@@ -36,18 +39,31 @@ export const event = {
 // Le programme et la FAQ ont ete retires de la landing : le programme
 // detaille ne sera pas publie, et la FAQ part sur la page de paiement.
 export const navItems = [
-  { href: "#constat", label: "Le constat" },
+  { href: "#constat", label: "20 ans" },
   { href: "#solution", label: "La solution" },
   { href: "#preuve", label: "La preuve" },
   { href: "#contact", label: "Contactez-nous" },
 ];
 
-/** Les verbes qui défilent dans le titre : le mouvement EST le message. */
+/**
+ * Le titre du hero.
+ *
+ * Les verbes defilent, comme avant — c'est le dispositif retenu. Ils
+ * changent de famille : ils disaient la survie face au marche de
+ * l'emploi, ils disent maintenant la duree. Chacun s'accroche a
+ * « Vingt ans a… » sans casser la phrase, et la ligne du bas pose le
+ * theme de l'edition.
+ */
+export const hero = {
+  amorce: "Vingt ans à",
+  chute: "Cette année, on élève le niveau.",
+};
+
 export const rotatingVerbs = [
-  "s'adapter",
-  "se réinventer",
-  "désapprendre",
-  "rebondir",
+  "former",
+  "transmettre",
+  "oser",
+  "recommencer",
   "durer",
 ];
 
@@ -66,53 +82,56 @@ export const skillTags = [
 
 
 /**
- * SECTION 1 — Le problème, et ce qu'il coûte.
+ * SECTION 1 — Vingt ans, et ce qu'ils obligent.
  *
- * La section ne vise PAS que ceux qui cherchent du travail. Les membres
- * AIESEC sont aussi des gens deja en poste, et l'argument vaut autant
- * pour eux : la question n'est pas d'avoir un emploi, c'est de le
- * garder dans un marche qui bouge plus vite qu'eux.
+ * Le theme de l'edition a change en cours de route : la conference ne
+ * parle plus d'employabilite mais des VINGT ANS d'AIESEC in Benin,
+ * atteints en 2025 et celebres cette annee. La section ne pose donc
+ * plus un probleme exterieur, elle pose un SOCLE.
  *
- * D'ou la forme : deux colonnes de meme poids, 51 face a 49, reunies
- * par un filet et une seule phrase. La mise en page dit ce que dit le
- * texte — les deux groupes sont au meme niveau.
+ * DEUX PUBLICS, UN SEUL TEXTE. L'externe lit une preuve de serieux —
+ * vingt ans, quatre villes, un reseau mondial. L'AIESECer lit un
+ * heritage qui le designe. Aucune phrase ne s'adresse a l'un plutot
+ * qu'a l'autre, chacun prend sa lecture.
  *
- * Une version precedente representait les 100 personnes en semis de
- * points. Abandonnee : les deux teintes ne se distinguaient pas, le
- * decalage empechait de compter, et le dispositif demandait un effort
- * d'interpretation pour rien.
+ * CHIFFRES. Les deux colonnes portent les seuls nombres beninois
+ * verifiables, communiques par l'utilisateur : vingt ans, quatre
+ * comites locaux. Le reseau mondial ne prend pas une troisieme
+ * colonne, il descend dans la ligne de bas de section — on garde deux
+ * chiffres, sans perdre l'argument international.
  *
- * Chiffre sourcé : Afrobarometer PP105, aout 2026 (Round 10) — 51 %
- * des 18-35 ans se declarent sans emploi et a la recherche d'un
- * travail.
+ * Aucune recherche publique n'a donne de donnee beninoise
+ * supplementaire : ni effectif, ni date de creation, ni nombre
+ * d'echanges. Les chiffres mondiaux viennent d'aiesec.org/about-us.
+ *
+ * La version precedente reposait sur un sondage Afrobarometer
+ * (51 % de chomage chez les 18-35 ans). Elle n'a plus d'objet.
  */
 export const constat = {
-  question: "Ton diplôme te garantit un travail ?",
-  probe: "Pose la question autour de toi. Compte le temps que les gens mettent à répondre.",
-  intro: "Sur 100 Béninois de 18 à 35 ans :",
+  question: "Vingt ans que nous formons des jeunes au Bénin.",
+  probe: "Deux décennies de comités, de projets et de promotions qui se sont passé le relais.",
+  intro: "AIESEC in Benin, aujourd'hui :",
   columns: [
     {
-      value: "51",
-      label: "cherchent du travail.",
-      // « Malgre leur diplome » est une lecture, pas une donnee : le
-      // sondage ne dit pas que ces 51 sont tous diplomes. La formule
-      // reste juste pour le public vise, qui est etudiant.
-      detail: "Malgré leur diplôme.",
+      value: "20",
+      label: "ans au Bénin.",
+      // L'annee de fondation n'est pas confirmee : on date le jalon,
+      // pas la creation.
+      detail: "Vingt ans atteints en 2025.",
     },
     {
-      value: "49",
-      label: "en ont un.",
-      // Formule volontairement non chiffree : aucune enquete ne mesure
-      // ce que ces 49 ressentent. En revanche « sans garantie » est
-      // etaye — 90 % des emplois beninois sont informels (DTDA).
-      detail: "Sans aucune garantie de le garder.",
+      value: "4",
+      label: "comités locaux.",
+      detail: "Cotonou, Parakou, Porto-Novo, Abomey-Calavi.",
     },
   ],
-  level: "Personne n'est tranquille.",
-  gap: "Le marché a changé de règles pendant que tu révisais, et il n'a pas fini.",
-  closing: "On te dira que ça va aller.",
-  closingAccent: "Ça n'ira pas tout seul.",
-  source: "Afrobarometer PP105, août 2026",
+  level: "Le relais ne s'est jamais arrêté.",
+  gap: "Chaque promotion a reçu quelque chose, et l'a passé plus haut.",
+  closing: "Vingt ans nous obligent.",
+  closingAccent: "Il est temps d'élever le niveau.",
+  // Occupe la ligne qui portait la source du sondage. Fait officiel,
+  // verifie sur aiesec.org.
+  source: "AIESEC, présent dans plus de 100 pays depuis 1948.",
 };
 
 /**
@@ -122,8 +141,14 @@ export const constat = {
  * version precedente disait « le NTMS existe pour ca » : on change de
  * section, le lecteur a perdu le fil, et « ca » ne renvoyait a rien.
  *
- * Le theme est l'ADAPTABILITE au marche de l'emploi, pas
- * l'entrepreneuriat.
+ * Le theme est desormais les VINGT ANS d'AIESEC in Benin et
+ * l'elevation des standards. Les quatre cadrans repondent donc a
+ * « ce qu'on eleve » et non plus a « ce que tu gagnes ».
+ *
+ * Le troisieme cadran repose sur un fait confirme par l'utilisateur :
+ * les alumni des vingt dernieres annees viennent prendre la parole.
+ * L'effectif de la salle, lui, n'est pas confirme — il a ete retire
+ * plutot qu'invente.
  *
  * Ecriture : aucune tournure du type « pas X, c'est Y ». C'est la
  * construction que les modeles produisent en boucle, et elle avait
@@ -134,12 +159,12 @@ export const constat = {
  */
 export const solution = {
   themeLabel: "Thème de l'édition",
-  lead: "Cinq jours à Lokossa, du 18 au 22 novembre 2026. Des ateliers, des mises en situation, et 180 membres qui traversent la même chose que toi.",
+  lead: "Cinq jours à Lokossa, du 18 au 22 novembre 2026. Des ateliers, des mises en situation, et les alumni des vingt dernières années dans la salle.",
   offers: [
     {
       icon: GraduationCap,
       title: "Des compétences qui ne périment pas",
-      body: "Communication, résolution de problèmes, travail en équipe, outils numériques. Ce que tu apprends ici ne dépend ni d'un poste ni d'un secteur.",
+      body: "Leadership, développement personnel, entrepreneuriat, travail en équipe. Ce que tu apprends ici ne dépend ni d'un poste ni d'un secteur.",
     },
     {
       icon: Plane,
@@ -148,8 +173,8 @@ export const solution = {
     },
     {
       icon: Users,
-      title: "Des gens qui avancent",
-      body: "180 membres, des alumni déjà en poste, des professionnels invités. Tu repars avec des numéros que tu utiliseras vraiment.",
+      title: "Vingt promotions dans la même salle",
+      body: "Les alumni des vingt dernières années viennent parler. Ce qu'ils ont construit, ils te disent comment.",
     },
     {
       icon: Compass,
@@ -158,17 +183,17 @@ export const solution = {
     },
   ],
   closing: "Tu repars avec des compétences, un réseau,",
-  closingAccent: "et une idée claire de ce que tu vaux.",
+  closingAccent: "et un niveau plus haut.",
 };
 
 /**
  * SECTION 3 — La preuve.
  *
- * ROLE : on vient d'annoncer le NTMS comme une conference. Ici on
- * montre COMMENT ca se passe, de l'interieur — la preuve qu'on forme
- * vraiment, pas qu'on fait asseoir des gens dans une salle. D'ou un
- * texte qui enumere des gestes concrets (le micro, le petit groupe,
- * le passage devant la salle) plutot que des qualites.
+ * ROLE sous le theme des vingt ans : les photos ne rassurent plus un
+ * futur recrute, elles rendent VISIBLE le chiffre annonce plus haut.
+ * Le titre reprend le relais evoque en section 1, l'accroche enumere
+ * des gestes concrets (le micro, le petit groupe, le passage devant la
+ * salle) plutot que des qualites.
  *
  * Photos reelles d'evenements AIESEC in Benin, fournies par
  * l'utilisateur. Le texte ne pretend PAS qu'il s'agit d'editions
@@ -179,12 +204,12 @@ export const solution = {
  * suivantes le bandeau defilant.
  */
 export const preuve = {
-  title: "Avant toi, ils y étaient.",
+  title: "Vingt ans de gens qui se sont passé le relais.",
   // Deux phrases pleines, sans liste ni deux-points : l'enumeration est
   // portee par les verbes, ce sont les membres qui font les actions.
   // La seconde phrase referme sur le lecteur — formulation choisie par
   // l'utilisateur.
-  lead: "Chaque année, nos membres se retrouvent en atelier, prennent la parole devant la salle, travaillent en petits groupes et présentent leurs restitutions. Joins-toi à nous pour vivre cette expérience.",
+  lead: "Depuis vingt ans, nos membres se retrouvent en atelier, prennent la parole devant la salle, travaillent en petits groupes et présentent leurs restitutions. Joins-toi à nous pour vivre cette expérience.",
   columns: [
     [
       { src: "/photos/prise-parole-01.jpg", alt: "Un membre prend la parole au micro devant le groupe" },
@@ -228,10 +253,9 @@ export const bandeau = {
   kicker: "Pour les curieux",
   title: "Des salles pleines,",
   titleAccent: "et des gens qui reviennent.",
-  // La formation par l'experience vecue est la pedagogie reelle
-  // d'AIESEC, pas une formule : on la nomme telle quelle plutot que de
-  // la deviner en creux.
-  lead: "Soirées, sorties, photos de promo. Chez AIESEC on se forme en vivant les choses, et ça ne s'oublie pas.",
+  // « Photos de promo » a ete retire : le mot renvoie a la photo de fin
+  // d'annee scolaire, un registre academique qu'on nous a reproche.
+  lead: "Soirées, sorties, photos de groupe. Vingt ans que le leadership se transmet comme ça, en vivant des expériences ensemble.",
   rows: [
     [
       "/photos/promo-01.jpg",
@@ -335,7 +359,7 @@ export const instagram = {
   // Formulation NEUTRE tant que le jeton n'est pas la : sans lui, les
   // vignettes sont des photos du projet, et « nos dernieres
   // publications » serait faux.
-  lead: "Annonces, coulisses, photos de promotion. Le compte publie toute l'année, entre deux éditions comprises.",
+  lead: "Annonces, coulisses, photos de groupe. Le compte publie toute l'année, entre deux éditions comprises.",
   handle: "@beninnationalconference",
   url: "https://www.instagram.com/beninnationalconference",
   button: "Suivre le compte",

@@ -3,27 +3,22 @@ import { constat } from "@/lib/content";
 import { cn } from "@/lib/utils";
 
 /**
- * Le problème, et ce qu'il coûte.
+ * Vingt ans, et ce qu'ils obligent.
  *
  * SUR ORDINATEUR — deux colonnes de même poids typographique, réunies
- * par un filet et une seule phrase : la mise en page porte l'argument.
- * Ceux qui cherchent et ceux qui travaillent ne sont pas deux publics,
- * c'est le même.
+ * par un filet et une seule phrase : les vingt ans et les quatre
+ * comités se lisent d'un coup, comme un seul socle.
  *
  * SUR TÉLÉPHONE — cette mise en page tombe. Les colonnes s'empilent,
- * et le 51 sort de l'écran avant que le 49 n'y entre : la confrontation
- * qui EST l'argument de la section n'a plus lieu.
+ * et le premier chiffre sort de l'écran avant que le second n'y entre.
  *
  * D'où un objet différent, propre au mobile : deux bandes pleine
  * largeur, collées l'une à l'autre, sans marge ni gouttière. Parce
  * qu'elles se touchent et vont d'un bord à l'autre de l'écran, elles se
- * lisent comme UN seul bloc coupé en deux — les cent personnes,
- * partagées. Et elles ont exactement la même hauteur : c'est ce que dit
- * la phrase qui suit, personne n'est plus tranquille que l'autre.
+ * lisent comme UN seul bloc coupé en deux. Et elles ont exactement la
+ * même hauteur : les deux chiffres pèsent pareil.
  *
- * Aucun graphique, aucune proportion dessinée. Une version précédente
- * représentait les cent personnes en semis de points ; abandonnée, le
- * dispositif demandait un effort d'interprétation pour rien.
+ * Aucun graphique, aucune proportion dessinée.
  *
  * Tout le traitement mobile passe par `max-sm:`, qui ne produit du CSS
  * qu'en dessous de 640 px. La vue sur ordinateur ne peut pas bouger.

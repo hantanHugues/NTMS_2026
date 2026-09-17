@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Countdown } from "@/components/site/countdown";
 import { RotatingVerb } from "@/components/site/rotating-verb";
 import { ShaderBackdrop } from "@/components/site/shader-backdrop";
-import { event, rotatingVerbs } from "@/lib/content";
+import { event, hero, rotatingVerbs } from "@/lib/content";
 
 /**
  * Hero d'annonce d'événement.
@@ -51,14 +51,14 @@ export function Hero() {
 
         <h1 className="font-heading mt-8 font-extrabold tracking-tight sm:mt-12">
           <span className="block text-[clamp(1.5rem,7.5vw,2rem)] leading-[1.05] sm:text-5xl lg:text-6xl">
-            Apprendre à
+            {hero.amorce}
           </span>
           <RotatingVerb
             verbs={rotatingVerbs}
             className="my-1 justify-items-center text-[clamp(2.25rem,12vw,3.25rem)] leading-[1] text-primary sm:text-8xl lg:text-9xl"
           />
           <span className="block text-[clamp(1.5rem,7.5vw,2rem)] leading-[1.05] text-balance sm:text-5xl lg:text-6xl">
-            avant que le marché ne l&apos;exige.
+            {hero.chute}
           </span>
         </h1>
 

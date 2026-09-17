@@ -605,3 +605,218 @@ html::-webkit-scrollbar {
 }
 
 
+
+/* ---------------------------------------------------------------------
+   Les quatre offres, en defilement horizontal epingle. TELEPHONE SEUL.
+
+   Tout est en CSS, sans une ligne de JavaScript. Le pilotage par
+   `animation-timeline` se fait sur le COMPOSITEUR, au meme titre que le
+   defilement natif : le decalage d'une frame entre le bloc epingle et
+   la page — la cause du tremblement sur tactile — ne peut plus se
+   produire. Une version precedente reposait sur GSAP ScrollTrigger,
+   qui repositionne l'element sur le fil principal.
+
+   REPLI. Par defaut, sans `animation-timeline`, la piste est une simple
+   bande a faire glisser au doigt avec accrochage carte par carte.
+   C'est ce que voit Firefox, dont le support est encore derriere un
+   drapeau. Fonctionnel, sans l'effet, jamais casse.
+
+   La course horizontale est calculee a partir du gabarit des cartes :
+   quatre cartes de 80vw, trois gouttieres de 1rem, 3rem de marges.
+   Si le nombre de cartes change, ce nombre est a corriger ici.
+   --------------------------------------------------------------------- */
+
+@media (max-width: 639px) {
+  .offres-piste {
+    --offres-course: calc(4 * 80vw + 3 * 1rem + 3rem - 100vw);
+
+    display: flex;
+    gap: 1rem;
+    padding-inline: 1.5rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .offres-piste > * {
+    scroll-snap-align: center;
+  }
+  .offres-barre {
+    display: none;
+  }
+
+  @supports (animation-timeline: view()) {
+    .offres-cadre {
+      view-timeline-name: --offres;
+      view-timeline-axis: block;
+      /* Un ecran pour le bloc epingle, plus la course a parcourir. */
+      height: calc(100svh + (4 * 80vw + 3 * 1rem + 3rem - 100vw));
+    }
+
+    /*
+      Le bloc fait UN ECRAN, et c'est obligatoire : la duree de
+      l'epinglage vaut `hauteur du cadre moins hauteur du bloc`, tandis
+      que la plage `contain` de l'animation vaut `hauteur du cadre moins
+      hauteur de l'ecran`. Les deux ne coincident que si le bloc fait la
+      hauteur de l'ecran. Un bloc plus court arrete les cartes avant la
+      fin de l'epinglage.
+
+      L'ecran est donc rempli par du CONTENU — promesse en haut, cartes
+      au milieu, ligne pratique en bas — plutot que par du vide.
+    */
+    .offres-bloc {
+      position: sticky;
+      top: 0;
+      display: flex;
+      height: 100svh;
+      flex-direction: column;
+      overflow: hidden;
+      padding-top: 5.5rem;
+      padding-bottom: 1.5rem;
+    }
+
+    /* Les cartes gardent LEUR hauteur et se centrent. Les etirer sur
+       tout l'ecran abime la mise en page. */
+    .offres-piste {
+      width: max-content;
+      flex: 1;
+      align-items: center;
+      min-height: 0;
+      overflow-x: visible;
+      scroll-snap-type: none;
+      animation: offres-defile linear both;
+      animation-timeline: --offres;
+      /* `contain` couvre exactement la duree ou le cadre remplit
+         l'ecran, c'est-a-dire la duree de l'epinglage. */
+      animation-range: contain 0% contain 100%;
+    }
+
+    .offres-barre {
+      display: block;
+      transform-origin: left;
+      animation: offres-avancement linear both;
+      animation-timeline: --offres;
+      animation-range: contain 0% contain 100%;
+    }
+  }
+}
+
+@keyframes offres-defile {
+  to {
+    transform: translateX(calc(-1 * (4 * 80vw + 3 * 1rem + 3rem - 100vw)));
+  }
+}
+
+@keyframes offres-avancement {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   La galerie de la section « preuve », VERSION TELEPHONE.
+
+   Au-dessus de 640 px, la galerie reste pilotee par Framer Motion :
+   `useScroll` lit la position a chaque frame et repositionne les douze
+   images depuis le fil principal. Sur un ordinateur, le processeur
+   suit. Sur un telephone, le defilement court sur le compositeur
+   pendant que ces calculs tournent ailleurs : les images trainent une
+   ou deux frames derriere le doigt, et l'effet passe pour un defaut.
+
+   Sous 640 px on rejoue donc la meme mise en scene — basculement puis
+   parallaxe decalee d'une colonne a l'autre — mais entierement en CSS,
+   sur le compositeur. La saccade devient impossible.
+
+   Et l'animation court sur TOUT le parcours : la version JavaScript
+   s'arretait a 72 %, laissant pres d'un ecran de defilement ou plus
+   rien ne bougeait.
+
+   Sans `animation-timeline` (Firefox), la grille reste simplement
+   posee, droite et lisible.
+   --------------------------------------------------------------------- */
+
+@media (max-width: 639px) {
+  .galerie-cadre {
+    position: relative;
+    height: 260vh;
+    view-timeline-name: --galerie;
+    view-timeline-axis: block;
+  }
+
+  .galerie-bloc {
+    position: sticky;
+    top: 0;
+    display: flex;
+    height: 100svh;
+    align-items: center;
+    overflow: hidden;
+    padding: 5rem 1.25rem 1.5rem;
+    perspective: 1000px;
+    perspective-origin: center top;
+  }
+
+  /* DEUX colonnes, pas trois : a trois, chaque photo tombait a
+     105 x 70 px et la grille ne remplissait plus l'ecran. A deux, elle
+     passe a 167 x 111 dans son format d'origine. */
+  .galerie-grille {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.625rem;
+    transform-style: preserve-3d;
+  }
+
+  .galerie-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
+  @supports (animation-timeline: view()) {
+    .galerie-grille {
+      transform-origin: 50% 14%;
+      animation: gal-redresse linear both;
+      animation-timeline: --galerie;
+      animation-range: contain 0% contain 58%;
+    }
+    .galerie-col--a {
+      animation: gal-parallaxe-a linear both;
+      animation-timeline: --galerie;
+      animation-range: contain 50% contain 100%;
+    }
+    .galerie-col--b {
+      animation: gal-parallaxe-b linear both;
+      animation-timeline: --galerie;
+      animation-range: contain 50% contain 100%;
+    }
+  }
+}
+
+@keyframes gal-redresse {
+  from {
+    transform: rotateX(62deg) scale(1.16);
+  }
+  to {
+    transform: rotateX(0deg) scale(1);
+  }
+}
+
+@keyframes gal-parallaxe-a {
+  from {
+    transform: translateY(-7%);
+  }
+  to {
+    transform: translateY(0%);
+  }
+}
+
+@keyframes gal-parallaxe-b {
+  from {
+    transform: translateY(11%);
+  }
+  to {
+    transform: translateY(3%);
+  }
+}
