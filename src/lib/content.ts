@@ -33,7 +33,7 @@ export const event = {
   city: "Lokossa, Bénin",
   cityShort: "Lokossa",
   seats: 180,
-  email: "benin@aiesec.net",
+  email: "aibconferences@gmail.com",
 };
 
 // Le programme et la FAQ ont ete retires de la landing : le programme

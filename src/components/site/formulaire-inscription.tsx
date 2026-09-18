@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, ArrowRight, Check, MessageCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Copy, MessageCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { event, inscription } from "@/lib/content";
@@ -107,6 +107,45 @@ function Choix({
           {option}
         </button>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Le lien du groupe en toutes lettres, sélectionnable, avec un bouton
+ * pour le copier : utile si WhatsApp ne s'ouvre pas depuis le navigateur,
+ * ou pour le transmettre à un autre appareil.
+ */
+function LienACopier({ lien }: { lien: string }) {
+  const [copie, setCopie] = React.useState(false);
+
+  async function copier() {
+    try {
+      await navigator.clipboard.writeText(lien);
+      setCopie(true);
+      window.setTimeout(() => setCopie(false), 2000);
+    } catch {
+      // Presse-papiers refusé : le lien reste sélectionnable à la main.
+    }
+  }
+
+  return (
+    <div className="mx-auto mt-6 max-w-md text-left">
+      <p className="text-xs text-muted-foreground">Ou copie ce lien :</p>
+      <div className="mt-2 flex items-center gap-2 rounded-xl border border-border bg-background py-1.5 pr-1.5 pl-3">
+        <span className="min-w-0 flex-1 truncate text-sm select-all">{lien}</span>
+        <button
+          type="button"
+          onClick={copier}
+          className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-primary/10"
+        >
+          {copie ? <Check className="size-4" /> : <Copy className="size-4" />}
+          {copie ? "Copié" : "Copier"}
+        </button>
+      </div>
+      <span className="sr-only" aria-live="polite">
+        {copie ? "Lien copié" : ""}
+      </span>
     </div>
   );
 }
@@ -219,10 +258,11 @@ export function FormulaireInscription() {
         </p>
 
         {inscription.lienWhatsApp ? (
+          <>
           <Button
             nativeButton={false}
             size="lg"
-            className="mt-8 h-13 rounded-full px-8 text-base"
+            className="mt-8 h-13 rounded-full px-8 text-base has-data-[icon=inline-start]:pl-7"
             render={
               <a
                 href={inscription.lienWhatsApp}
@@ -234,6 +274,8 @@ export function FormulaireInscription() {
             <MessageCircle data-icon="inline-start" />
             {inscription.succesBouton}
           </Button>
+          <LienACopier lien={inscription.lienWhatsApp} />
+          </>
         ) : (
           <p className="mt-8 text-sm text-muted-foreground">
             Le lien du groupe t&apos;est envoyé par mail.
@@ -560,7 +602,7 @@ export function FormulaireInscription() {
         {etape > 0 ? (
           <Button
             variant="outline"
-            className="h-12 rounded-full px-5"
+            className="h-12 rounded-full px-5 has-data-[icon=inline-start]:pl-4"
             onClick={() => {
               setErreur(null);
               setEtape((n) => n - 1);
@@ -573,7 +615,7 @@ export function FormulaireInscription() {
 
         {etape < inscription.etapes.length - 1 ? (
           <Button
-            className="h-12 flex-1 rounded-full text-base sm:flex-none sm:px-8"
+            className="h-12 flex-1 rounded-full text-base sm:flex-none sm:px-8 sm:has-data-[icon=inline-end]:pr-7"
             onClick={suivant}
           >
             Continuer

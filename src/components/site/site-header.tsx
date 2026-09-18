@@ -122,7 +122,7 @@ export function SiteHeader() {
           <Sheet>
             <SheetTrigger
               render={
-                <Button variant="ghost" size="icon" className="md:hidden">
+                <Button variant="ghost" size="icon" className="text-foreground md:hidden">
                   <Menu />
                   <span className="sr-only">Ouvrir le menu</span>
                 </Button>

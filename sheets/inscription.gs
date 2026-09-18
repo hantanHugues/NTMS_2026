@@ -49,8 +49,9 @@
  *   7. INTERRUPTEUR — ENVOI_ACTIF = false coupe les mails, les
  *      inscriptions continuent d'etre enregistrees.
  *
- * EXPEDITEUR — le compte PROPRIETAIRE, celui qui a deploye en
- * « Execute as: Me ». C'est le deploiement qui fixe l'adresse.
+ * EXPEDITEUR — par defaut le compte qui a deploye en « Execute as: Me ».
+ * Un autre compte peut prendre le relais depuis le classeur, menu
+ * NTMS > « Envoyer les mails depuis ce compte » (voir plus bas).
  *
  * A CHAQUE MODIFICATION DU CODE : Deploy > Manage deployments >
  * crayon > Version : New version > Deploy. Sinon l'adresse /exec
@@ -191,8 +192,15 @@ function doPost(e) {
     feuille.appendRow(ligne);
     var numeroLigne = feuille.getLastRow();
 
-    // Le mail vient APRES l'ecriture.
-    envoyerMail(feuille, numeroLigne, donnees, reference, conf);
+    // Le mail vient APRES l'ecriture. Si un autre compte a pris le role
+    // d'expediteur (menu NTMS), c'est sa tache automatique qui l'enverra.
+    if (expediteurActif()) {
+      feuille.getRange(numeroLigne, COLONNES.indexOf("mail_envoye") + 1).setValue(EN_ATTENTE);
+      PropertiesService.getScriptProperties().setProperty("A_ENVOYER", "1");
+    } else if (envoyerMail(feuille, numeroLigne, donnees, reference, conf) === EN_ATTENTE) {
+      // Quota du jour atteint : une tache reprendra l'envoi.
+      assurerRelance();
+    }
 
     return reponse(true, "Inscription enregistree.", reference);
   } catch (err) {
@@ -364,7 +372,11 @@ function remplirHtml(gabarit, valeurs) {
 
 /**
  * HABILLAGE — tous les mails partent dans le meme cadre : en-tete
- * brique a motif avec le logo, contenu blanc, pied de page brique uni.
+ * brique a motif avec le logo, bouton orange, pied de page brique uni.
+ *
+ * Le CONTENU n'impose ni fond ni couleur de texte : il prend ceux de la
+ * boite mail du lecteur, blanc en theme clair, noir en theme sombre.
+ * C'est la seule facon de suivre le theme partout, Gmail compris.
  * Seul le CONTENU vient de l'onglet config (Images, Titre, Corps,
  * bouton) ; la reference s'affiche quand elle existe.
  *
@@ -383,9 +395,10 @@ var CHARTE = {
   orange: "#FF7A00",
   nuit: "#001724",
   creme: "#FFEBD1",
-  texte: "#1F2E38",
-  fond: "#EFE8DD",
-  filet: "#EADFD0",
+  // Lisibles sur fond clair ET sur fond sombre : le contenu prend les
+  // couleurs de la boite mail du lecteur.
+  libelle: "#E06A00",
+  filet: "rgba(128,128,128,0.3)",
   police: "Lato,'Helvetica Neue',Helvetica,Arial,sans-serif",
 };
 
@@ -394,7 +407,7 @@ var EVENEMENT = {
   datesCourtes: "18 – 22 nov. 2026",
   lieu: "Lokossa, Bénin",
   theme: "20 ans d'existence : élever nos standards pour un meilleur impact.",
-  email: "benin@aiesec.net",
+  email: "aibconferences@gmail.com",
   instagram: "@beninnationalconference",
   lienInstagram: "https://www.instagram.com/beninnationalconference/",
 };
@@ -416,14 +429,13 @@ function construireHtml(conf, valeurs) {
     .join("");
 
   var titre = conf.titre
-    ? '<tr><td style="' + police + "padding:0 0 18px;font-size:22px;line-height:1.3;font-weight:900;color:" +
-      C.nuit + '">' + remplirHtml(conf.titre, valeurs) + "</td></tr>"
+    ? '<tr><td style="' + police + 'padding:0 0 18px;font-size:22px;line-height:1.3;font-weight:900">' + remplirHtml(conf.titre, valeurs) + "</td></tr>"
     : "";
 
   var corps = remplirHtml(conf.corps || "", valeurs)
     .split(/\n\s*\n/)
     .map(function (bloc) {
-      return '<tr><td style="' + police + "padding:0 0 18px;font-size:16px;line-height:1.7;color:" + C.texte + '">' +
+      return '<tr><td style="' + police + 'padding:0 0 18px;font-size:16px;line-height:1.7">' +
         bloc.replace(/\n/g, "<br>") + "</td></tr>";
     })
     .join("");
@@ -435,13 +447,19 @@ function construireHtml(conf, valeurs) {
       '<td bgcolor="' + C.orange + '" style="border-radius:999px">' +
       '<a href="' + echapper(conf.liencta) + '" target="_blank" style="' + police +
       "display:inline-block;padding:15px 28px;font-size:16px;font-weight:900;color:" + C.nuit +
-      ';text-decoration:none;border-radius:999px">' + echapper(conf.textecta) + "</a></td></tr></table></td></tr>"
+      ';text-decoration:none;border-radius:999px">' + echapper(conf.textecta) + "</a></td></tr></table></td></tr>" +
+      // Le lien en toutes lettres, pour qui prefere le copier ou dont la
+      // boite mail bloque le bouton.
+      '<tr><td style="' + police + 'padding:4px 0 18px;font-size:13px;line-height:1.6;opacity:0.8">' +
+      "Ou copie ce lien :<br>" +
+      '<a href="' + echapper(conf.liencta) + '" target="_blank" style="color:' + C.libelle +
+      ';word-break:break-all">' + echapper(conf.liencta) + "</a></td></tr>"
     : "";
 
   function info(libelle, valeur) {
     return '<td class="colonne" valign="top" style="' + police + 'padding:0 12px 12px 0">' +
-      '<div style="font-size:12px;font-weight:700;color:#79280E">' + libelle + "</div>" +
-      '<div style="font-size:14px;font-weight:700;color:' + C.nuit + ';padding-top:2px">' + echapper(valeur) + "</div></td>";
+      '<div style="font-size:12px;font-weight:700;color:' + C.libelle + '">' + libelle + "</div>" +
+      '<div style="font-size:14px;font-weight:700;padding-top:2px">' + echapper(valeur) + "</div></td>";
   }
   var infos = info("Quand", E.datesCourtes) + info("Où", E.lieu) +
     (valeurs.reference ? info("Référence", valeurs.reference) : "");
@@ -460,7 +478,7 @@ function construireHtml(conf, valeurs) {
   return (
     '<!doctype html><html lang="fr"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
-    '<meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only">' +
+    '<meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">' +
     '<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&amp;display=swap" rel="stylesheet">' +
     "<style>@media only screen and (max-width:620px){" +
     ".cadre{width:100%!important}" +
@@ -468,12 +486,11 @@ function construireHtml(conf, valeurs) {
     ".colonne{display:block!important;width:100%!important}" +
     ".droite{text-align:left!important;padding-top:14px!important}" +
     "}</style></head>" +
-    '<body style="margin:0;padding:0;background:' + C.fond + '">' +
+    '<body style="margin:0;padding:0">' +
     '<div style="display:none;max-height:0;overflow:hidden;opacity:0">' + apercu + "</div>" +
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="' + C.fond +
-    '" style="background:' + C.fond + '"><tr><td align="center" style="padding:32px 12px">' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="padding:32px 12px">' +
     '<table role="presentation" class="cadre" width="600" cellpadding="0" cellspacing="0" border="0" ' +
-    'style="width:600px;max-width:600px;background:#FFFFFF;border-radius:16px;overflow:hidden">' +
+    'style="width:600px;max-width:600px;border-radius:16px;overflow:hidden">' +
 
     // En-tete : brique et motif
     '<tr><td class="marge" bgcolor="' + C.brique + '" style="background-color:' + C.brique + ";" + motif +
@@ -518,6 +535,12 @@ function construireTexte(conf, valeurs) {
   return morceaux.join("\n\n");
 }
 
+/**
+ * Envoie le mail d'une ligne et renvoie ce qui s'est passe : "oui",
+ * "non" (echec, voir erreur_mail), "desactive", ou EN_ATTENTE quand le
+ * quota du jour ne suffit pas. Dans ce dernier cas, la ligne est
+ * reprise automatiquement des que le quota se libere.
+ */
 function envoyerMail(feuille, numeroLigne, donnees, reference, conf) {
   var colEnvoye = COLONNES.indexOf("mail_envoye") + 1;
   var colDate = COLONNES.indexOf("mail_envoye_le") + 1;
@@ -525,12 +548,12 @@ function envoyerMail(feuille, numeroLigne, donnees, reference, conf) {
 
   if (!ENVOI_ACTIF) {
     feuille.getRange(numeroLigne, colEnvoye).setValue("desactive");
-    return;
+    return "desactive";
   }
   if (!conf.objet || !conf.corps) {
     feuille.getRange(numeroLigne, colEnvoye).setValue("non");
     feuille.getRange(numeroLigne, colErreur).setValue("Onglet config incomplet : Objet et Corps sont obligatoires.");
-    return;
+    return "non";
   }
 
   var valeurs = {
@@ -554,13 +577,161 @@ function envoyerMail(feuille, numeroLigne, donnees, reference, conf) {
     if (cc) options.cc = cc;
     if (bcc) options.bcc = bcc;
 
+    // Le quota se compte en destinataires : l'inscrit, plus CC et BCC.
+    var destinataires = 1 + (cc ? cc.split(",").length : 0) + (bcc ? bcc.split(",").length : 0);
+    if (MailApp.getRemainingDailyQuota() < destinataires) {
+      feuille.getRange(numeroLigne, colEnvoye).setValue(EN_ATTENTE);
+      feuille.getRange(numeroLigne, colErreur).setValue(
+        "Quota de mails du jour atteint : envoi automatique des qu'il se libere."
+      );
+      var props = PropertiesService.getScriptProperties();
+      props.setProperty("A_ENVOYER", "1");
+      // Inutile de relire la feuille chaque minute tant que le quota
+      // est plein : prochain essai dans une heure.
+      props.setProperty("REPRISE_APRES", String(Date.now() + 60 * 60 * 1000));
+      return EN_ATTENTE;
+    }
+
     MailApp.sendEmail(options);
     feuille.getRange(numeroLigne, colEnvoye).setValue("oui");
     feuille.getRange(numeroLigne, colDate).setValue(new Date());
     feuille.getRange(numeroLigne, colErreur).setValue("");
+    return "oui";
   } catch (err) {
     feuille.getRange(numeroLigne, colEnvoye).setValue("non");
     feuille.getRange(numeroLigne, colErreur).setValue(String(err));
+    return "non";
+  }
+}
+
+// ---------------------------------------------------------------------
+// Compte qui envoie les mails
+// ---------------------------------------------------------------------
+
+/**
+ * QUI ENVOIE LES MAILS
+ *
+ * Par defaut, le compte qui a deploye le script envoie le mail au
+ * moment de l'inscription.
+ *
+ * Un AUTRE compte (celui de la conference) peut prendre le relais sans
+ * toucher au code : il ouvre le classeur, menu NTMS > « Envoyer les
+ * mails depuis ce compte », et accepte les autorisations. Une tache
+ * automatique a SON nom est alors creee : chaque minute, elle envoie
+ * les mails en attente DEPUIS SON COMPTE. Les
+ * inscriptions, elles, continuent d'etre ecrites par le compte du
+ * deploiement ; l'adresse /exec ne change pas.
+ *
+ * Le compte actif est note dans la propriete « EXPEDITEUR ». La tache
+ * d'un compte qui n'est plus l'expediteur actif ne fait rien : un seul
+ * compte envoie a la fois.
+ */
+// 1 minute : le plus court que Google autorise pour une tache automatique.
+// Aucune voie plus directe n'existe : une inscription est executee par le
+// compte du deploiement, et un compte ne peut pas lancer de code au nom
+// d'un autre. Pour tenir dans le quota (90 min de taches par jour en
+// compte gratuit), la tache sort aussitot quand rien n'attend : chaque
+// inscription pose le signal « A_ENVOYER », la tache l'efface.
+var FREQUENCE_MINUTES = 1;
+var EN_ATTENTE = "en attente";
+
+// Mails envoyes au plus par passage de la tache : environ 15 secondes.
+// Pendant l'envoi, le verrou retient les inscriptions ; un lot court
+// evite qu'une vague d'inscrits se voie repondre « reessaie ».
+var LOT_PAR_PASSAGE = 15;
+
+function expediteurActif() {
+  return (PropertiesService.getScriptProperties().getProperty("EXPEDITEUR") || "").toLowerCase();
+}
+
+function moi() {
+  return String(Session.getEffectiveUser().getEmail() || "").toLowerCase();
+}
+
+/** Ajoute le menu NTMS a l'ouverture du classeur. */
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu("NTMS")
+    .addItem("Envoyer les mails depuis ce compte", "devenirExpediteur")
+    .addItem("Qui envoie les mails ?", "afficherExpediteur")
+    .addSeparator()
+    .addItem("Arrêter l'envoi depuis ce compte", "arreterExpediteur")
+    .addToUi();
+}
+
+function devenirExpediteur() {
+  var compte = moi();
+  supprimerMesTaches();
+  ScriptApp.newTrigger("envoiProgramme").timeBased().everyMinutes(FREQUENCE_MINUTES).create();
+  PropertiesService.getScriptProperties().setProperty("EXPEDITEUR", compte);
+  SpreadsheetApp.getUi().alert(
+    "C'est fait. Les mails d'inscription partent maintenant de " + compte +
+    ", environ une minute après chaque inscription.\n\n" +
+    "Quota restant aujourd'hui sur ce compte : " + MailApp.getRemainingDailyQuota() + " destinataires."
+  );
+}
+
+function arreterExpediteur() {
+  var compte = moi();
+  supprimerMesTaches();
+  if (expediteurActif() === compte) {
+    PropertiesService.getScriptProperties().deleteProperty("EXPEDITEUR");
+  }
+  SpreadsheetApp.getUi().alert(
+    compte + " n'envoie plus les mails. Ils repartent du compte qui a déployé le script, " +
+    "au moment de l'inscription."
+  );
+}
+
+function afficherExpediteur() {
+  var compte = expediteurActif();
+  SpreadsheetApp.getUi().alert(
+    compte
+      ? "Les mails partent de " + compte + ", environ une minute après chaque inscription."
+      : "Les mails partent du compte qui a déployé le script, au moment de l'inscription."
+  );
+}
+
+/** Ne voit et ne supprime que les taches du compte qui l'execute. */
+function supprimerMesTaches() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === "envoiProgramme") ScriptApp.deleteTrigger(t);
+  });
+}
+
+/** La tache automatique : envoie les mails en attente, depuis le compte actif. */
+function envoiProgramme() {
+  var props = PropertiesService.getScriptProperties();
+  // Rien n'attend : on sort sans lire la feuille.
+  if (!props.getProperty("A_ENVOYER")) return;
+  // Quota plein au dernier essai : on patiente jusqu'a l'heure prevue.
+  if (Date.now() < Number(props.getProperty("REPRISE_APRES") || 0)) return;
+  // Un autre compte est l'expediteur actif : ce n'est pas notre tour.
+  // (Sans expediteur actif, c'est la tache de relance du compte du
+  // deploiement qui tourne, et elle envoie.)
+  var actif = expediteurActif();
+  if (actif && actif !== moi()) return;
+  traiterLesMails(function (etat) {
+    return etat === EN_ATTENTE;
+  }, false, function () {
+    // Efface SOUS LE VERROU, avant la lecture : une inscription arrivee
+    // pendant l'envoi reposera le signal pour le passage suivant.
+    props.deleteProperty("A_ENVOYER");
+    props.deleteProperty("REPRISE_APRES");
+  }, LOT_PAR_PASSAGE);
+}
+
+/**
+ * Envoi immediat (aucun expediteur actif) et quota plein : cree, si elle
+ * n'existe pas, la tache qui reprendra les mails en attente. Elle tourne
+ * au nom du compte du deploiement.
+ */
+function assurerRelance() {
+  var existe = ScriptApp.getProjectTriggers().some(function (t) {
+    return t.getHandlerFunction() === "envoiProgramme";
+  });
+  if (!existe) {
+    ScriptApp.newTrigger("envoiProgramme").timeBased().everyMinutes(FREQUENCE_MINUTES).create();
   }
 }
 
@@ -580,27 +751,44 @@ function testerLeMail() {
   }
   PropertiesService.getScriptProperties().getProperties();
   var valeurs = { prenom: "Test", nom: "Utilisateur", lc: "Cotonou", role: "TM", reference: "NTMS-TEST" };
-  var moi = Session.getEffectiveUser().getEmail();
+  var compte = Session.getEffectiveUser().getEmail();
   MailApp.sendEmail({
-    to: moi,
+    to: compte,
     subject: "[TEST] " + remplirTexte(conf.objet, valeurs),
     body: construireTexte(conf, valeurs),
     htmlBody: construireHtml(conf, valeurs),
     name: conf.nomexpediteur || "AIESEC in Benin",
   });
-  Logger.log("Mail de test envoye a " + moi + ". Quota restant aujourd'hui : " +
+  Logger.log("Mail de test envoye a " + compte + ". Quota restant aujourd'hui : " +
     MailApp.getRemainingDailyQuota() + " destinataires.");
 }
 
 /**
- * Renvoie le mail aux inscrits qui ne l'ont pas recu. A lancer apres
- * avoir corrige la cause (quota, config, interrupteur). Prend le meme
- * verrou que les inscriptions : personne ne recoit deux mails.
+ * Renvoie le mail aux inscrits qui ne l'ont pas recu (en attente,
+ * echec, interrupteur coupe). A lancer apres avoir corrige la cause.
+ * Les mails partent du compte qui lance la fonction.
  */
 function envoyerLesMailsEnAttente() {
+  traiterLesMails(function (etat) {
+    return etat !== "oui";
+  }, true);
+}
+
+/**
+ * Parcourt les inscrits et envoie le mail a ceux que `aTraiter` retient.
+ * Prend le meme verrou que les inscriptions : personne ne recoit deux
+ * mails. La tache automatique n'attend pas le verrou : s'il est pris,
+ * elle repassera au tour suivant.
+ */
+function traiterLesMails(aTraiter, attendre, avantLecture, limite) {
   var verrou = LockService.getScriptLock();
-  verrou.waitLock(30000);
+  if (attendre) {
+    verrou.waitLock(30000);
+  } else if (!verrou.tryLock(10000)) {
+    return;
+  }
   try {
+    if (avantLecture) avantLecture();
     var conf = lireConfig();
     var feuille = feuilleDonnees(conf.nomfeuillebd);
     var valeurs = feuille.getDataRange().getValues();
@@ -611,14 +799,21 @@ function envoyerLesMailsEnAttente() {
 
     var traites = 0;
     for (var i = 1; i < valeurs.length; i++) {
-      if (String(valeurs[i][i0.mail_envoye]).toLowerCase() === "oui") continue;
+      if (!aTraiter(String(valeurs[i][i0.mail_envoye]).toLowerCase())) continue;
       if (!valeurs[i][i0.email]) continue;
+      if (limite && traites >= limite) {
+        // Lot plein : le passage suivant continuera.
+        PropertiesService.getScriptProperties().setProperty("A_ENVOYER", "1");
+        break;
+      }
       var donnees = {};
       COLONNES.forEach(function (cle) {
         donnees[cle] = valeurs[i][i0[cle]];
       });
-      envoyerMail(feuille, i + 1, donnees, donnees.reference, conf);
       traites++;
+      // Quota plein : inutile d'essayer les suivants, ils restent en
+      // attente et le signal est deja pose.
+      if (envoyerMail(feuille, i + 1, donnees, donnees.reference, conf) === EN_ATTENTE) break;
     }
     Logger.log("Lignes traitees : " + traites);
   } finally {

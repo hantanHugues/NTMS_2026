@@ -63,8 +63,11 @@ export function ContactSection() {
                 <span className="block text-xs tracking-wider text-muted-foreground">
                   {contact.mailLabel}
                 </span>
-                <span className="font-heading block text-xl leading-tight font-extrabold tracking-tight sm:text-2xl">
-                  {event.email}
+                <span className="font-heading block text-xl leading-tight font-extrabold tracking-tight [overflow-wrap:anywhere] max-sm:text-lg sm:text-2xl">
+                  {/* Coupure permise juste après « @ » : sur petit écran,
+                      l'adresse passe à la ligne là, pas au milieu d'un mot. */}
+                  {event.email.split("@")[0]}@<wbr />
+                  {event.email.split("@")[1]}
                 </span>
               </span>
             </div>
