@@ -320,7 +320,7 @@ export const cta = {
     },
   ],
   button: "Réserve ta place gratuitement",
-  href: "#inscription",
+  href: "/inscription",
 };
 
 /**
@@ -385,6 +385,53 @@ export const contact = {
     "L'hébergement et les repas",
     "Les tarifs",
   ],
+};
+
+/**
+ * SECTION 7 — La page d'inscription.
+ *
+ * Les champs viennent du comite. Trois ajouts de ma part, signales a
+ * l'utilisateur : le SEXE, sans lequel « chambre non mixte » est
+ * inexploitable ; et deux consentements, l'ajout au groupe WhatsApp et
+ * l'usage des photos, puisque le site en publie.
+ *
+ * Les positions sont saisies librement tant que le comite n'a pas
+ * fourni la liste officielle.
+ */
+export const inscription = {
+  titre: "Inscription au NTMS 2026",
+  chapo: "Cinq jours à Lokossa, du 18 au 22 novembre 2026. Quelques minutes pour t'inscrire.",
+  etapes: ["Qui es-tu ?", "Ton lien avec AIESEC", "Ton séjour"],
+  /** [0] = AIESECer au Bénin, [1] = d'un autre pays, [2] = pas AIESECer. */
+  profils: ["AIESECer au Bénin", "AIESECer d'un autre pays", "Pas AIESECer"],
+  niveaux: ["MC", "LC"],
+  /** `valeur` part dans la base ; `libelle` s'affiche dans la liste. */
+  rolesMC: [
+    { valeur: "MCP", libelle: "MCP · Member Committee President" },
+    { valeur: "MCVP", libelle: "MCVP · Member Committee Vice President" },
+    { valeur: "Autre", libelle: "Autre" },
+  ],
+  rolesLC: [
+    { valeur: "LCP", libelle: "LCP · Local Committee President" },
+    { valeur: "LCVP", libelle: "LCVP · Local Committee Vice President" },
+    { valeur: "TL", libelle: "TL · Team Leader" },
+    { valeur: "TM", libelle: "TM · Team Member" },
+  ],
+  comites: ["Cotonou", "Parakou", "Porto-Novo", "Abomey-Calavi"],
+  sexes: ["Femme", "Homme"],
+  chambres: ["Chambre mixte", "Chambre non mixte"],
+  ouiNon: ["Oui", "Non"],
+  consentementGroupe:
+    "J'accepte d'être ajouté au groupe WhatsApp de l'édition, où sont annoncés le programme, les informations pratiques et les tarifs.",
+  consentementPhotos:
+    "J'accepte d'apparaître sur les photos et vidéos prises pendant l'événement et publiées par AIESEC in Benin.",
+  boutonFinal: "Valider mon inscription",
+  succesTitre: "Ton inscription est enregistrée.",
+  succesTexte:
+    "Rejoins le groupe WhatsApp maintenant : c'est là qu'arrivent le programme, les informations pratiques et les tarifs. Tu reçois aussi une confirmation par mail.",
+  succesBouton: "Rejoindre le groupe WhatsApp",
+  // Renseigner NEXT_PUBLIC_LIEN_WHATSAPP pour afficher le bouton.
+  lienWhatsApp: process.env.NEXT_PUBLIC_LIEN_WHATSAPP ?? "",
 };
 
 export const programme = [
