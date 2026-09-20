@@ -21,8 +21,8 @@ export function SiteFooter() {
               {event.name}
             </span>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              {event.baseline} — {event.organisation}. Vingt ans au Bénin, et
-              cinq jours pour élever nos standards.
+              {event.baseline} — {event.organisation}. Vingt ans d'AIESEC in Benin,
+              et cinq jours pour élever nos standards.
             </p>
             <a
               href={`mailto:${event.email}`}

@@ -51,11 +51,13 @@ export const navItems = [
  * Les verbes defilent, comme avant — c'est le dispositif retenu. Ils
  * changent de famille : ils disaient la survie face au marche de
  * l'emploi, ils disent maintenant la duree. Chacun s'accroche a
- * « Vingt ans a… » sans casser la phrase, et la ligne du bas pose le
+ * « AIESEC in Benin, vingt ans a… » sans casser la phrase — le sujet
+ * est nomme pour qu'on ne croie pas que le NTMS a vingt ans. La ligne
+ * du bas pose le
  * theme de l'edition.
  */
 export const hero = {
-  amorce: "Vingt ans à",
+  amorce: "AIESEC in Benin, vingt ans à",
   chute: "Cette année, on élève le niveau.",
 };
 
@@ -68,16 +70,16 @@ export const rotatingVerbs = [
 ];
 
 export const skillTags = [
-  "Pensée critique",
-  "Adaptabilité",
-  "IA & outils",
   "Leadership",
-  "Communication",
-  "Résilience",
+  "Cotonou",
+  "Développement personnel",
+  "Parakou",
   "Travail en équipe",
-  "Gestion de projet",
-  "Curiosité",
-  "Intelligence culturelle",
+  "Porto-Novo",
+  "Entrepreneuriat",
+  "Abomey-Calavi",
+  "Prise de parole",
+  "Vingt ans de relais",
 ];
 
 
@@ -108,13 +110,13 @@ export const skillTags = [
  * (51 % de chomage chez les 18-35 ans). Elle n'a plus d'objet.
  */
 export const constat = {
-  question: "Vingt ans que nous formons des jeunes au Bénin.",
+  question: "Vingt ans qu'AIESEC in Benin forme des jeunes.",
   probe: "Deux décennies de comités, de projets et de promotions qui se sont passé le relais.",
   intro: "AIESEC in Benin, aujourd'hui :",
   columns: [
     {
       value: "20",
-      label: "ans au Bénin.",
+      label: "ans d'AIESEC in Benin.",
       // L'annee de fondation n'est pas confirmee : on date le jalon,
       // pas la creation.
       detail: "Vingt ans atteints en 2025.",
@@ -204,12 +206,12 @@ export const solution = {
  * suivantes le bandeau defilant.
  */
 export const preuve = {
-  title: "Vingt ans de gens qui se sont passé le relais.",
+  title: "Vingt générations d'AIESECers qui se sont succédé.",
   // Deux phrases pleines, sans liste ni deux-points : l'enumeration est
   // portee par les verbes, ce sont les membres qui font les actions.
   // La seconde phrase referme sur le lecteur — formulation choisie par
   // l'utilisateur.
-  lead: "Depuis vingt ans, nos membres se retrouvent en atelier, prennent la parole devant la salle, travaillent en petits groupes et présentent leurs restitutions. Joins-toi à nous pour vivre cette expérience.",
+  lead: "Depuis vingt ans, les membres d'AIESEC in Benin se retrouvent en atelier, prennent la parole devant la salle, travaillent en petits groupes et présentent leurs restitutions. Joins-toi à nous pour vivre cette expérience.",
   columns: [
     [
       { src: "/photos/prise-parole-01.jpg", alt: "Un membre prend la parole au micro devant le groupe" },
@@ -255,7 +257,7 @@ export const bandeau = {
   titleAccent: "et des gens qui reviennent.",
   // « Photos de promo » a ete retire : le mot renvoie a la photo de fin
   // d'annee scolaire, un registre academique qu'on nous a reproche.
-  lead: "Soirées, sorties, photos de groupe. Vingt ans que le leadership se transmet comme ça, en vivant des expériences ensemble.",
+  lead: "Soirées, sorties, photos de groupe. Vingt ans que le leadership se transmet au sein d'AIESEC in Benin, en vivant des expériences ensemble.",
   rows: [
     [
       "/photos/promo-01.jpg",
