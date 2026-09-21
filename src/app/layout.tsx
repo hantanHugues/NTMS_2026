@@ -18,10 +18,29 @@ const bricolage = Bricolage_Grotesque({
   display: "swap",
 });
 
+/**
+ * Ce que montrent WhatsApp, Telegram ou les réseaux quand on colle le
+ * lien du site : titre, phrase et image. Sans `metadataBase`, l'adresse
+ * de l'image resterait relative et aucune application ne l'afficherait.
+ *
+ * Ces applications gardent l'aperçu en mémoire : après une mise à jour,
+ * l'ancien peut encore s'afficher pendant plusieurs heures.
+ */
 export const metadata: Metadata = {
-  title: "NTMS 2026 — S'adapter, le nouveau métier",
+  metadataBase: new URL("https://ntms-2026.vercel.app"),
+  title: "NTMS 2026 — Les 20 ans d'AIESEC in Benin",
   description:
-    "Le séminaire des nouveaux membres d'AIESEC in Benin. Cinq jours pour construire l'adaptabilité que le marché de l'emploi réclame déjà.",
+    "National Training and Motivation Seminar, du 18 au 22 novembre 2026 à Lokossa. Cinq jours de formation et de rencontres pour les vingt ans d'AIESEC in Benin.",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    siteName: "NTMS 2026",
+    title: "NTMS 2026 — Les 20 ans d'AIESEC in Benin",
+    description:
+      "Du 18 au 22 novembre 2026 à Lokossa. Cinq jours de formation et de rencontres. Réserve ta place gratuitement.",
+    images: [{ url: "/partage.jpg", width: 1200, height: 630 }],
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 /**

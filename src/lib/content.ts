@@ -258,23 +258,26 @@ export const bandeau = {
   // « Photos de promo » a ete retire : le mot renvoie a la photo de fin
   // d'annee scolaire, un registre academique qu'on nous a reproche.
   lead: "Soirées, sorties, photos de groupe. Vingt ans que le leadership se transmet au sein d'AIESEC in Benin, en vivant des expériences ensemble.",
+  // Le bandeau n'utilise AUCUNE photo du mur de la section precedente :
+  // on passe de l'une a l'autre sans revoir les memes visages.
   rows: [
     [
-      "/photos/promo-01.jpg",
-      "/photos/prise-parole-01.jpg",
-      "/photos/groupe-01.jpg",
-      "/photos/public-01.jpg",
-      "/photos/soiree-01.jpg",
-      "/photos/atelier-01.jpg",
-      "/photos/prise-parole-02.jpg",
+      "/photos/bandeau-01.jpg",
+      "/photos/bandeau-02.jpg",
+      "/photos/bandeau-03.jpg",
+      "/photos/bandeau-04.jpg",
+      "/photos/bandeau-05.jpg",
+      "/photos/bandeau-06.jpg",
+      "/photos/bandeau-07.jpg",
     ],
     [
-      "/photos/public-03.jpg",
-      "/photos/atelier-02.jpg",
-      "/photos/portrait-01.jpg",
-      "/photos/prise-parole-03.jpg",
-      "/photos/public-04.jpg",
-      "/photos/public-02.jpg",
+      "/photos/bandeau-08.jpg",
+      "/photos/bandeau-09.jpg",
+      "/photos/bandeau-10.jpg",
+      "/photos/bandeau-11.jpg",
+      "/photos/bandeau-12.jpg",
+      "/photos/bandeau-13.jpg",
+      "/photos/bandeau-14.jpg",
     ],
   ],
 };
