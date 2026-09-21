@@ -1,12 +1,22 @@
 # Base d'inscription NTMS 2026
 
 Le classeur maître fait deux choses, et seulement deux : **garder la
-liste des inscrits** et **leur envoyer un mail** à l'inscription. Le
-contenu de ce mail se règle dans l'onglet `config`.
+liste des inscrits** et **leur envoyer des mails**.
+
+Deux mails existent, chacun avec son onglet de réglage :
+
+| mail | onglet | quand il part |
+|---|---|---|
+| **automatique** | `config auto` | tout seul, à chaque inscription |
+| **manuel** | `config manuel` | seulement en cliquant dans le menu **NTMS** |
+
+Le contenu de `config auto` se change selon la période : c'est toujours
+ce mail-là que le site fait partir. L'ancien nom d'onglet `config` reste
+accepté pour l'automatique.
 
 | fichier | rôle |
 |---|---|
-| `ntms-2026-base.xlsx` | le classeur à importer : `inscriptions`, `config`, `lisez-moi` |
+| `ntms-2026-base.xlsx` | le classeur à importer : `inscriptions`, `config auto`, `config manuel`, `lisez-moi` |
 | `inscription.gs` | le script à coller dans ce classeur |
 | `README.md` | ce document |
 
@@ -63,13 +73,13 @@ Sheets**, et **Fichier → Enregistrer au format Google Sheets**.
 **Si ton classeur existe déjà**, vérifie trois choses avant d'importer :
 
 1. **L'en-tête de l'onglet `inscriptions`** doit être exactement,
-   de A à W :
+   de A à Z :
 
    ```
    horodatage reference nom prenom email whatsapp sexe profil niveau
    role lc pays source chambre allergie allergie_detail restauration
    consentement_groupe consentement_photos mail_envoye mail_envoye_le
-   erreur_mail id_envoi
+   erreur_mail id_envoi mail_manuel mail_manuel_le erreur_mail_manuel
    ```
 
    Le plus simple : **vider entièrement l'onglet, en-tête compris**. Le
@@ -80,12 +90,12 @@ Sheets**, et **Fichier → Enregistrer au format Google Sheets**.
    journal du serveur indique la colonne fautive) au lieu d'être écrite
    de travers.
 
-2. **S'il existe déjà un onglet `config`**, supprime-le avant
-   l'import. Sinon Google crée « config 1 », et le script continue de
-   lire l'ancien.
+2. **S'il existe déjà un onglet `config` ou `config auto`**, supprime-le
+   avant l'import. Sinon Google crée « config auto 1 », et le script
+   continue de lire l'ancien.
 
 3. **L'onglet des inscrits doit s'appeler `inscriptions`** — c'est ce
-   que dit « Nom feuille (BD) » dans `config`. S'ils ne correspondent
+   que dit « Nom feuille (BD) » dans `config auto`. S'ils ne correspondent
    pas, le script crée un nouvel onglet et tes inscrits se retrouvent
    répartis sur deux feuilles.
 
@@ -186,10 +196,71 @@ construction** : si tu le changes chez l'hébergeur, il faut
 
 ---
 
+## La base secondaire
+
+Un **second classeur**, tenu par un autre compte, reçoit une copie de
+chaque inscription. Il sert de base de travail à l'équipe : on y trie,
+on y filtre, on le partage avec qui on veut.
+
+**Aucun des deux comptes n'a accès au classeur de l'autre.** Le site
+écrit dans les deux, chacun par son propre script et son propre secret.
+
+```
+site ──► script du registre maître ──► inscriptions + mail
+     └──► script de la base secondaire ──► copie
+```
+
+**Mise en place, par le titulaire du second classeur :**
+
+1. Créer le classeur, puis **Extensions → Apps Script**, et y coller
+   `base-secondaire.gs`.
+2. **Paramètres du projet → Propriétés du script** → propriété `SECRET`,
+   avec **la même valeur** que celle du registre maître, celle de
+   `INSCRIPTION_SECRET`.
+3. **Deploy → New deployment → Web app**, « Execute as : Me », « Who has
+   access : Anyone ». Copier l'adresse `/exec`.
+4. Transmettre cette adresse à qui tient le site.
+
+**Côté site**, dans `.env.local` et chez l'hébergeur :
+
+```
+INSCRIPTION_MIROIR_URL=…      (l'adresse /exec du second script)
+```
+
+Laisser cette variable vide désactive la copie. Une variable
+`INSCRIPTION_MIROIR_SECRET` existe, au cas où les deux classeurs
+devraient un jour avoir des secrets différents.
+
+**Ce que reçoit la base secondaire :** les données de l'inscription et
+sa référence, sans le suivi des mails. L'en-tête se pose tout seul, et
+une référence déjà présente n'est jamais copiée deux fois.
+
+**Si elle est injoignable**, l'inscription et le mail se font quand
+même : l'inscrit ne voit rien, et le site consigne l'échec dans ses
+journaux. Le registre maître fait foi.
+
+---
+
 ## Au quotidien
 
-**Changer le texte du mail** : onglet `config`. Immédiat, pas besoin de
-redéployer le script.
+**Changer le texte d'un mail** : onglet `config auto` ou `config manuel`.
+Immédiat, pas besoin de redéployer le script.
+
+**Envoyer le mail manuel** : menu **NTMS** dans le classeur.
+- *Aux lignes sélectionnées* : sélectionne les lignes des inscrits, puis clique.
+- *À ceux qui ne l'ont pas reçu* : tous ceux dont `mail_manuel` n'est pas `oui`.
+
+Dans les deux cas, une confirmation s'affiche, puis les mails partent
+dans la minute qui suit, par la même file que les inscriptions. Le suivi
+se lit dans `mail_manuel`, `mail_manuel_le` et `erreur_mail_manuel`.
+
+**Renvoyer le mail automatique à tout le monde** : menu **NTMS**. À
+utiliser après avoir changé le contenu de `config auto` : tous les
+inscrits, y compris ceux qui l'avaient déjà reçu, reçoivent la nouvelle
+version.
+
+**Voir un mail avant de l'envoyer** : menu **NTMS** → « M'envoyer un
+aperçu du mail automatique » ou « … du mail manuel ».
 
 **L'habillage du mail** (en-tête brique à motif, logo, bande Quand / Où
 / Référence, pied de page) est dans le script, pas dans `config` : il est
@@ -202,7 +273,8 @@ CTA » dans `config` (pour le mail) et `NEXT_PUBLIC_LIEN_WHATSAPP` (pour
 l'écran de confirmation du site). Changer les deux.
 
 **Couper les mails** sans arrêter les inscriptions :
-`ENVOI_ACTIF = false` dans le script, puis nouvelle version.
+`ENVOI_ACTIF = false` dans le script, puis nouvelle version. Cela coupe
+les deux mails.
 
 **Un mail n'est pas parti** : la ligne porte `mail_envoye = non` et
 l'erreur exacte dans `erreur_mail`. Corriger la cause, puis lancer

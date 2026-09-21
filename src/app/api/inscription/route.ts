@@ -33,6 +33,60 @@ function refus(message: string, status = 400) {
   return NextResponse.json({ ok: false, message }, { status });
 }
 
+type Reponse = { ok?: boolean; message?: string; reference?: string | null };
+
+/**
+ * Appelle une application web Apps Script et lit sa réponse.
+ *
+ * Apps Script répond en DEUX temps : le POST exécute le script et
+ * renvoie une redirection 302 ; la réponse JSON se lit ensuite par un
+ * GET sur l'adresse indiquée.
+ *
+ * La redirection est suivie À LA MAIN. Suivie automatiquement, elle
+ * repartait avec les en-têtes du POST et Google répondait 404 : le
+ * script avait bien écrit la ligne, mais le site ne recevait jamais la
+ * confirmation et affichait un échec.
+ */
+async function appelerScript(
+  url: string,
+  corps: Record<string, string>
+): Promise<Reponse> {
+  const signal = AbortSignal.timeout(45000);
+  const premier = await fetch(url, {
+    method: "POST",
+    // `text/plain` évite la requête préliminaire qu'Apps Script ne sait
+    // pas traiter.
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(corps),
+    redirect: "manual",
+    signal,
+  });
+
+  let reponse = premier;
+  if (premier.status >= 300 && premier.status < 400) {
+    const suite = premier.headers.get("location");
+    if (!suite) throw new Error("Redirection d'Apps Script sans adresse.");
+    reponse = await fetch(suite, { method: "GET", signal });
+  }
+
+  const texte = await reponse.text();
+  try {
+    return JSON.parse(texte) as Reponse;
+  } catch {
+    // Page HTML de Google : mauvais déploiement, page de connexion, ou
+    // panne passagère. On garde le texte lisible, pas le HTML : c'est là
+    // que Google écrit la cause.
+    const lisible = texte
+      .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    throw new Error(
+      `Réponse non JSON d'Apps Script (HTTP ${reponse.status}) : ${lisible.slice(0, 600)}`
+    );
+  }
+}
+
 export async function POST(request: Request) {
   const url = process.env.INSCRIPTION_WEBAPP_URL;
   const secret = process.env.INSCRIPTION_SECRET;
@@ -101,61 +155,37 @@ export async function POST(request: Request) {
   };
 
   try {
-    const signal = AbortSignal.timeout(45000);
-
-    // Apps Script répond en DEUX temps : le POST exécute le script et
-    // renvoie une redirection 302 ; la réponse JSON se lit ensuite par
-    // un GET sur l'adresse indiquée.
-    //
-    // La redirection est suivie À LA MAIN. Suivie automatiquement, elle
-    // repartait avec les en-têtes du POST et Google répondait 404 : le
-    // script avait bien écrit la ligne, mais le site ne recevait jamais
-    // la confirmation et affichait un échec.
-    const premier = await fetch(url, {
-      method: "POST",
-      // `text/plain` évite la requête préliminaire qu'Apps Script ne
-      // sait pas traiter.
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ ...donnees, _secret: secret }),
-      redirect: "manual",
-      signal,
-    });
-
-    let reponse = premier;
-    if (premier.status >= 300 && premier.status < 400) {
-      const suite = premier.headers.get("location");
-      if (!suite) {
-        console.error("Redirection d'Apps Script sans adresse.");
-        return refus("Le service d'inscription ne répond pas correctement.", 502);
-      }
-      reponse = await fetch(suite, { method: "GET", signal });
-    }
-
-    const texte = await reponse.text();
-    let resultat: { ok?: boolean; message?: string; reference?: string | null };
-    try {
-      resultat = JSON.parse(texte);
-    } catch {
-      // Page HTML de Google : mauvais déploiement, page de connexion…
-      // Le texte lisible de la page, pas son HTML : c'est là que
-      // Google écrit la cause (erreur du script, délai, autorisation).
-      const lisible = texte
-        .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, " ")
-        .replace(/<[^>]+>/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-      console.error(
-        `Réponse non JSON d'Apps Script (HTTP ${reponse.status}) :`,
-        lisible.slice(0, 600)
-      );
-      return refus("Le service d'inscription ne répond pas correctement.", 502);
-    }
-
+    const resultat = await appelerScript(url, { ...donnees, _secret: secret });
     if (!resultat.ok) {
       console.error("Refus d'Apps Script :", resultat.message);
       return refus("L'inscription n'a pas pu être enregistrée. Réessaie.", 502);
     }
-    return NextResponse.json({ ok: true, reference: resultat.reference ?? "" });
+
+    const reference = resultat.reference ?? "";
+
+    // La COPIE dans la base secondaire, s'il y en a une. Elle part après
+    // coup et n'a aucun droit de faire échouer une inscription : le
+    // registre maître fait foi. Une copie manquée se voit dans les
+    // journaux du site.
+    const miroir = process.env.INSCRIPTION_MIROIR_URL;
+    // Par défaut, le même secret que le registre maître : un seul à
+    // retenir. INSCRIPTION_MIROIR_SECRET n'est là que si un jour les
+    // deux classeurs doivent en avoir chacun un.
+    const miroirSecret = process.env.INSCRIPTION_MIROIR_SECRET || secret;
+    if (miroir) {
+      try {
+        const copie = await appelerScript(miroir, {
+          ...donnees,
+          reference,
+          _secret: miroirSecret,
+        });
+        if (!copie.ok) console.error("Base secondaire, refus :", copie.message);
+      } catch (err) {
+        console.error("Base secondaire injoignable :", err);
+      }
+    }
+
+    return NextResponse.json({ ok: true, reference });
   } catch (err) {
     console.error("Appel Apps Script impossible :", err);
     return refus("Le service est momentanément indisponible. Réessaie.", 504);

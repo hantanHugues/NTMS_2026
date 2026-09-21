@@ -72,7 +72,35 @@ function secretAttendu() {
   return PropertiesService.getScriptProperties().getProperty("SECRET") || "";
 }
 
-var ONGLET_CONFIG = "config";
+/**
+ * LES DEUX MAILS DU CLASSEUR
+ *
+ * « auto »   : part tout seul a l'inscription. Son contenu se change
+ *              dans l'onglet « config auto » selon la periode ; le site
+ *              appelle toujours la meme chose.
+ * « manuel » : ne part QUE sur clic, menu NTMS. Contenu dans l'onglet
+ *              « config manuel ».
+ *
+ * Chaque modele a ses propres colonnes de suivi : un inscrit peut avoir
+ * recu l'un sans l'autre. « onglets » liste les noms acceptes, dans
+ * l'ordre : l'ancien nom « config » reste valable pour l'automatique.
+ */
+var MODELES = {
+  auto: {
+    nom: "automatique",
+    onglets: ["config auto", "config"],
+    etat: "mail_envoye",
+    date: "mail_envoye_le",
+    erreur: "erreur_mail",
+  },
+  manuel: {
+    nom: "manuel",
+    onglets: ["config manuel"],
+    etat: "mail_manuel",
+    date: "mail_manuel_le",
+    erreur: "erreur_mail_manuel",
+  },
+};
 var ONGLET_PAR_DEFAUT = "inscriptions";
 
 /** Longueur maximale conservee pour un champ saisi. */
@@ -117,10 +145,17 @@ var COLONNES = [
   "mail_envoye_le",
   "erreur_mail",
   "id_envoi",
+  "mail_manuel",
+  "mail_manuel_le",
+  "erreur_mail_manuel",
 ];
 
 /** Colonnes remplies par le script, jamais par le formulaire. */
-var COLONNES_SCRIPT = ["horodatage", "reference", "mail_envoye", "mail_envoye_le", "erreur_mail"];
+var COLONNES_SCRIPT = [
+  "horodatage", "reference",
+  "mail_envoye", "mail_envoye_le", "erreur_mail",
+  "mail_manuel", "mail_manuel_le", "erreur_mail_manuel",
+];
 
 var REQUIS = ["nom", "prenom", "profil", "email", "whatsapp"];
 
@@ -192,15 +227,9 @@ function doPost(e) {
     feuille.appendRow(ligne);
     var numeroLigne = feuille.getLastRow();
 
-    // Le mail vient APRES l'ecriture. Si un autre compte a pris le role
-    // d'expediteur (menu NTMS), c'est sa tache automatique qui l'enverra.
-    if (expediteurActif()) {
-      feuille.getRange(numeroLigne, COLONNES.indexOf("mail_envoye") + 1).setValue(EN_ATTENTE);
-      PropertiesService.getScriptProperties().setProperty("A_ENVOYER", "1");
-    } else if (envoyerMail(feuille, numeroLigne, donnees, reference, conf) === EN_ATTENTE) {
-      // Quota du jour atteint : une tache reprendra l'envoi.
-      assurerRelance();
-    }
+    // Le mail vient APRES l'ecriture, et part TOUT DE SUITE, au nom du
+    // compte qui a deploye le script (le proprietaire du classeur).
+    envoyerMail(feuille, numeroLigne, donnees, reference, conf);
 
     return reponse(true, "Inscription enregistree.", reference);
   } catch (err) {
@@ -322,8 +351,28 @@ function normaliser(libelle) {
     .replace(/[^a-z0-9]/g, "");
 }
 
-function lireConfig() {
-  var feuille = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ONGLET_CONFIG);
+/**
+ * Lit l'onglet de reglage d'un modele (MODELES.auto par defaut).
+ *
+ * La recherche est VOLONTAIREMENT tolerante : tout onglet dont le nom
+ * contient « config » est un onglet de reglage, majuscules, accents,
+ * espaces et fautes de frappe compris (« Configue Auto » marche). Parmi
+ * eux, celui qui contient « manuel » est le mail manuel, les autres
+ * l'automatique. Un nom mal ecrit a deja coute une serie de mails.
+ */
+function lireConfig(modele) {
+  var manuel = (modele || MODELES.auto) === MODELES.manuel;
+  var feuille = null;
+  var feuilles = SpreadsheetApp.getActiveSpreadsheet().getSheets();
+  for (var f = 0; f < feuilles.length; f++) {
+    var nom = normaliser(feuilles[f].getName());
+    if (nom.indexOf("config") === -1) continue;
+    var estManuel = nom.indexOf("manuel") !== -1 || nom.indexOf("manual") !== -1;
+    if (estManuel !== manuel) continue;
+    // A defaut, le premier trouve ; mais « auto » l'emporte pour le
+    // modele automatique si plusieurs onglets correspondent.
+    if (!feuille || (!manuel && nom.indexOf("auto") !== -1)) feuille = feuilles[f];
+  }
   var conf = {};
   if (!feuille) return conf;
   var valeurs = feuille.getDataRange().getValues();
@@ -537,14 +586,15 @@ function construireTexte(conf, valeurs) {
 
 /**
  * Envoie le mail d'une ligne et renvoie ce qui s'est passe : "oui",
- * "non" (echec, voir erreur_mail), "desactive", ou EN_ATTENTE quand le
- * quota du jour ne suffit pas. Dans ce dernier cas, la ligne est
- * reprise automatiquement des que le quota se libere.
+ * "non" (echec, voir erreur_mail), "desactive", ou "quota" quand le
+ * quota du jour est epuise. Le detail de chaque ligne se lit dans la
+ * feuille.
  */
-function envoyerMail(feuille, numeroLigne, donnees, reference, conf) {
-  var colEnvoye = COLONNES.indexOf("mail_envoye") + 1;
-  var colDate = COLONNES.indexOf("mail_envoye_le") + 1;
-  var colErreur = COLONNES.indexOf("erreur_mail") + 1;
+function envoyerMail(feuille, numeroLigne, donnees, reference, conf, modele) {
+  modele = modele || MODELES.auto;
+  var colEnvoye = COLONNES.indexOf(modele.etat) + 1;
+  var colDate = COLONNES.indexOf(modele.date) + 1;
+  var colErreur = COLONNES.indexOf(modele.erreur) + 1;
 
   if (!ENVOI_ACTIF) {
     feuille.getRange(numeroLigne, colEnvoye).setValue("desactive");
@@ -552,7 +602,9 @@ function envoyerMail(feuille, numeroLigne, donnees, reference, conf) {
   }
   if (!conf.objet || !conf.corps) {
     feuille.getRange(numeroLigne, colEnvoye).setValue("non");
-    feuille.getRange(numeroLigne, colErreur).setValue("Onglet config incomplet : Objet et Corps sont obligatoires.");
+    feuille.getRange(numeroLigne, colErreur).setValue(
+      "Onglet « " + modele.onglets[0] + " » incomplet : Objet et Corps sont obligatoires."
+    );
     return "non";
   }
 
@@ -580,16 +632,11 @@ function envoyerMail(feuille, numeroLigne, donnees, reference, conf) {
     // Le quota se compte en destinataires : l'inscrit, plus CC et BCC.
     var destinataires = 1 + (cc ? cc.split(",").length : 0) + (bcc ? bcc.split(",").length : 0);
     if (MailApp.getRemainingDailyQuota() < destinataires) {
-      feuille.getRange(numeroLigne, colEnvoye).setValue(EN_ATTENTE);
+      feuille.getRange(numeroLigne, colEnvoye).setValue("non");
       feuille.getRange(numeroLigne, colErreur).setValue(
-        "Quota de mails du jour atteint : envoi automatique des qu'il se libere."
+        "Quota de mails du jour atteint : relancer l'envoi demain depuis le menu NTMS."
       );
-      var props = PropertiesService.getScriptProperties();
-      props.setProperty("A_ENVOYER", "1");
-      // Inutile de relire la feuille chaque minute tant que le quota
-      // est plein : prochain essai dans une heure.
-      props.setProperty("REPRISE_APRES", String(Date.now() + 60 * 60 * 1000));
-      return EN_ATTENTE;
+      return "quota";
     }
 
     MailApp.sendEmail(options);
@@ -605,134 +652,122 @@ function envoyerMail(feuille, numeroLigne, donnees, reference, conf) {
 }
 
 // ---------------------------------------------------------------------
-// Compte qui envoie les mails
+// Envois a la demande, depuis le menu NTMS
 // ---------------------------------------------------------------------
 
 /**
- * QUI ENVOIE LES MAILS
+ * QUI ENVOIE — le compte qui a deploye le script (proprietaire du
+ * classeur) pour le mail d'inscription, et le compte qui clique pour
+ * les envois du menu. Aucune tache automatique : tout part tout de
+ * suite.
  *
- * Par defaut, le compte qui a deploye le script envoie le mail au
- * moment de l'inscription.
- *
- * Un AUTRE compte (celui de la conference) peut prendre le relais sans
- * toucher au code : il ouvre le classeur, menu NTMS > « Envoyer les
- * mails depuis ce compte », et accepte les autorisations. Une tache
- * automatique a SON nom est alors creee : chaque minute, elle envoie
- * les mails en attente DEPUIS SON COMPTE. Les
- * inscriptions, elles, continuent d'etre ecrites par le compte du
- * deploiement ; l'adresse /exec ne change pas.
- *
- * Le compte actif est note dans la propriete « EXPEDITEUR ». La tache
- * d'un compte qui n'est plus l'expediteur actif ne fait rien : un seul
- * compte envoie a la fois.
+ * QUOTA — 1 500 destinataires par jour sur un compte Google Workspace,
+ * 100 sur un compte Gmail ordinaire. Au-dela, le script s'arrete, le
+ * dit, et les lignes non servies portent l'explication dans leur
+ * colonne d'erreur. Il suffit de relancer le lendemain.
  */
-// 1 minute : le plus court que Google autorise pour une tache automatique.
-// Aucune voie plus directe n'existe : une inscription est executee par le
-// compte du deploiement, et un compte ne peut pas lancer de code au nom
-// d'un autre. Pour tenir dans le quota (90 min de taches par jour en
-// compte gratuit), la tache sort aussitot quand rien n'attend : chaque
-// inscription pose le signal « A_ENVOYER », la tache l'efface.
-var FREQUENCE_MINUTES = 1;
-var EN_ATTENTE = "en attente";
-
-// Mails envoyes au plus par passage de la tache : environ 15 secondes.
-// Pendant l'envoi, le verrou retient les inscriptions ; un lot court
-// evite qu'une vague d'inscrits se voie repondre « reessaie ».
-var LOT_PAR_PASSAGE = 15;
-
-function expediteurActif() {
-  return (PropertiesService.getScriptProperties().getProperty("EXPEDITEUR") || "").toLowerCase();
-}
-
-function moi() {
-  return String(Session.getEffectiveUser().getEmail() || "").toLowerCase();
-}
 
 /** Ajoute le menu NTMS a l'ouverture du classeur. */
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu("NTMS")
-    .addItem("Envoyer les mails depuis ce compte", "devenirExpediteur")
-    .addItem("Qui envoie les mails ?", "afficherExpediteur")
+    .addItem("Envoyer le mail manuel à tous les inscrits", "envoyerManuelTous")
+    .addItem("Envoyer le mail manuel à ceux qui ne l'ont pas reçu", "envoyerManuelNonRecus")
     .addSeparator()
-    .addItem("Arrêter l'envoi depuis ce compte", "arreterExpediteur")
+    .addItem("Envoyer le mail automatique à ceux qui ne l'ont pas reçu", "envoyerLesMailsEnAttente")
+    .addSeparator()
+    .addItem("M'envoyer un aperçu du mail automatique", "testerLeMail")
+    .addItem("M'envoyer un aperçu du mail manuel", "testerLeMailManuel")
     .addToUi();
 }
 
-function devenirExpediteur() {
-  var compte = moi();
-  supprimerMesTaches();
-  ScriptApp.newTrigger("envoiProgramme").timeBased().everyMinutes(FREQUENCE_MINUTES).create();
-  PropertiesService.getScriptProperties().setProperty("EXPEDITEUR", compte);
-  SpreadsheetApp.getUi().alert(
-    "C'est fait. Les mails d'inscription partent maintenant de " + compte +
-    ", environ une minute après chaque inscription.\n\n" +
-    "Quota restant aujourd'hui sur ce compte : " + MailApp.getRemainingDailyQuota() + " destinataires."
-  );
+function envoyerManuelTous() {
+  demanderPuisEnvoyer(MODELES.manuel, function () {
+    return true;
+  }, "Envoyer le mail manuel à TOUS les inscrits, y compris ceux à qui il a déjà été envoyé ?");
 }
 
-function arreterExpediteur() {
-  var compte = moi();
-  supprimerMesTaches();
-  if (expediteurActif() === compte) {
-    PropertiesService.getScriptProperties().deleteProperty("EXPEDITEUR");
+/** Le mail manuel a ceux qui ne l'ont pas encore recu. */
+function envoyerManuelNonRecus() {
+  demanderPuisEnvoyer(MODELES.manuel, nonRecu,
+    "Envoyer le mail manuel aux inscrits qui ne l'ont pas encore reçu ?");
+}
+
+/** Le mail d'inscription a ceux dont il n'est pas parti : echec, quota. */
+function envoyerLesMailsEnAttente() {
+  demanderPuisEnvoyer(MODELES.auto, nonRecu,
+    "Envoyer le mail automatique aux inscrits qui ne l'ont pas reçu ?");
+}
+
+/** Tout ce qui n'est pas « oui » reste a envoyer. */
+function nonRecu(etat) {
+  return etat !== "oui";
+}
+
+/** Confirme, envoie, puis dit ce qui s'est passe. */
+function demanderPuisEnvoyer(modele, aTraiter, question) {
+  var ui = SpreadsheetApp.getUi();
+  var conf = lireConfig(modele);
+  if (!conf.objet || !conf.corps) {
+    ui.alert("L'onglet de réglage du mail " + modele.nom + " est incomplet : remplis Objet et Corps.");
+    return;
   }
-  SpreadsheetApp.getUi().alert(
-    compte + " n'envoie plus les mails. Ils repartent du compte qui a déployé le script, " +
-    "au moment de l'inscription."
+  if (ui.alert("Mail " + modele.nom, question, ui.ButtonSet.OK_CANCEL) !== ui.Button.OK) return;
+
+  var bilan = envoyerAChacun(modele, aTraiter, conf);
+  if (bilan.envoyes + bilan.echecs + bilan.restants === 0) {
+    ui.alert("Aucun inscrit concerné : rien n'a été envoyé.");
+    return;
+  }
+  ui.alert(
+    "Mails envoyés : " + bilan.envoyes +
+    (bilan.echecs ? "\nÉchecs : " + bilan.echecs + " (voir la colonne d'erreur)" : "") +
+    (bilan.quota
+      ? "\n\nQuota du jour atteint : " + bilan.restants + " inscrit(s) n'ont rien reçu. " +
+        "Relance demain le même envoi, en choisissant « … à ceux qui ne l'ont pas reçu »."
+      : "")
   );
-}
-
-function afficherExpediteur() {
-  var compte = expediteurActif();
-  SpreadsheetApp.getUi().alert(
-    compte
-      ? "Les mails partent de " + compte + ", environ une minute après chaque inscription."
-      : "Les mails partent du compte qui a déployé le script, au moment de l'inscription."
-  );
-}
-
-/** Ne voit et ne supprime que les taches du compte qui l'execute. */
-function supprimerMesTaches() {
-  ScriptApp.getProjectTriggers().forEach(function (t) {
-    if (t.getHandlerFunction() === "envoiProgramme") ScriptApp.deleteTrigger(t);
-  });
-}
-
-/** La tache automatique : envoie les mails en attente, depuis le compte actif. */
-function envoiProgramme() {
-  var props = PropertiesService.getScriptProperties();
-  // Rien n'attend : on sort sans lire la feuille.
-  if (!props.getProperty("A_ENVOYER")) return;
-  // Quota plein au dernier essai : on patiente jusqu'a l'heure prevue.
-  if (Date.now() < Number(props.getProperty("REPRISE_APRES") || 0)) return;
-  // Un autre compte est l'expediteur actif : ce n'est pas notre tour.
-  // (Sans expediteur actif, c'est la tache de relance du compte du
-  // deploiement qui tourne, et elle envoie.)
-  var actif = expediteurActif();
-  if (actif && actif !== moi()) return;
-  traiterLesMails(function (etat) {
-    return etat === EN_ATTENTE;
-  }, false, function () {
-    // Efface SOUS LE VERROU, avant la lecture : une inscription arrivee
-    // pendant l'envoi reposera le signal pour le passage suivant.
-    props.deleteProperty("A_ENVOYER");
-    props.deleteProperty("REPRISE_APRES");
-  }, LOT_PAR_PASSAGE);
 }
 
 /**
- * Envoi immediat (aucun expediteur actif) et quota plein : cree, si elle
- * n'existe pas, la tache qui reprendra les mails en attente. Elle tourne
- * au nom du compte du deploiement.
+ * Envoie le mail a chaque ligne retenue, une par une. S'arrete net si le
+ * quota du jour est epuise, et dit combien de lignes restaient.
  */
-function assurerRelance() {
-  var existe = ScriptApp.getProjectTriggers().some(function (t) {
-    return t.getHandlerFunction() === "envoiProgramme";
-  });
-  if (!existe) {
-    ScriptApp.newTrigger("envoiProgramme").timeBased().everyMinutes(FREQUENCE_MINUTES).create();
+function envoyerAChacun(modele, aTraiter, conf) {
+  var verrou = LockService.getScriptLock();
+  verrou.waitLock(30000);
+  var bilan = { envoyes: 0, echecs: 0, quota: false, restants: 0 };
+  try {
+    var feuille = feuilleDonnees(lireConfig(MODELES.auto).nomfeuillebd);
+    var valeurs = feuille.getDataRange().getValues();
+    var i0 = {};
+    COLONNES.forEach(function (cle, i) {
+      i0[cle] = i;
+    });
+
+    for (var i = 1; i < valeurs.length; i++) {
+      if (!valeurs[i][i0.email]) continue;
+      if (!aTraiter(String(valeurs[i][i0[modele.etat]]).toLowerCase())) continue;
+
+      if (bilan.quota) {
+        bilan.restants++;
+        continue;
+      }
+      var donnees = {};
+      COLONNES.forEach(function (cle) {
+        donnees[cle] = valeurs[i][i0[cle]];
+      });
+      var etat = envoyerMail(feuille, i + 1, donnees, donnees.reference, conf, modele);
+      if (etat === "oui") bilan.envoyes++;
+      else if (etat === "quota") {
+        bilan.quota = true;
+        bilan.restants++;
+      } else bilan.echecs++;
+    }
+  } finally {
+    verrou.releaseLock();
   }
+  return bilan;
 }
 
 // ---------------------------------------------------------------------
@@ -742,83 +777,30 @@ function assurerRelance() {
 /**
  * A LANCER UNE FOIS AVANT TOUT TEST.
  * Declenche la demande d'autorisation (feuille, proprietes, envoi de
- * mail) et s'envoie le mail de config a soi-meme pour en voir le rendu.
+ * mail) et s'envoie le mail a soi-meme pour en voir le rendu.
  */
-function testerLeMail() {
-  var conf = lireConfig();
+function testerLeMail(modele) {
+  modele = modele || MODELES.auto;
+  var conf = lireConfig(modele);
   if (!conf.objet || !conf.corps) {
-    throw new Error("Onglet config incomplet : Objet et Corps sont obligatoires.");
+    throw new Error("Onglet de réglage du mail " + modele.nom + " incomplet : Objet et Corps sont obligatoires.");
   }
-  PropertiesService.getScriptProperties().getProperties();
   var valeurs = { prenom: "Test", nom: "Utilisateur", lc: "Cotonou", role: "TM", reference: "NTMS-TEST" };
   var compte = Session.getEffectiveUser().getEmail();
   MailApp.sendEmail({
     to: compte,
-    subject: "[TEST] " + remplirTexte(conf.objet, valeurs),
+    subject: "[TEST " + modele.nom + "] " + remplirTexte(conf.objet, valeurs),
     body: construireTexte(conf, valeurs),
     htmlBody: construireHtml(conf, valeurs),
     name: conf.nomexpediteur || "AIESEC in Benin",
   });
-  Logger.log("Mail de test envoye a " + compte + ". Quota restant aujourd'hui : " +
+  Logger.log("Mail " + modele.nom + " envoye a " + compte + ". Quota restant aujourd'hui : " +
     MailApp.getRemainingDailyQuota() + " destinataires.");
 }
 
-/**
- * Renvoie le mail aux inscrits qui ne l'ont pas recu (en attente,
- * echec, interrupteur coupe). A lancer apres avoir corrige la cause.
- * Les mails partent du compte qui lance la fonction.
- */
-function envoyerLesMailsEnAttente() {
-  traiterLesMails(function (etat) {
-    return etat !== "oui";
-  }, true);
-}
-
-/**
- * Parcourt les inscrits et envoie le mail a ceux que `aTraiter` retient.
- * Prend le meme verrou que les inscriptions : personne ne recoit deux
- * mails. La tache automatique n'attend pas le verrou : s'il est pris,
- * elle repassera au tour suivant.
- */
-function traiterLesMails(aTraiter, attendre, avantLecture, limite) {
-  var verrou = LockService.getScriptLock();
-  if (attendre) {
-    verrou.waitLock(30000);
-  } else if (!verrou.tryLock(10000)) {
-    return;
-  }
-  try {
-    if (avantLecture) avantLecture();
-    var conf = lireConfig();
-    var feuille = feuilleDonnees(conf.nomfeuillebd);
-    var valeurs = feuille.getDataRange().getValues();
-    var i0 = {};
-    COLONNES.forEach(function (cle, i) {
-      i0[cle] = i;
-    });
-
-    var traites = 0;
-    for (var i = 1; i < valeurs.length; i++) {
-      if (!aTraiter(String(valeurs[i][i0.mail_envoye]).toLowerCase())) continue;
-      if (!valeurs[i][i0.email]) continue;
-      if (limite && traites >= limite) {
-        // Lot plein : le passage suivant continuera.
-        PropertiesService.getScriptProperties().setProperty("A_ENVOYER", "1");
-        break;
-      }
-      var donnees = {};
-      COLONNES.forEach(function (cle) {
-        donnees[cle] = valeurs[i][i0[cle]];
-      });
-      traites++;
-      // Quota plein : inutile d'essayer les suivants, ils restent en
-      // attente et le signal est deja pose.
-      if (envoyerMail(feuille, i + 1, donnees, donnees.reference, conf) === EN_ATTENTE) break;
-    }
-    Logger.log("Lignes traitees : " + traites);
-  } finally {
-    verrou.releaseLock();
-  }
+/** Le meme apercu, pour le mail manuel. */
+function testerLeMailManuel() {
+  testerLeMail(MODELES.manuel);
 }
 
 function reponse(ok, message, reference) {
