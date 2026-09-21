@@ -246,6 +246,14 @@ journaux. Le registre maître fait foi.
 **Changer le texte d'un mail** : onglet `config auto` ou `config manuel`.
 Immédiat, pas besoin de redéployer le script.
 
+**Joindre un fichier** : ligne **Pièces jointes** de l'onglet de réglage.
+Colle le lien Google Drive du fichier, ou son adresse `https://`.
+Plusieurs fichiers se séparent par des virgules. Un fichier Drive doit
+être lisible par le compte qui envoie les mails ; le plus simple est de
+le mettre dans le même Drive. Google limite un mail à **25 Mo**, pièces
+comprises. Si un fichier est introuvable, le mail part quand même et le
+souci est noté dans la colonne d'erreur de la ligne.
+
 **Envoyer le mail manuel** : menu **NTMS** dans le classeur.
 - *Aux lignes sélectionnées* : sélectionne les lignes des inscrits, puis clique.
 - *À ceux qui ne l'ont pas reçu* : tous ceux dont `mail_manuel` n'est pas `oui`.

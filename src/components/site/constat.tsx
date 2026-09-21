@@ -38,6 +38,12 @@ const BANDES = [
     libelle: "",
     detail: "",
   },
+  {
+    fond: "max-sm:bg-[oklch(0.325_0.082_37)]",
+    chiffre: "max-sm:text-[oklch(0.735_0.19_50.5)]",
+    libelle: "max-sm:text-[oklch(0.96_0.02_75)]",
+    detail: "max-sm:text-[oklch(0.84_0.03_55)]",
+  },
 ];
 
 export function Constat() {
@@ -65,17 +71,17 @@ export function Constat() {
             l'une à l'autre ; le filet supérieur disparaît, ce sont les
             bandes elles-mêmes qui structurent.
           */}
-          <div className="mt-6 grid gap-10 border-t border-border pt-10 max-sm:-mx-6 max-sm:mt-5 max-sm:auto-rows-fr max-sm:gap-0 max-sm:border-t-0 max-sm:pt-0 sm:grid-cols-2 sm:gap-14">
+          <div className="mt-6 grid gap-10 border-t border-border pt-10 max-sm:-mx-6 max-sm:mt-5 max-sm:auto-rows-fr max-sm:gap-0 max-sm:border-t-0 max-sm:pt-0 sm:grid-cols-3 sm:gap-10">
             {constat.columns.map((col, i) => (
               <div
                 key={col.value}
                 className={cn("max-sm:px-6 max-sm:py-9", BANDES[i].fond)}
               >
                 {/* Chiffre et libelle sur la meme ligne de base. */}
-                <div className="flex items-baseline gap-3 sm:gap-4">
+                <div className="flex items-baseline gap-3 sm:block sm:gap-0">
                   <p
                     className={cn(
-                      "font-heading shrink-0 text-6xl leading-none font-extrabold tracking-tight text-accent-text tabular-nums sm:text-7xl",
+                      "font-heading shrink-0 text-6xl leading-none font-extrabold tracking-tight text-accent-text tabular-nums sm:text-6xl",
                       BANDES[i].chiffre
                     )}
                   >
@@ -83,7 +89,7 @@ export function Constat() {
                   </p>
                   <p
                     className={cn(
-                      "font-heading text-xl leading-tight font-extrabold tracking-tight text-balance sm:text-2xl",
+                      "font-heading text-xl leading-tight font-extrabold tracking-tight text-balance sm:mt-3 sm:block sm:text-xl",
                       BANDES[i].libelle
                     )}
                   >

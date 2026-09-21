@@ -26,7 +26,10 @@ export const event = {
   themeSubject: "20 ans d'existence",
   themeAngle: "élever nos standards pour un meilleur impact.",
   dates: "18 – 22 novembre 2026",
-  startsAt: "2026-11-18T09:00:00+01:00",
+  // Vers quoi pointe le compte a rebours. Se change sans toucher au
+  // code, par NEXT_PUBLIC_DATE_NTMS dans .env.local et chez l'hebergeur
+  // (valeur inseree AU MOMENT DU BUILD : redeployer apres un changement).
+  startsAt: process.env.NEXT_PUBLIC_DATE_NTMS ?? "2026-11-18T09:00:00+01:00",
   // LIEU OFFICIEL, communique par l'utilisateur. Comme le theme, c'est
   // une information validee — a distinguer des dates et du nombre de
   // places, qui restent des propositions.
@@ -123,8 +126,14 @@ export const constat = {
     },
     {
       value: "4",
-      label: "comités locaux.",
+      label: "représentations locales.",
       detail: "Cotonou, Parakou, Porto-Novo, Abomey-Calavi.",
+    },
+    {
+      // Chiffre communique par le comite, comme les deux precedents.
+      value: "1000+",
+      label: "jeunes touchés.",
+      detail: "",
     },
   ],
   level: "Le relais ne s'est jamais arrêté.",

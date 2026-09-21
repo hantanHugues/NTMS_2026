@@ -25,6 +25,8 @@
  *   BCC                adresses separees par des virgules
  *   Images             adresses d'images publiques, separees par des
  *                      virgules, affichees en tete du mail
+ *   Pieces jointes     fichiers joints au mail : liens Google Drive ou
+ *                      adresses https, separes par des virgules
  *   Nom feuille (BD)   onglet ou ecrire les inscrits
  *
  * Les libelles sont reconnus sans tenir compte des majuscules, des
@@ -375,12 +377,123 @@ function lireConfig(modele) {
   }
   var conf = {};
   if (!feuille) return conf;
-  var valeurs = feuille.getDataRange().getValues();
+  var plage = feuille.getDataRange();
+  var valeurs = plage.getValues();
+  // Une adresse collee dans une cellule devient souvent un LIEN : le
+  // texte affiche peut alors etre vide, ou porter le titre du fichier.
+  // On recupere donc aussi l'adresse du lien.
+  var riches = plage.getRichTextValues();
   for (var i = 0; i < valeurs.length; i++) {
     var cle = normaliser(valeurs[i][0]);
-    if (cle) conf[cle] = valeurs[i].length > 1 ? String(valeurs[i][1]).trim() : "";
+    if (!cle) continue;
+    var texte = valeurs[i].length > 1 ? String(valeurs[i][1]).trim() : "";
+    var lien = "";
+    try {
+      var riche = riches[i][1];
+      lien = (riche && riche.getLinkUrl()) || "";
+      if (!lien && riche) {
+        // Lien pose sur une partie du texte seulement.
+        var morceaux = riche.getRuns();
+        for (var r = 0; r < morceaux.length && !lien; r++) {
+          lien = morceaux[r].getLinkUrl() || "";
+        }
+      }
+    } catch (err) {
+      lien = "";
+    }
+    // Le lien l'emporte quand la cellule n'affiche pas deja une adresse.
+    conf[cle] = lien && texte.indexOf("http") !== 0 ? lien : texte || lien;
   }
   return conf;
+}
+
+/**
+ * La valeur de la ligne des pieces jointes, quel que soit le libelle
+ * ecrit en colonne A : « Pieces jointes », « Piece jointe », « Fichier
+ * joint », « PJ »… Toute ligne dont le libelle contient « joint » ou
+ * vaut « pj » fait l'affaire.
+ */
+function valeurPiecesJointes(conf) {
+  for (var cle in conf) {
+    if (cle.indexOf("joint") !== -1 || cle === "pj") {
+      if (conf[cle]) return conf[cle];
+    }
+  }
+  return "";
+}
+
+/**
+ * Les fichiers a joindre, d'apres la ligne « Pieces jointes » du
+ * reglage : liens Google Drive (le fichier doit etre lisible par le
+ * compte qui envoie) ou adresses https directes, separes par des
+ * virgules. Un fichier introuvable n'empeche pas le mail de partir : il
+ * est signale dans `erreurs`.
+ *
+ * Google limite un mail a 25 Mo, pieces comprises.
+ */
+function piecesJointes(texte, erreurs) {
+  // Decoupage sur les virgules et les retours a la ligne UNIQUEMENT :
+  // un nom de fichier contient souvent des espaces.
+  return String(texte || "")
+    .split(/[,;\n]+/)
+    .map(function (u) {
+      return u.trim();
+    })
+    .filter(function (u) {
+      return u;
+    })
+    .map(function (u) {
+      var identifiant = (u.match(/[-\w]{25,}/) || [])[0];
+      var estDrive = u.indexOf("drive.google.com") !== -1 || u.indexOf("docs.google.com") !== -1;
+
+      // D'ABORD un simple telechargement : aucune autorisation Drive
+      // n'est alors necessaire, le fichier devant etre accessible par
+      // lien. DriveApp ne sert que de secours, pour un fichier prive.
+      if (estDrive && identifiant) {
+        var recu = telecharger(
+          "https://drive.google.com/uc?export=download&id=" + identifiant
+        );
+        if (recu) return recu;
+      } else if (/^https?:\/\//.test(u)) {
+        var direct = telecharger(u);
+        if (direct) return direct;
+        erreurs.push("Piece jointe ignoree (" + u + ") : telechargement impossible.");
+        return null;
+      }
+
+      try {
+        return DriveApp.getFileById(identifiant || u).getBlob();
+      } catch (err) {
+        erreurs.push("Piece jointe ignoree (" + u + ") : " + err);
+        return null;
+      }
+    })
+    .filter(function (b) {
+      return b;
+    });
+}
+
+/**
+ * Telecharge une adresse et renvoie le fichier, ou null. Une page de
+ * connexion Google (du HTML) n'est pas un fichier : on la refuse, pour
+ * ne pas joindre une page web a la place du document.
+ */
+function telecharger(adresse) {
+  try {
+    var reponse = UrlFetchApp.fetch(adresse, { muteHttpExceptions: true, followRedirects: true });
+    if (reponse.getResponseCode() !== 200) return null;
+    var blob = reponse.getBlob();
+    if (String(blob.getContentType()).indexOf("text/html") === 0) return null;
+
+    // Nom du fichier, tel que le serveur l'annonce.
+    var entetes = reponse.getAllHeaders();
+    var disposition = entetes["Content-Disposition"] || entetes["content-disposition"] || "";
+    var nom = String(disposition).match(/filename\*?=(?:UTF-8'')?"?([^";]+)/);
+    if (nom) blob.setName(decodeURIComponent(nom[1]));
+    return blob;
+  } catch (err) {
+    return null;
+  }
 }
 
 /** « a@b.cd, e@f.gh » -> « a@b.cd,e@f.gh », vide si rien de valable. */
@@ -629,6 +742,10 @@ function envoyerMail(feuille, numeroLigne, donnees, reference, conf, modele) {
     if (cc) options.cc = cc;
     if (bcc) options.bcc = bcc;
 
+    var soucis = [];
+    var fichiers = piecesJointes(valeurPiecesJointes(conf), soucis);
+    if (fichiers.length) options.attachments = fichiers;
+
     // Le quota se compte en destinataires : l'inscrit, plus CC et BCC.
     var destinataires = 1 + (cc ? cc.split(",").length : 0) + (bcc ? bcc.split(",").length : 0);
     if (MailApp.getRemainingDailyQuota() < destinataires) {
@@ -642,7 +759,8 @@ function envoyerMail(feuille, numeroLigne, donnees, reference, conf, modele) {
     MailApp.sendEmail(options);
     feuille.getRange(numeroLigne, colEnvoye).setValue("oui");
     feuille.getRange(numeroLigne, colDate).setValue(new Date());
-    feuille.getRange(numeroLigne, colErreur).setValue("");
+    // Le mail est parti ; une piece jointe manquante est signalee ici.
+    feuille.getRange(numeroLigne, colErreur).setValue(soucis.join(" | "));
     return "oui";
   } catch (err) {
     feuille.getRange(numeroLigne, colEnvoye).setValue("non");
@@ -787,13 +905,18 @@ function testerLeMail(modele) {
   }
   var valeurs = { prenom: "Test", nom: "Utilisateur", lc: "Cotonou", role: "TM", reference: "NTMS-TEST" };
   var compte = Session.getEffectiveUser().getEmail();
-  MailApp.sendEmail({
+  var soucis = [];
+  var options = {
     to: compte,
     subject: "[TEST " + modele.nom + "] " + remplirTexte(conf.objet, valeurs),
     body: construireTexte(conf, valeurs),
     htmlBody: construireHtml(conf, valeurs),
     name: conf.nomexpediteur || "AIESEC in Benin",
-  });
+  };
+  var fichiers = piecesJointes(valeurPiecesJointes(conf), soucis);
+  if (fichiers.length) options.attachments = fichiers;
+  MailApp.sendEmail(options);
+  if (soucis.length) Logger.log(soucis.join(" | "));
   Logger.log("Mail " + modele.nom + " envoye a " + compte + ". Quota restant aujourd'hui : " +
     MailApp.getRemainingDailyQuota() + " destinataires.");
 }
