@@ -1,4 +1,5 @@
-import { Mail } from "lucide-react";
+import { Mail, MessageCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ContactButton } from "@/components/site/contact-button";
 import { Reveal } from "@/components/site/reveal";
 import { contact, event } from "@/lib/content";
@@ -17,8 +18,8 @@ import { contact, event } from "@/lib/content";
  * questions-là — ce sont exactement celles que la page n'a pas
  * traitées (tarifs, trajet, hébergement).
  *
- * Un seul canal affiché, l'adresse du comité : le numéro WhatsApp et
- * le compte Instagram ne sont pas encore connus.
+ * Deux canaux : l'adresse du comité, et WhatsApp, qui ouvre directement
+ * la discussion avec le numéro du comité.
  *
  * Le bouton ouvre un message DÉJÀ ADRESSÉ et DÉJÀ INTITULÉ, dans un
  * nouvel onglet. Seul le corps reste vide — c'est au lecteur d'écrire
@@ -73,6 +74,26 @@ export function ContactSection() {
             </div>
 
             <ContactButton />
+
+            <Button
+              nativeButton={false}
+              size="lg"
+              variant="outline"
+              className="mt-3 h-12 w-full rounded-full text-base has-data-[icon=inline-start]:pl-6"
+              render={
+                <a
+                  href={contact.whatsappLien}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
+            >
+              <MessageCircle data-icon="inline-start" />
+              {contact.whatsappLabel}
+            </Button>
+            <p className="mt-2 text-center text-sm text-muted-foreground tabular-nums">
+              {contact.whatsappNumero}
+            </p>
 
             <p className="mt-8 border-t border-border pt-8 text-xs tracking-wider text-muted-foreground uppercase">
               {contact.topicsLabel}

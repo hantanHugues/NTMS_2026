@@ -392,6 +392,12 @@ export const contact = {
   // d'ecrire sa question, un texte deja tape serait a effacer.
   mailSubject: "NTMS 2026 — Question",
   buttonLabel: "Écrire au comité",
+  // Numero beninois du comite (format a 10 chiffres depuis 2024).
+  // `wa.me` ouvre la discussion dans l'application WhatsApp sur
+  // telephone, et WhatsApp Web sur ordinateur.
+  whatsappLabel: "Écrire sur WhatsApp",
+  whatsappNumero: "+229 01 62 55 52 20",
+  whatsappLien: "https://wa.me/2290162555220",
   topicsLabel: "Ce qu'on nous demande le plus",
   topics: [
     "Le programme des cinq jours",
