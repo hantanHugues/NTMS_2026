@@ -3,7 +3,14 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Check, Copy, MessageCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Copy,
+  Home,
+  MessageCircle,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { event, inscription } from "@/lib/content";
@@ -280,7 +287,27 @@ export function FormulaireInscription() {
 
   if (reference !== null) {
     return (
-      <div className="flex flex-col rounded-3xl bg-card p-8 text-center shadow-md sm:p-12 max-sm:min-h-svh max-sm:justify-center max-sm:rounded-none max-sm:bg-background max-sm:px-5 max-sm:py-10 max-sm:shadow-none">
+      <div className="flex flex-col rounded-3xl bg-card text-center shadow-md max-sm:min-h-svh max-sm:rounded-none max-sm:bg-background max-sm:shadow-none">
+        {/* TÉLÉPHONE — sans cette barre, l'écran de fin est un
+            cul-de-sac : plus d'en-tête de site, plus de retour. */}
+        <div className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur sm:hidden">
+          <Image
+            src="/ntms-logo.png"
+            alt={event.name}
+            width={1699}
+            height={1267}
+            className="h-7 w-auto"
+          />
+          <Link
+            href="/"
+            className="-mr-2 flex items-center gap-1.5 rounded-full px-2 py-2 text-sm text-muted-foreground"
+          >
+            <Home className="size-4" />
+            Accueil
+          </Link>
+        </div>
+
+        <div className="p-8 sm:p-12 max-sm:flex max-sm:flex-1 max-sm:flex-col max-sm:justify-center max-sm:px-5 max-sm:py-10">
         <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
           <Check className="size-6" />
         </span>
@@ -325,6 +352,18 @@ export function FormulaireInscription() {
             Le lien du groupe t&apos;est envoyé par mail.
           </p>
         )}
+
+        {/* Pour qui ne rejoint pas le groupe tout de suite : une sortie,
+            plutôt qu'un écran sans issue. Sur ordinateur, l'en-tête de
+            la page joue déjà ce rôle. */}
+        <Link
+          href="/"
+          className="mx-auto mt-10 flex h-12 items-center justify-center gap-2 rounded-full px-5 text-sm font-medium text-muted-foreground transition-colors active:bg-primary/10 sm:hidden"
+        >
+          <ArrowLeft className="size-4" />
+          Revenir à l&apos;accueil
+        </Link>
+        </div>
       </div>
     );
   }
