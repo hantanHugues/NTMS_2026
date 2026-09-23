@@ -98,7 +98,7 @@ function Choix({
           aria-checked={valeur === option}
           onClick={() => onChange(option)}
           className={cn(
-            "rounded-full border px-4 py-2.5 text-sm transition-colors",
+            "rounded-full border px-4 py-3 text-sm transition-colors max-sm:py-3.5",
             valeur === option
               ? "border-primary bg-primary text-primary-foreground"
               : "border-border bg-background hover:border-primary/40"
@@ -132,12 +132,16 @@ function LienACopier({ lien }: { lien: string }) {
   return (
     <div className="mx-auto mt-6 max-w-md text-left">
       <p className="text-xs text-muted-foreground">Ou copie ce lien :</p>
-      <div className="mt-2 flex items-center gap-2 rounded-xl border border-border bg-background py-1.5 pr-1.5 pl-3">
-        <span className="min-w-0 flex-1 truncate text-sm select-all">{lien}</span>
+      <div className="mt-2 flex items-center gap-2 rounded-xl border border-border bg-background py-2 pr-2 pl-3">
+        {/* Affiché sans « https:// » et sur deux lignes au plus ; c'est
+            le lien ENTIER qui est copié. */}
+        <span className="min-w-0 flex-1 text-sm leading-snug break-all line-clamp-2 select-all">
+          {lien.replace(/^https?:\/\//, "")}
+        </span>
         <button
           type="button"
           onClick={copier}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-primary/10"
+          className="flex h-11 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors hover:bg-primary/10"
         >
           {copie ? <Check className="size-4" /> : <Copy className="size-4" />}
           {copie ? "Copié" : "Copier"}
@@ -572,10 +576,13 @@ export function FormulaireInscription() {
                   ["consentement_photos", inscription.consentementPhotos],
                 ] as const
               ).map(([cle, texte]) => (
-                <label key={cle} className="flex items-start gap-3 text-sm">
+                <label
+                  key={cle}
+                  className="flex cursor-pointer items-start gap-3 py-1.5 text-sm"
+                >
                   <input
                     type="checkbox"
-                    className="mt-0.5 size-4 shrink-0"
+                    className="mt-0.5 size-5 shrink-0 accent-primary"
                     checked={donnees[cle] === "oui"}
                     onChange={(e) => set(cle)(e.target.checked ? "oui" : "")}
                   />

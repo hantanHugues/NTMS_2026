@@ -23,7 +23,7 @@ export default function PageInscription() {
     <div className="min-h-svh bg-background">
       <header className="border-b border-border">
         <div className="mx-auto flex h-20 max-w-3xl items-center justify-between px-6">
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/" className="-mx-2 flex items-center gap-3 px-2 py-3">
             <Image
               src="/ntms-logo.png"
               alt={event.name}
@@ -38,7 +38,7 @@ export default function PageInscription() {
           </Link>
           <Link
             href="/"
-            className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className="-mr-2 flex items-center gap-2 px-2 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
             Retour
