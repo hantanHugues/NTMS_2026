@@ -1,5 +1,5 @@
 import { Mail } from "lucide-react";
-import { event, navItems } from "@/lib/content";
+import { event, legal, navItems } from "@/lib/content";
 
 export function SiteFooter() {
   return (
@@ -21,7 +21,7 @@ export function SiteFooter() {
               {event.name}
             </span>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              {event.baseline} — {event.organisation}. Vingt ans d'AIESEC in Benin,
+              {event.baseline} — {event.organisation}. Vingt ans d&apos;AIESEC in Benin,
               et cinq jours pour élever nos standards.
             </p>
             <a
@@ -61,13 +61,23 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-16 flex flex-col gap-3 border-t border-border/40 pt-8 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground">
-            {/* Annee figee sur celle de l'edition : `new Date()` s'evalue
-                cote serveur ET cote client, et les deux peuvent tomber de
-                part et d'autre du 31 decembre selon le fuseau — c'est une
-                erreur d'hydratation en puissance. */}
-            © {new Date(event.startsAt).getFullYear()} {event.organisation}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <p className="text-xs text-muted-foreground">
+              {/* Annee figee sur celle de l'edition : `new Date()` s'evalue
+                  cote serveur ET cote client, et les deux peuvent tomber de
+                  part et d'autre du 31 decembre selon le fuseau — c'est une
+                  erreur d'hydratation en puissance. */}
+              © {new Date(event.startsAt).getFullYear()} {event.organisation}
+            </p>
+            <a
+              href={legal.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground underline underline-offset-4 transition-colors duration-300 hover:text-foreground"
+            >
+              {legal.label}
+            </a>
+          </div>
           <p className="max-w-md text-xs text-muted-foreground sm:text-right">
             {event.theme}
           </p>

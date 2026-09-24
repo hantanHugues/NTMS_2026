@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { event, inscription } from "@/lib/content";
+import { event, inscription, legal } from "@/lib/content";
 import {
   ChoixPays,
   ListeDeroulante,
@@ -183,6 +183,38 @@ function LienACopier({ lien }: { lien: string }) {
         {copie ? "Lien copié" : ""}
       </span>
     </div>
+  );
+}
+
+/**
+ * Une phrase d'accord dont un morceau est un lien. Le clic sur le lien
+ * ne coche pas la case : il ouvre le document, dans un autre onglet.
+ */
+function TexteAvecLien({
+  texte,
+  lien,
+  href,
+}: {
+  texte: string;
+  lien: string;
+  href: string;
+}) {
+  const i = texte.indexOf(lien);
+  if (i < 0) return <>{texte}</>;
+  return (
+    <>
+      {texte.slice(0, i)}
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="font-medium text-foreground underline underline-offset-2 transition-colors hover:text-primary"
+      >
+        {lien}
+      </a>
+      {texte.slice(i + lien.length)}
+    </>
   );
 }
 
@@ -713,7 +745,16 @@ export function FormulaireInscription() {
                 [
                   ["consentement_groupe", inscription.consentementGroupe],
                   ["consentement_photos", inscription.consentementPhotos],
-                ] as const
+                  [
+                    "consentement_politique",
+                    <TexteAvecLien
+                      key="politique"
+                      texte={inscription.consentementPolitique.texte}
+                      lien={inscription.consentementPolitique.lien}
+                      href={legal.url}
+                    />,
+                  ],
+                ] as [keyof Donnees, React.ReactNode][]
               ).map(([cle, texte]) => (
                 <label
                   key={cle}
@@ -774,9 +815,12 @@ export function FormulaireInscription() {
             <ArrowRight data-icon="inline-end" />
           </Button>
         ) : (
+          // Tant que la politique n'est pas acceptée, le bouton reste
+          // gris : l'accord est juste au-dessus, le lien entre les deux
+          // se lit sans message d'erreur.
           <Button
             className="h-12 flex-1 rounded-full text-base sm:flex-none sm:px-8 max-sm:h-14 max-sm:w-full"
-            disabled={envoi}
+            disabled={envoi || donnees.consentement_politique !== "oui"}
             onClick={envoyer}
           >
             {envoi ? "Envoi…" : inscription.boutonFinal}

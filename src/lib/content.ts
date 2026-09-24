@@ -418,6 +418,16 @@ export const contact = {
  * Les positions sont saisies librement tant que le comite n'a pas
  * fourni la liste officielle.
  */
+/**
+ * La politique de confidentialité et les mentions légales, publiées
+ * comme document Google. Une seule adresse pour tout le site : le pied
+ * de page et la case à cocher du formulaire pointent ici.
+ */
+export const legal = {
+  label: "Confidentialité et mentions légales",
+  url: "https://docs.google.com/document/d/e/2PACX-1vTX5WyoXNFfFqgLqCaM9644QpI-_0Za4Az6Toay_46fG_uZ1GtcPyW3xQEDi5aurTV5nKn9p2HPMriW/pub",
+};
+
 export const inscription = {
   titre: "Inscription au NTMS 2026",
   chapo: "Cinq jours à Lokossa, du 18 au 22 novembre 2026. Quelques minutes pour t'inscrire.",
@@ -445,6 +455,13 @@ export const inscription = {
     "J'accepte d'être ajouté au groupe WhatsApp de l'édition, où sont annoncés le programme, les informations pratiques et les tarifs.",
   consentementPhotos:
     "J'accepte d'apparaître sur les photos et vidéos prises pendant l'événement et publiées par AIESEC in Benin.",
+  // `lien` doit apparaître mot pour mot dans `texte` : c'est ce
+  // morceau-là que le formulaire transforme en lien.
+  consentementPolitique: {
+    texte:
+      "J'ai lu et j'accepte la politique de confidentialité et les mentions légales.",
+    lien: "politique de confidentialité et les mentions légales",
+  },
   boutonFinal: "Valider mon inscription",
   succesTitre: "Ton inscription est enregistrée.",
   succesTexte:

@@ -40,6 +40,7 @@ export type Donnees = {
   restauration: string;
   consentement_groupe: string;
   consentement_photos: string;
+  consentement_politique: string;
 };
 
 export const VIDE: Donnees = {
@@ -62,6 +63,7 @@ export const VIDE: Donnees = {
   restauration: "",
   consentement_groupe: "",
   consentement_photos: "",
+  consentement_politique: "",
 };
 
 export const [PROFIL_BENIN, PROFIL_ETRANGER, PROFIL_EXTERNE] = inscription.profils;
@@ -160,6 +162,8 @@ export function problemeEtape(d: Donnees, etape: number): string | null {
       return "Précise à quoi tu es allergique.";
     if (d.consentement_groupe !== "oui")
       return "L'ajout au groupe WhatsApp est nécessaire pour suivre l'édition.";
+    if (d.consentement_politique !== "oui")
+      return "Il faut accepter la politique de confidentialité pour t'inscrire.";
   }
   return null;
 }
