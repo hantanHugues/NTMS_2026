@@ -569,9 +569,20 @@ var EVENEMENT = {
   datesCourtes: "18 – 22 nov. 2026",
   lieu: "Lokossa, Bénin",
   theme: "20 ans d'existence : élever nos standards pour un meilleur impact.",
+  // Le mail de la conference : c'est lui qui recoit les reponses.
   email: "aibconferences@gmail.com",
-  instagram: "@beninnationalconference",
-  lienInstagram: "https://www.instagram.com/beninnationalconference/",
+  // Et l'organisation derriere l'edition, telle qu'elle se presente sur
+  // aiesec.bj. Le pied du mail signe AIESEC in Benin, pas la conference.
+  organisation: "AIESEC in Benin",
+  site: "aiesec.bj",
+  lienSite: "https://www.aiesec.bj/",
+  emailOrganisation: "benin@aiesec.net",
+  telephone: "+229 01 69 01 63 83",
+  instagram: "@aiesecinbenin",
+  lienInstagram: "https://www.instagram.com/aiesecinbenin/",
+  facebook: "AIESEC in Benin",
+  lienFacebook: "https://www.facebook.com/AIESECinBENIN",
+  lienLinkedin: "https://www.linkedin.com/company/aiesecinbenin",
 };
 
 function construireHtml(conf, valeurs) {
@@ -678,10 +689,20 @@ function construireHtml(conf, valeurs) {
     '<tr><td class="marge" bgcolor="' + C.brique + '" style="' + police + "background-color:" + C.brique +
     ';padding:30px 52px 34px;font-size:12px;line-height:1.6;color:#F3D9C4">' +
     '<div style="font-size:14px;font-weight:700;color:' + C.creme + ';padding-bottom:10px">' + echapper(E.theme) + "</div>" +
-    'AIESEC in Benin, <a href="mailto:' + E.email + '" style="color:' + C.orange + ';text-decoration:none">' +
-    E.email + "</a><br>" +
-    'Instagram : <a href="' + E.lienInstagram + '" style="color:' + C.orange + ';text-decoration:none">' +
-    E.instagram + "</a></td></tr>" +
+    // L'organisation d'abord : site, mail et numero d'AIESEC in Benin.
+    '<a href="' + E.lienSite + '" style="color:' + C.orange + ';text-decoration:none">' + E.organisation +
+    " &middot; " + E.site + "</a><br>" +
+    '<a href="mailto:' + E.emailOrganisation + '" style="color:' + C.orange + ';text-decoration:none">' +
+    E.emailOrganisation + "</a> &middot; " + E.telephone + "<br>" +
+    '<a href="' + E.lienInstagram + '" style="color:' + C.orange + ';text-decoration:none">Instagram ' +
+    E.instagram + "</a> &middot; " +
+    '<a href="' + E.lienFacebook + '" style="color:' + C.orange + ';text-decoration:none">Facebook</a> &middot; ' +
+    '<a href="' + E.lienLinkedin + '" style="color:' + C.orange + ';text-decoration:none">LinkedIn</a>' +
+    // La conference garde sa propre adresse : c'est elle qui repond aux
+    // questions sur l'edition.
+    '<div style="padding-top:10px">Questions sur le NTMS 2026 : ' +
+    '<a href="mailto:' + E.email + '" style="color:' + C.orange + ';text-decoration:none">' + E.email +
+    "</a></div></td></tr>" +
 
     "</table></td></tr></table></body></html>"
   );

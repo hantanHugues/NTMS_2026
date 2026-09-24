@@ -154,7 +154,7 @@ export function problemeEtape(d: Donnees, etape: number): string | null {
     if (d.consentement_groupe !== "oui")
       return "L'ajout au groupe WhatsApp est nécessaire pour suivre l'édition.";
     if (d.consentement_politique !== "oui")
-      return "Il faut accepter la politique de confidentialité pour t'inscrire.";
+      return "Il faut accepter les CGU et la politique de confidentialité pour t'inscrire.";
   }
   return null;
 }

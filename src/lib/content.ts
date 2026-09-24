@@ -419,13 +419,15 @@ export const contact = {
  * fourni la liste officielle.
  */
 /**
- * La politique de confidentialité et les mentions légales, publiées
- * comme document Google. Une seule adresse pour tout le site : le pied
- * de page et la case à cocher du formulaire pointent ici.
+ * Les CGU et la politique de confidentialité d'AIESEC in Benin,
+ * publiées comme document Google. Une seule adresse pour tout le
+ * site : le pied de page et la case à cocher du formulaire pointent
+ * ici. C'est ce document-là qu'on fait accepter, mentions légales
+ * comprises (il porte l'identification de l'éditeur).
  */
 export const legal = {
-  label: "Confidentialité et mentions légales",
-  url: "https://docs.google.com/document/d/e/2PACX-1vTX5WyoXNFfFqgLqCaM9644QpI-_0Za4Az6Toay_46fG_uZ1GtcPyW3xQEDi5aurTV5nKn9p2HPMriW/pub",
+  label: "CGU et politique de confidentialité",
+  url: "https://docs.google.com/document/d/e/2PACX-1vTcsG7n-UwpY3Isj276rO8qLYK4cETA7T0Tke2V0m8yN1-wGsUF3Mh4GWeNDo9uYpSUSK3TByhPVYuI/pub",
 };
 
 export const inscription = {
@@ -463,8 +465,8 @@ export const inscription = {
   // morceau-là que le formulaire transforme en lien.
   consentementPolitique: {
     texte:
-      "J'ai lu et j'accepte la politique de confidentialité et les mentions légales.",
-    lien: "politique de confidentialité et les mentions légales",
+      "J'ai lu et j'accepte les conditions générales d'utilisation et la politique de confidentialité d'AIESEC in Benin.",
+    lien: "conditions générales d'utilisation et la politique de confidentialité",
   },
   boutonFinal: "Valider mon inscription",
   succesTitre: "Ton inscription est enregistrée.",
