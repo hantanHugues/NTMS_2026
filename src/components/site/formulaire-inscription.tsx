@@ -9,11 +9,13 @@ import {
   Check,
   Copy,
   Home,
+  LifeBuoy,
+  Mail,
   MessageCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { event, inscription, legal } from "@/lib/content";
+import { contact, event, inscription, legal } from "@/lib/content";
 import {
   ChoixPays,
   ListeDeroulante,
@@ -218,12 +220,226 @@ function TexteAvecLien({
   );
 }
 
+/**
+ * L'écran d'attente pendant l'envoi.
+ *
+ * L'aller-retour passe par notre serveur, puis par Google : trois à dix
+ * secondes, parfois plus depuis un téléphone. Sans rien à l'écran, on
+ * croit que le bouton n'a pas pris et on recommence. Les phrases se
+ * succèdent pour montrer que ça avance vraiment.
+ */
+export function EcranEnvoi() {
+  const etapes = [
+    "On enregistre ton inscription…",
+    "On prépare ton mail de confirmation…",
+    "Le serveur répond, encore un instant…",
+  ];
+  const [i, setI] = React.useState(0);
+  React.useEffect(() => {
+    const minuteur = window.setInterval(
+      () => setI((n) => Math.min(n + 1, etapes.length - 1)),
+      3500
+    );
+    return () => window.clearInterval(minuteur);
+    // Les phrases ne changent jamais : une seule minuterie pour la vie
+    // de l'écran.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-background/95 px-8 text-center backdrop-blur-sm"
+    >
+      <span className="relative flex size-20 items-center justify-center">
+        <span className="absolute inset-0 animate-spin rounded-full border-4 border-primary/15 border-t-primary" />
+        <Image
+          src="/ntms-logo.png"
+          alt=""
+          width={1699}
+          height={1267}
+          className="h-8 w-auto"
+        />
+      </span>
+      <p className="font-heading text-lg font-extrabold tracking-tight text-balance">
+        {etapes[i]}
+      </p>
+      <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
+        Ne ferme pas cette page : ton inscription part en ce moment.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Ce qu'on affiche quand l'envoi a échoué. On ne sait pas toujours
+ * pourquoi — réseau coupé, service Google indisponible — alors on donne
+ * les deux portes ouvertes : WhatsApp et le mail du comité, avec le
+ * message d'erreur déjà recopié dedans.
+ */
+export function SecoursContact({
+  donnees,
+  erreur,
+}: {
+  donnees: Donnees;
+  erreur: string | null;
+}) {
+  const details =
+    `Bonjour,
+
+Je n'arrive pas à finaliser mon inscription au NTMS 2026 ` +
+    `depuis le site.
+
+` +
+    `Nom : ${donnees.nom}
+Prénom : ${donnees.prenom}
+` +
+    `E-mail : ${donnees.email}
+WhatsApp : ${donnees.telephone}
+
+` +
+    `Message affiché : ${erreur ?? "aucun"}
+`;
+
+  const lienMail =
+    `mailto:${event.email}` +
+    `?subject=${encodeURIComponent("NTMS 2026 — problème d'inscription")}` +
+    `&body=${encodeURIComponent(details)}`;
+  const lienWhatsApp = `${contact.whatsappLien}?text=${encodeURIComponent(details)}`;
+
+  return (
+    <div className="mt-4 rounded-2xl border border-border bg-card p-5 text-left max-sm:mx-5">
+      <p className="flex items-start gap-2.5 text-sm font-medium">
+        <LifeBuoy className="mt-0.5 size-4 shrink-0 text-primary" />
+        Réessaie dans un instant. Si ça recommence, écris-nous : on
+        t&apos;inscrit à la main, ta place n&apos;est pas perdue.
+      </p>
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <Button
+          nativeButton={false}
+          variant="outline"
+          className="h-12 flex-1 rounded-full has-data-[icon=inline-start]:pl-4"
+          render={
+            <a href={lienWhatsApp} target="_blank" rel="noopener noreferrer" />
+          }
+        >
+          <MessageCircle data-icon="inline-start" />
+          {contact.whatsappLabel}
+        </Button>
+        <Button
+          nativeButton={false}
+          variant="outline"
+          className="h-12 flex-1 rounded-full has-data-[icon=inline-start]:pl-4"
+          render={<a href={lienMail} />}
+        >
+          <Mail data-icon="inline-start" />
+          Écrire par mail
+        </Button>
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">
+        {contact.whatsappNumero} · {event.email}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * L'écran de fin. Le titre prend le focus à l'affichage : un lecteur
+ * d'écran annonce alors le résultat, au lieu de rester sur le bouton
+ * qui vient de disparaître.
+ */
+export function EcranSucces() {
+  const titre = React.useRef<HTMLHeadingElement>(null);
+  React.useEffect(() => {
+    titre.current?.focus();
+  }, []);
+
+  return (
+    <div className="flex flex-col rounded-3xl bg-card text-center shadow-md max-sm:min-h-svh max-sm:rounded-none max-sm:bg-background max-sm:shadow-none">
+      {/* TÉLÉPHONE — sans cette barre, l'écran de fin est un
+          cul-de-sac : plus d'en-tête de site, plus de retour. */}
+      <div className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur sm:hidden">
+        <Image
+          src="/ntms-logo.png"
+          alt={event.name}
+          width={1699}
+          height={1267}
+          className="h-7 w-auto"
+        />
+        <Link
+          href="/"
+          className="-mr-2 flex items-center gap-1.5 rounded-full px-2 py-2 text-sm text-muted-foreground"
+        >
+          <Home className="size-4" />
+          Accueil
+        </Link>
+      </div>
+
+      <div className="p-8 sm:p-12 max-sm:flex max-sm:flex-1 max-sm:flex-col max-sm:justify-center max-sm:px-5 max-sm:py-10">
+      <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+        <Check className="size-6" />
+      </span>
+      <h2
+        ref={titre}
+        tabIndex={-1}
+        className="font-heading mt-6 text-2xl font-extrabold tracking-tight text-balance outline-none sm:text-3xl"
+      >
+        {inscription.succesTitre}
+      </h2>
+      <p className="mx-auto mt-5 max-w-md leading-relaxed text-pretty text-muted-foreground">
+        {inscription.succesTexte}
+      </p>
+
+      {inscription.lienWhatsApp ? (
+        <>
+          <Button
+            nativeButton={false}
+            size="lg"
+            className="mt-8 h-13 rounded-full px-8 text-base has-data-[icon=inline-start]:pl-7 max-sm:h-14 max-sm:w-full max-sm:px-6"
+            render={
+              <a
+                href={inscription.lienWhatsApp}
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+            }
+          >
+            <MessageCircle data-icon="inline-start" />
+            {inscription.succesBouton}
+          </Button>
+          <LienACopier lien={inscription.lienWhatsApp} />
+        </>
+      ) : (
+        <p className="mt-8 text-sm text-muted-foreground">
+          Le lien du groupe t&apos;est envoyé par mail.
+        </p>
+      )}
+
+      {/* Pour qui ne rejoint pas le groupe tout de suite : une sortie,
+          plutôt qu'un écran sans issue. Sur ordinateur, l'en-tête de
+          la page joue déjà ce rôle. */}
+      <Link
+        href="/"
+        className="mx-auto mt-10 flex h-12 items-center justify-center gap-2 rounded-full px-5 text-sm font-medium text-muted-foreground transition-colors active:bg-primary/10 sm:hidden"
+      >
+        <ArrowLeft className="size-4" />
+        Revenir à l&apos;accueil
+      </Link>
+      </div>
+    </div>
+  );
+}
+
 export function FormulaireInscription() {
   const [etape, setEtape] = React.useState(0);
   const [donnees, setDonnees] = React.useState<Donnees>(VIDE);
   const [erreur, setErreur] = React.useState<string | null>(null);
   const [envoi, setEnvoi] = React.useState(false);
   const [reference, setReference] = React.useState<string | null>(null);
+  // Vrai quand l'envoi lui-même a échoué (réseau, service) — pas quand
+  // c'est une réponse manquante dans le formulaire.
+  const [echec, setEchec] = React.useState(false);
   const [piege, setPiege] = React.useState("");
 
   // Tiré une seule fois : il identifie CE formulaire, même si la
@@ -235,7 +451,6 @@ export function FormulaireInscription() {
   );
 
   const titreEtape = React.useRef<HTMLHeadingElement>(null);
-  const titreSucces = React.useRef<HTMLHeadingElement>(null);
   const boiteErreur = React.useRef<HTMLParagraphElement>(null);
   const premierRendu = React.useRef(true);
 
@@ -249,10 +464,6 @@ export function FormulaireInscription() {
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     titreEtape.current?.focus();
   }, [etape]);
-
-  React.useEffect(() => {
-    if (reference !== null) titreSucces.current?.focus();
-  }, [reference]);
 
   // Un refus doit se voir : le bouton est en bas de l'écran, le message
   // juste au-dessus, mais la question fautive peut être plus haut.
@@ -280,6 +491,7 @@ export function FormulaireInscription() {
 
     setEnvoi(true);
     setErreur(null);
+    setEchec(false);
     try {
       const reponse = await fetch("/api/inscription", {
         method: "POST",
@@ -300,6 +512,7 @@ export function FormulaireInscription() {
       setErreur(
         err instanceof Error ? err.message : "Envoi impossible. Réessaie."
       );
+      setEchec(true);
     } finally {
       setEnvoi(false);
     }
@@ -317,82 +530,7 @@ export function FormulaireInscription() {
     setEtape((n) => n - 1);
   }
 
-  if (reference !== null) {
-    return (
-      <div className="flex flex-col rounded-3xl bg-card text-center shadow-md max-sm:min-h-svh max-sm:rounded-none max-sm:bg-background max-sm:shadow-none">
-        {/* TÉLÉPHONE — sans cette barre, l'écran de fin est un
-            cul-de-sac : plus d'en-tête de site, plus de retour. */}
-        <div className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur sm:hidden">
-          <Image
-            src="/ntms-logo.png"
-            alt={event.name}
-            width={1699}
-            height={1267}
-            className="h-7 w-auto"
-          />
-          <Link
-            href="/"
-            className="-mr-2 flex items-center gap-1.5 rounded-full px-2 py-2 text-sm text-muted-foreground"
-          >
-            <Home className="size-4" />
-            Accueil
-          </Link>
-        </div>
-
-        <div className="p-8 sm:p-12 max-sm:flex max-sm:flex-1 max-sm:flex-col max-sm:justify-center max-sm:px-5 max-sm:py-10">
-        <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
-          <Check className="size-6" />
-        </span>
-        <h2
-          ref={titreSucces}
-          tabIndex={-1}
-          className="font-heading mt-6 text-2xl font-extrabold tracking-tight text-balance outline-none sm:text-3xl"
-        >
-          {inscription.succesTitre}
-        </h2>
-        <p className="mx-auto mt-5 max-w-md leading-relaxed text-pretty text-muted-foreground">
-          {inscription.succesTexte}
-        </p>
-
-        {inscription.lienWhatsApp ? (
-          <>
-            <Button
-              nativeButton={false}
-              size="lg"
-              className="mt-8 h-13 rounded-full px-8 text-base has-data-[icon=inline-start]:pl-7 max-sm:h-14 max-sm:w-full max-sm:px-6"
-              render={
-                <a
-                  href={inscription.lienWhatsApp}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                />
-              }
-            >
-              <MessageCircle data-icon="inline-start" />
-              {inscription.succesBouton}
-            </Button>
-            <LienACopier lien={inscription.lienWhatsApp} />
-          </>
-        ) : (
-          <p className="mt-8 text-sm text-muted-foreground">
-            Le lien du groupe t&apos;est envoyé par mail.
-          </p>
-        )}
-
-        {/* Pour qui ne rejoint pas le groupe tout de suite : une sortie,
-            plutôt qu'un écran sans issue. Sur ordinateur, l'en-tête de
-            la page joue déjà ce rôle. */}
-        <Link
-          href="/"
-          className="mx-auto mt-10 flex h-12 items-center justify-center gap-2 rounded-full px-5 text-sm font-medium text-muted-foreground transition-colors active:bg-primary/10 sm:hidden"
-        >
-          <ArrowLeft className="size-4" />
-          Revenir à l&apos;accueil
-        </Link>
-        </div>
-      </div>
-    );
-  }
+  if (reference !== null) return <EcranSucces />;
 
   const dernier = etape === inscription.etapes.length - 1;
 
@@ -753,6 +891,8 @@ export function FormulaireInscription() {
         </p>
       </div>
 
+      {envoi ? <EcranEnvoi /> : null}
+
       {erreur ? (
         <p
           ref={boiteErreur}
@@ -762,6 +902,8 @@ export function FormulaireInscription() {
           {erreur}
         </p>
       ) : null}
+
+      {echec ? <SecoursContact donnees={donnees} erreur={erreur} /> : null}
 
       {/* L'action, collée en bas de l'écran sur téléphone : jamais à
           chercher, quelle que soit la longueur de l'étape. */}

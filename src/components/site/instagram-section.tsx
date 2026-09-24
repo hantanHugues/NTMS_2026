@@ -1,4 +1,6 @@
 import { Reveal } from "@/components/site/reveal";
+import { Play } from "lucide-react";
+
 import { instagram } from "@/lib/content";
 import { getInstagramPosts, type InstagramPost } from "@/lib/instagram";
 import { InstagramTile } from "@/components/site/instagram-tile";
@@ -88,7 +90,7 @@ function Colonne({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`${instagram.handle} sur Instagram`}
-                className="block aspect-square w-full overflow-hidden"
+                className="relative block aspect-square w-full overflow-hidden"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -97,6 +99,17 @@ function Colonne({
                   loading="lazy"
                   className="size-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
+                {/* Une vidéo se signale au centre, mais en petit et en
+                    translucide : on garde l'image lisible, à l'opposé de
+                    la grande flèche opaque d'Instagram. */}
+                {post.video ? (
+                  <span
+                    aria-hidden
+                    className="absolute top-1/2 left-1/2 flex size-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-nuit/35 text-white/90 backdrop-blur-[2px]"
+                  >
+                    <Play className="size-4 translate-x-px fill-current" />
+                  </span>
+                ) : null}
               </a>
             ) : (
               <InstagramTile url={post.url} />

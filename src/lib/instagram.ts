@@ -46,19 +46,39 @@ export const EMBED = {
 };
 
 export type InstagramPost =
-  /** Avec jeton : l'image nue, servie par Instagram. */
-  | { mode: "image"; url: string; image: string }
+  /** L'image nue : servie par Instagram (avec jeton), ou gardee ici. */
+  | { mode: "image"; url: string; image: string; video?: boolean }
   /** Sans jeton : l'iframe officielle, decoupee sur l'image. */
   | { mode: "embed"; url: string };
 
-/** Publications relevees sur le profil public le 10 septembre 2026. */
-const REPLI = [
-  "https://www.instagram.com/p/DbdUnstNia8/",
-  "https://www.instagram.com/p/DbbmNHktX6K/",
-  "https://www.instagram.com/p/DbYuQCYtnyl/",
-  "https://www.instagram.com/p/DbTlKdaDblq/",
-  "https://www.instagram.com/p/DbBxuQ2N772/",
-  "https://www.instagram.com/p/Da6EgCzje_X/",
+/**
+ * Publications relevees sur le profil public le 24 septembre 2026, de
+ * la plus recente a la plus ancienne.
+ *
+ * COMMENT LES REFAIRE — le HTML brut du profil ne contient rien, mais
+ * un vrai navigateur, lui, monte la grille. Ouvrir le profil dans
+ * Chromium (Playwright), fermer la fenetre de connexion, defiler d'un
+ * ecran, puis relever les `a[href]` en `/p/<code>/` et `/reel/<code>/`
+ * dans l'ordre de la page. Le prefixe du compte est a retirer : c'est
+ * l'adresse courte qui s'integre.
+ */
+const REPLI: { url: string; image?: string }[] = [
+  { url: "https://www.instagram.com/p/DdoJX3sDf1j/" },
+  // UNE VIDEO. Son integration officielle pose une grande fleche
+  // blanche et « Regarder sur Instagram » par-dessus l'image, et cette
+  // surcouche est DANS l'iframe d'Instagram : aucun style de notre cote
+  // ne peut l'atteindre. On garde donc l'image de couverture, relevee
+  // sur cette page d'integration et servie depuis `public` (les
+  // adresses du CDN d'Instagram sont signees et expirent), avec notre
+  // propre repere de lecture, discret.
+  {
+    url: "https://www.instagram.com/reel/DdSHHoRTcet/",
+    image: "/instagram/reel-DdSHHoRTcet.jpg",
+  },
+  { url: "https://www.instagram.com/p/DbdUnstNia8/" },
+  { url: "https://www.instagram.com/p/DbbmNHktX6K/" },
+  { url: "https://www.instagram.com/p/DbYuQCYtnyl/" },
+  { url: "https://www.instagram.com/p/DbTlKdaDblq/" },
 ];
 
 type MediaGraph = {
@@ -73,10 +93,11 @@ export async function getInstagramPosts(
 ): Promise<InstagramPost[]> {
   const token = process.env.INSTAGRAM_TOKEN;
 
-  const repli: InstagramPost[] = REPLI.slice(0, limit).map((url) => ({
-    mode: "embed" as const,
-    url,
-  }));
+  const repli: InstagramPost[] = REPLI.slice(0, limit).map((post) =>
+    post.image
+      ? { mode: "image" as const, url: post.url, image: post.image, video: true }
+      : { mode: "embed" as const, url: post.url }
+  );
 
   if (!token) return repli;
 
@@ -98,6 +119,8 @@ export async function getInstagramPosts(
         url: media.permalink ?? instagramProfil,
         // Une video n'a pas d'image : c'est `thumbnail_url` qui la porte.
         image: media.thumbnail_url ?? media.media_url ?? "",
+        // Meme repere de lecture que dans la liste tenue a la main.
+        video: media.media_type === "VIDEO" || media.media_type === "REELS",
       }))
       .filter((post) => post.image !== "")
       .slice(0, limit);
