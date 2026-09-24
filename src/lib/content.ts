@@ -434,14 +434,12 @@ export const inscription = {
   etapes: ["Qui es-tu ?", "Ton lien avec AIESEC", "Ton séjour"],
   /** [0] = AIESECer au Bénin, [1] = d'un autre pays, [2] = pas AIESECer. */
   profils: ["AIESECer au Bénin", "AIESECer d'un autre pays", "Pas AIESECer"],
-  niveaux: ["MC", "LC"],
+  // Les membres du MC organisent l'edition : ils ne s'inscrivent pas.
+  // Un AIESECer du Benin qui s'inscrit est donc forcement en LC, et la
+  // question du niveau n'a plus lieu d'etre.
+  noteMC: "Les membres du MC n'ont pas à s'inscrire.",
   /** `valeur` part dans la base ; `libelle` s'affiche dans la liste. */
-  rolesMC: [
-    { valeur: "MCP", libelle: "MCP · Member Committee President" },
-    { valeur: "MCVP", libelle: "MCVP · Member Committee Vice President" },
-    { valeur: "Autre", libelle: "Autre" },
-  ],
-  rolesLC: [
+  roles: [
     { valeur: "LCP", libelle: "LCP · Local Committee President" },
     { valeur: "LCVP", libelle: "LCVP · Local Committee Vice President" },
     { valeur: "TL", libelle: "TL · Team Leader" },
@@ -449,7 +447,13 @@ export const inscription = {
   ],
   comites: ["Cotonou", "Parakou", "Porto-Novo", "Abomey-Calavi"],
   sexes: ["Femme", "Homme"],
+  // Les valeurs partent telles quelles dans la feuille, qui les
+  // controle par une liste deroulante : on ne les renomme pas. C'est
+  // la question et l'explication qui portent la clarte.
+  chambreQuestion: "Avec qui partages-tu ta chambre ?",
   chambres: ["Chambre mixte", "Chambre non mixte"],
+  chambreAide:
+    "Chambre mixte : filles et garçons peuvent loger dans la même chambre. Chambre non mixte : uniquement des personnes du même sexe que toi.",
   ouiNon: ["Oui", "Non"],
   consentementGroupe:
     "J'accepte d'être ajouté au groupe WhatsApp de l'édition, où sont annoncés le programme, les informations pratiques et les tarifs.",

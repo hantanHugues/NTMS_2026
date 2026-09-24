@@ -30,7 +30,6 @@ export type Donnees = {
   profil: string;
   niveau: string;
   role: string;
-  role_autre: string;
   lc: string;
   pays: string;
   source: string;
@@ -53,7 +52,6 @@ export const VIDE: Donnees = {
   profil: "",
   niveau: "",
   role: "",
-  role_autre: "",
   lc: "",
   pays: "",
   source: "",
@@ -136,15 +134,8 @@ export function problemeEtape(d: Donnees, etape: number): string | null {
   if (etape === 1) {
     if (!dans(inscription.profils, d.profil)) return "Dis-nous qui tu es.";
     if (d.profil === PROFIL_BENIN) {
-      if (!dans(inscription.niveaux, d.niveau))
-        return "Indique si tu es au niveau MC ou LC.";
-      if (d.niveau === "MC") {
-        if (!dans(valeurs(inscription.rolesMC), d.role)) return "Choisis ton rôle.";
-        if (d.role === "Autre" && !d.role_autre.trim()) return "Précise ton rôle.";
-      } else {
-        if (!dans(valeurs(inscription.rolesLC), d.role)) return "Choisis ton rôle.";
-        if (!dans(inscription.comites, d.lc)) return "Choisis ton comité local.";
-      }
+      if (!dans(valeurs(inscription.roles), d.role)) return "Choisis ton rôle.";
+      if (!dans(inscription.comites, d.lc)) return "Choisis ton comité local.";
     }
     if (d.profil === PROFIL_ETRANGER) {
       if (!d.role.trim()) return "Indique ton poste.";
@@ -177,7 +168,6 @@ export function elaguer(d: Donnees): Donnees {
   if (r.profil !== PROFIL_BENIN) {
     r.niveau = "";
     r.lc = "";
-    r.role_autre = "";
   }
   if (r.profil !== PROFIL_ETRANGER) r.pays = "";
   if (r.profil !== PROFIL_EXTERNE) {
@@ -186,10 +176,10 @@ export function elaguer(d: Donnees): Donnees {
     r.role = "";
   }
   if (r.profil === PROFIL_BENIN) {
-    const roles = r.niveau === "MC" ? inscription.rolesMC : inscription.rolesLC;
-    if (!dans(valeurs(roles), r.role)) r.role = "";
-    if (r.niveau !== "LC") r.lc = "";
-    if (r.role !== "Autre") r.role_autre = "";
+    // La colonne « niveau » de la feuille existe toujours : on la
+    // remplit nous-mêmes, puisque seuls les LC s'inscrivent.
+    r.niveau = "LC";
+    if (!dans(valeurs(inscription.roles), r.role)) r.role = "";
   }
   if (r.allergie !== "Oui") r.allergie_detail = "";
   return r;

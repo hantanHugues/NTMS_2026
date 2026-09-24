@@ -265,7 +265,7 @@ export function FormulaireInscription() {
       const suivant = { ...d, [cle]: valeur };
       // Changer de branche repart d'un rôle vierge ; les champs d'une
       // branche abandonnée ne doivent pas rester.
-      if ((cle === "profil" || cle === "niveau") && valeur !== d[cle]) {
+      if (cle === "profil" && valeur !== d[cle]) {
         suivant.role = "";
       }
       return elaguer(suivant);
@@ -350,12 +350,6 @@ export function FormulaireInscription() {
         >
           {inscription.succesTitre}
         </h2>
-        {reference ? (
-          <p className="mt-3 text-sm text-muted-foreground">
-            Ta référence :{" "}
-            <strong className="text-foreground">{reference}</strong>
-          </p>
-        ) : null}
         <p className="mx-auto mt-5 max-w-md leading-relaxed text-pretty text-muted-foreground">
           {inscription.succesTexte}
         </p>
@@ -597,57 +591,29 @@ export function FormulaireInscription() {
             {donnees.profil === PROFIL_BENIN ? (
               <>
                 <div>
-                  <Libelle obligatoire id="q-niveau">Tu es au niveau…</Libelle>
-                  <Choix
-                    etiquette="q-niveau"
-                    options={inscription.niveaux}
-                    valeur={donnees.niveau}
-                    onChange={set("niveau")}
+                  <Libelle obligatoire id="q-role">Ton rôle</Libelle>
+                  <ListeDeroulante
+                    etiquette="q-role"
+                    options={inscription.roles}
+                    valeur={donnees.role}
+                    onChange={set("role")}
+                    indication="Choisis ton rôle"
                   />
+                  <span className="mt-2 block text-xs text-muted-foreground">
+                    {inscription.noteMC}
+                  </span>
                 </div>
 
-                {donnees.niveau ? (
-                  <div>
-                    <Libelle obligatoire id="q-role">Ton rôle</Libelle>
-                    <ListeDeroulante
-                      key={donnees.niveau}
-                      etiquette="q-role"
-                      options={
-                        donnees.niveau === "MC"
-                          ? inscription.rolesMC
-                          : inscription.rolesLC
-                      }
-                      valeur={donnees.role}
-                      onChange={set("role")}
-                      indication="Choisis ton rôle"
-                    />
-                  </div>
-                ) : null}
-
-                {donnees.niveau === "MC" && donnees.role === "Autre" ? (
-                  <label>
-                    <Libelle obligatoire>Précise ton rôle</Libelle>
-                    <input
-                      className={CHAMP}
-                      value={donnees.role_autre}
-                      onChange={(e) => set("role_autre")(e.target.value)}
-                      maxLength={100}
-                    />
-                  </label>
-                ) : null}
-
-                {donnees.niveau === "LC" ? (
-                  <div>
-                    <Libelle obligatoire id="q-lc">Ton comité local</Libelle>
-                    <ListeDeroulante
-                      etiquette="q-lc"
-                      options={inscription.comites}
-                      valeur={donnees.lc}
-                      onChange={set("lc")}
-                      indication="Choisis ton comité"
-                    />
-                  </div>
-                ) : null}
+                <div>
+                  <Libelle obligatoire id="q-lc">Ton comité local</Libelle>
+                  <ListeDeroulante
+                    etiquette="q-lc"
+                    options={inscription.comites}
+                    valeur={donnees.lc}
+                    onChange={set("lc")}
+                    indication="Choisis ton comité"
+                  />
+                </div>
               </>
             ) : null}
 
@@ -694,13 +660,18 @@ export function FormulaireInscription() {
         {etape === 2 ? (
           <>
             <div>
-              <Libelle obligatoire id="q-chambre">Chambre</Libelle>
+              <Libelle obligatoire id="q-chambre">
+                {inscription.chambreQuestion}
+              </Libelle>
               <Choix
                 etiquette="q-chambre"
                 options={inscription.chambres}
                 valeur={donnees.chambre}
                 onChange={set("chambre")}
               />
+              <span className="mt-2 block text-xs leading-relaxed text-muted-foreground">
+                {inscription.chambreAide}
+              </span>
             </div>
 
             <div>

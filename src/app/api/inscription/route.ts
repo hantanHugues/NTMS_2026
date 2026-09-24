@@ -130,8 +130,7 @@ export async function POST(request: Request) {
   }
 
   // Ce qui part vers la feuille, dans les noms de ses colonnes. Le
-  // numéro est réécrit au format international (+229 01 97 12 34 56),
-  // un « Autre » est remplacé par le rôle saisi.
+  // numéro est réécrit au format international (+229 01 97 12 34 56).
   const donnees = {
     nom: d.nom,
     prenom: d.prenom,
@@ -140,7 +139,7 @@ export async function POST(request: Request) {
     sexe: d.sexe,
     profil: d.profil,
     niveau: d.niveau,
-    role: d.role === "Autre" ? d.role_autre : d.role,
+    role: d.role,
     lc: d.lc,
     pays: d.pays,
     source: d.source,
