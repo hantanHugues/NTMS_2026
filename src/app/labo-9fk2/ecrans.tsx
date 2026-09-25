@@ -42,8 +42,11 @@ export function EcransEssai() {
   return (
     <div className="min-h-svh bg-background">
       <div className="sticky top-0 z-[60] border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-5 py-3">
-          <span className="mr-2 text-xs tracking-wider text-muted-foreground uppercase">
+        {/* Barre compacte : sur écran étroit elle mangeait 170 px et
+            repoussait l'écran montré, ce qui donnait une fausse idée de
+            sa mise en page. */}
+        <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-1.5 px-3 py-2 sm:gap-2 sm:px-5 sm:py-3">
+          <span className="mr-2 hidden text-xs tracking-wider text-muted-foreground uppercase sm:inline">
             Écrans d&apos;essai · local
           </span>
           {ECRANS.map((e) => (
@@ -52,7 +55,7 @@ export function EcransEssai() {
               type="button"
               onClick={() => setEcran(e.cle)}
               className={cn(
-                "rounded-full border px-4 py-2 text-sm transition-colors",
+                "rounded-full border px-3 py-1.5 text-xs transition-colors sm:px-4 sm:py-2 sm:text-sm",
                 ecran === e.cle
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border hover:border-primary/40"

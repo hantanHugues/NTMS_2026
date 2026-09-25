@@ -319,7 +319,7 @@ WhatsApp : ${donnees.telephone}
         <Button
           nativeButton={false}
           variant="outline"
-          className="h-12 flex-1 rounded-full has-data-[icon=inline-start]:pl-4"
+          className="h-12 w-full rounded-full has-data-[icon=inline-start]:pl-4 max-sm:h-13 sm:flex-1"
           render={
             <a href={lienWhatsApp} target="_blank" rel="noopener noreferrer" />
           }
@@ -330,7 +330,7 @@ WhatsApp : ${donnees.telephone}
         <Button
           nativeButton={false}
           variant="outline"
-          className="h-12 flex-1 rounded-full has-data-[icon=inline-start]:pl-4"
+          className="h-12 w-full rounded-full has-data-[icon=inline-start]:pl-4 max-sm:h-13 sm:flex-1"
           render={<a href={lienMail} />}
         >
           <Mail data-icon="inline-start" />

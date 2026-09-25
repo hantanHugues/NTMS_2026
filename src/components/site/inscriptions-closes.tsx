@@ -49,10 +49,13 @@ export function InscriptionsCloses() {
           {inscription.closesTexte}
         </p>
 
+        {/* En colonne, `flex-1` écraserait la hauteur des boutons : un
+            enfant qui grandit dans l'axe vertical ignore `h-*`. Il ne
+            s'applique donc qu'à partir de la rangée. */}
         <div className="mx-auto mt-8 flex w-full max-w-md flex-col gap-3 sm:flex-row">
           <Button
             nativeButton={false}
-            className="h-13 flex-1 rounded-full text-base has-data-[icon=inline-start]:pl-6"
+            className="h-13 w-full rounded-full text-base has-data-[icon=inline-start]:pl-6 max-sm:h-14 sm:flex-1"
             render={
               <a
                 href={contact.whatsappLien}
@@ -67,7 +70,7 @@ export function InscriptionsCloses() {
           <Button
             nativeButton={false}
             variant="outline"
-            className="h-13 flex-1 rounded-full text-base has-data-[icon=inline-start]:pl-6"
+            className="h-13 w-full rounded-full text-base has-data-[icon=inline-start]:pl-6 max-sm:h-14 sm:flex-1"
             render={
               <a
                 href={`mailto:${event.email}?subject=${encodeURIComponent(
