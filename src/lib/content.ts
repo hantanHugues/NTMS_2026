@@ -30,6 +30,14 @@ export const event = {
   // code, par NEXT_PUBLIC_DATE_NTMS dans .env.local et chez l'hebergeur
   // (valeur inseree AU MOMENT DU BUILD : redeployer apres un changement).
   startsAt: process.env.NEXT_PUBLIC_DATE_NTMS ?? "2026-11-18T09:00:00+01:00",
+  // Fin des inscriptions. Par defaut la meme date : quand le compte a
+  // rebours tombe a zero, le formulaire ferme et « Je m'inscris » mene
+  // a l'ecran de cloture. NEXT_PUBLIC_FIN_INSCRIPTIONS permet de
+  // fermer plus tot, sans toucher au compte a rebours.
+  finInscriptions:
+    process.env.NEXT_PUBLIC_FIN_INSCRIPTIONS ??
+    process.env.NEXT_PUBLIC_DATE_NTMS ??
+    "2026-11-18T09:00:00+01:00",
   // LIEU OFFICIEL, communique par l'utilisateur. Comme le theme, c'est
   // une information validee — a distinguer des dates et du nombre de
   // places, qui restent des propositions.
@@ -469,6 +477,10 @@ export const inscription = {
     lien: "conditions générales d'utilisation et la politique de confidentialité",
   },
   boutonFinal: "Valider mon inscription",
+  // Affiche a la place du formulaire une fois la date passee.
+  closesTitre: "Les inscriptions sont closes.",
+  closesTexte:
+    "Le formulaire est fermé. Si tu t'es inscrit et que tu n'as rien reçu, ou si tu veux être de la prochaine édition, écris au comité : quelqu'un te répond directement.",
   succesTitre: "Ton inscription est enregistrée.",
   succesTexte:
     "Rejoins le groupe WhatsApp maintenant : c'est là qu'arrivent le programme, les informations pratiques et les tarifs. Tu reçois aussi une confirmation par mail.",

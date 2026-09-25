@@ -7,6 +7,7 @@ import {
   EcranSucces,
   SecoursContact,
 } from "@/components/site/formulaire-inscription";
+import { InscriptionsCloses } from "@/components/site/inscriptions-closes";
 import { VIDE } from "@/lib/inscription-regles";
 import { cn } from "@/lib/utils";
 
@@ -26,12 +27,13 @@ const EXEMPLE = {
 
 const ERREUR = "Le service ne répond pas. Réessaie dans un instant.";
 
-type Ecran = "attente" | "echec" | "succes";
+type Ecran = "attente" | "echec" | "succes" | "closes";
 
 const ECRANS: { cle: Ecran; libelle: string }[] = [
   { cle: "attente", libelle: "Attente pendant l'envoi" },
   { cle: "echec", libelle: "Échec de l'envoi" },
   { cle: "succes", libelle: "Inscription enregistrée" },
+  { cle: "closes", libelle: "Inscriptions closes" },
 ];
 
 export function EcransEssai() {
@@ -78,6 +80,9 @@ export function EcransEssai() {
           </div>
         ) : null}
         {ecran === "succes" ? <EcranSucces /> : null}
+        {/* Ce que verra un visiteur qui clique « Je m'inscris » une fois
+            le compte à rebours à zéro. */}
+        {ecran === "closes" ? <InscriptionsCloses /> : null}
       </div>
     </div>
   );

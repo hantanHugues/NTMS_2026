@@ -7,7 +7,7 @@ import {
 } from "libphonenumber-js/max";
 import exemples from "libphonenumber-js/mobile/examples";
 
-import { inscription } from "@/lib/content";
+import { event, inscription } from "@/lib/content";
 
 /**
  * Les règles d'inscription, partagées par le formulaire ET par la route
@@ -113,6 +113,18 @@ export function numeroInternational(code: string, numero: string) {
 
 const valeurs = (liste: readonly { valeur: string }[]) => liste.map((r) => r.valeur);
 const dans = (liste: readonly string[], v: string) => liste.includes(v);
+
+/**
+ * Vrai tant qu'on peut s'inscrire.
+ *
+ * La date de fermeture est celle du compte à rebours, sauf réglage
+ * séparé. Une date illisible laisse le formulaire OUVERT : mieux vaut
+ * une inscription de trop qu'une page fermée sur une faute de frappe.
+ */
+export function inscriptionsOuvertes(maintenant = Date.now()) {
+  const fin = Date.parse(event.finInscriptions);
+  return Number.isNaN(fin) || maintenant < fin;
+}
 
 /** Le premier problème de l'étape, ou null. Messages destinés à l'inscrit. */
 export function problemeEtape(d: Donnees, etape: number): string | null {

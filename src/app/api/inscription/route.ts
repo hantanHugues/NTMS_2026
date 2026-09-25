@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   VIDE,
   elaguer,
+  inscriptionsOuvertes,
   numeroInternational,
   problemeEtape,
   type Donnees,
@@ -111,6 +112,12 @@ export async function POST(request: Request) {
   // pour ne pas lui apprendre qu'il a été détecté.
   if (typeof entree.site_web === "string" && entree.site_web.trim() !== "") {
     return NextResponse.json({ ok: true, reference: "" });
+  }
+
+  // Les inscriptions closes : le formulaire ne s'affiche plus, mais
+  // rien n'empêche d'appeler cette adresse directement.
+  if (!inscriptionsOuvertes()) {
+    return refus("Les inscriptions sont closes.");
   }
 
   // On ne lit QUE les champs attendus, nettoyés et bornés.
