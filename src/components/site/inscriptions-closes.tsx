@@ -1,9 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, CalendarX, Home, Mail, MessageCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarX,
+  CreditCard,
+  Home,
+  Mail,
+  MessageCircle,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { contact, event, instagram, inscription } from "@/lib/content";
+import { contact, event, instagram, inscription, paiement } from "@/lib/content";
+import { paiementsOuverts } from "@/lib/inscription-regles";
 
 /**
  * L'écran servi à la place du formulaire une fois les inscriptions
@@ -19,6 +27,10 @@ import { contact, event, instagram, inscription } from "@/lib/content";
  * ordinateur, écran entier avec sa barre sur téléphone.
  */
 export function InscriptionsCloses() {
+  // Entre les deux dates, il reste quelque chose à faire : régler sa
+  // place. C'est alors l'action principale, et les contacts passent
+  // derrière.
+  const peutPayer = paiementsOuverts();
   return (
     <div className="flex flex-col rounded-3xl bg-card text-center shadow-md max-sm:min-h-svh max-sm:rounded-none max-sm:bg-background max-sm:shadow-none">
       <div className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur sm:hidden">
@@ -46,15 +58,27 @@ export function InscriptionsCloses() {
           {inscription.closesTitre}
         </h1>
         <p className="mx-auto mt-5 max-w-md leading-relaxed text-pretty text-muted-foreground">
-          {inscription.closesTexte}
+          {peutPayer ? paiement.chapo : inscription.closesTexte}
         </p>
+
+        {peutPayer ? (
+          <Button
+            nativeButton={false}
+            className="mx-auto mt-8 h-13 w-full max-w-md rounded-full text-base has-data-[icon=inline-start]:pl-6 max-sm:h-14"
+            render={<a href="/paiement" />}
+          >
+            <CreditCard data-icon="inline-start" />
+            {paiement.bouton}
+          </Button>
+        ) : null}
 
         {/* En colonne, `flex-1` écraserait la hauteur des boutons : un
             enfant qui grandit dans l'axe vertical ignore `h-*`. Il ne
             s'applique donc qu'à partir de la rangée. */}
-        <div className="mx-auto mt-8 flex w-full max-w-md flex-col gap-3 sm:flex-row">
+        <div className="mx-auto mt-3 flex w-full max-w-md flex-col gap-3 sm:flex-row">
           <Button
             nativeButton={false}
+            variant={peutPayer ? "outline" : undefined}
             className="h-13 w-full rounded-full text-base has-data-[icon=inline-start]:pl-6 max-sm:h-14 sm:flex-1"
             render={
               <a

@@ -229,10 +229,12 @@ function TexteAvecLien({
  * succèdent pour montrer que ça avance vraiment.
  */
 export function EcranEnvoi() {
+  // Des phrases qui parlent de l'inscription, jamais de la machine :
+  // personne n'a à connaître l'existence d'un serveur.
   const etapes = [
     "On enregistre ton inscription…",
     "On prépare ton mail de confirmation…",
-    "Le serveur répond, encore un instant…",
+    "Encore quelques secondes…",
   ];
   const [i, setI] = React.useState(0);
   React.useEffect(() => {

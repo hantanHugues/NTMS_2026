@@ -88,12 +88,32 @@ async function appelerScript(
   }
 }
 
+/**
+ * Le motif technique d'un refus, mais UNIQUEMENT en test.
+ *
+ * Un inscrit n'a que faire d'un en-tête de colonne ou d'un secret ;
+ * pendant la mise au point, en revanche, chercher la raison dans les
+ * journaux de l'hébergeur fait perdre un temps fou. INSCRIPTION_DEBUG=1
+ * fait remonter la vraie phrase jusqu'au navigateur. À ne jamais
+ * laisser allumé une fois les inscriptions ouvertes au public.
+ */
+function detail(message: string): string | null {
+  return process.env.INSCRIPTION_DEBUG === "1" ? message : null;
+}
+
 export async function POST(request: Request) {
   const url = process.env.INSCRIPTION_WEBAPP_URL;
   const secret = process.env.INSCRIPTION_SECRET;
   if (!url || !secret) {
-    console.error("INSCRIPTION_WEBAPP_URL ou INSCRIPTION_SECRET absent.");
-    return refus("Les inscriptions ne sont pas encore ouvertes.", 503);
+    const manque = !url ? "INSCRIPTION_WEBAPP_URL" : "INSCRIPTION_SECRET";
+    console.error(manque + " absent.");
+    // Le message disait « pas encore ouvertes » : trompeur, il envoyait
+    // chercher une date de clôture alors qu'il manque un réglage.
+    return refus(
+      detail(`Réglage du serveur incomplet : ${manque} manque.`) ??
+        "Le service d'inscription est indisponible. Écris-nous.",
+      503
+    );
   }
 
   let brut: unknown;
@@ -164,7 +184,11 @@ export async function POST(request: Request) {
     const resultat = await appelerScript(url, { ...donnees, _secret: secret });
     if (!resultat.ok) {
       console.error("Refus d'Apps Script :", resultat.message);
-      return refus("L'inscription n'a pas pu être enregistrée. Réessaie.", 502);
+      return refus(
+        detail("Le classeur a refusé : " + resultat.message) ??
+          "L'inscription n'a pas pu être enregistrée. Réessaie.",
+        502
+      );
     }
 
     const reference = resultat.reference ?? "";
@@ -194,6 +218,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, reference });
   } catch (err) {
     console.error("Appel Apps Script impossible :", err);
-    return refus("Le service est momentanément indisponible. Réessaie.", 504);
+    return refus(
+      detail("Appel du classeur impossible : " + String(err)) ??
+        "Le service est momentanément indisponible. Réessaie.",
+      504
+    );
   }
 }

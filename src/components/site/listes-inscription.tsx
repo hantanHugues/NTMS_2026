@@ -269,9 +269,14 @@ const libellePays = (p: Pays) => `${p.nom} (+${p.indicatif})`;
  * avant cela, on n'affiche que l'indicatif, identique partout.
  */
 function useMonte() {
-  const [monte, setMonte] = React.useState(false);
-  React.useEffect(() => setMonte(true), []);
-  return monte;
+  // `useSyncExternalStore` répond false au serveur et true dans le
+  // navigateur, sans effet ni second rendu : c'est la forme prévue par
+  // React pour cette question précise.
+  return React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 }
 
 /** Choix du pays du numéro, avec recherche par nom ou par indicatif. */

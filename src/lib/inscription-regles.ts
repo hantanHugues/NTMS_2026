@@ -126,6 +126,36 @@ export function inscriptionsOuvertes(maintenant = Date.now()) {
   return Number.isNaN(fin) || maintenant < fin;
 }
 
+/**
+ * Vrai tant qu'on peut payer sa place.
+ *
+ * Seconde date, indépendante de la première : le formulaire peut être
+ * clos alors que la billetterie reste ouverte quelques jours.
+ */
+export function paiementsOuverts(maintenant = Date.now()) {
+  const fin = Date.parse(event.finPaiements);
+  return Number.isNaN(fin) || maintenant < fin;
+}
+
+/**
+ * Où en est l'édition, des deux dates de clôture :
+ *
+ *   inscription — le formulaire est ouvert, la place est gratuite
+ *   paiement    — le formulaire est clos, il reste à régler sa place
+ *   clos        — plus rien à faire sur le site
+ *
+ * Une seule fonction pour tout le site : le bouton de l'en-tête, celui
+ * du hero et la carte d'appel à l'action doivent dire la même chose au
+ * même moment.
+ */
+export type Phase = "inscription" | "paiement" | "clos";
+
+export function phase(maintenant = Date.now()): Phase {
+  if (inscriptionsOuvertes(maintenant)) return "inscription";
+  if (paiementsOuverts(maintenant)) return "paiement";
+  return "clos";
+}
+
 /** Le premier problème de l'étape, ou null. Messages destinés à l'inscrit. */
 export function problemeEtape(d: Donnees, etape: number): string | null {
   if (etape === 0) {

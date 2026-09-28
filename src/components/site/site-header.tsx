@@ -12,9 +12,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { event, navItems } from "@/lib/content";
+import { boutonPhase, event, navItems } from "@/lib/content";
+import type { Phase } from "@/lib/inscription-regles";
 
-export function SiteHeader() {
+export function SiteHeader({ phase = "inscription" }: { phase?: Phase }) {
+  const bouton = boutonPhase[phase];
   const ref = React.useRef<HTMLElement>(null);
 
   /**
@@ -114,9 +116,9 @@ export function SiteHeader() {
           <Button
             nativeButton={false}
             className="hidden h-10 rounded-full px-5 md:inline-flex"
-            render={<a href="#inscription" />}
+            render={<a href={bouton.href} />}
           >
-            Je m&apos;inscris
+            {bouton.label}
           </Button>
 
           <Sheet>
@@ -155,11 +157,11 @@ export function SiteHeader() {
                     <Button
                       nativeButton={false}
                       className="mt-4 h-11 rounded-full text-base"
-                      render={<a href="#inscription" />}
+                      render={<a href={bouton.href} />}
                     />
                   }
                 >
-                  Je m&apos;inscris
+                  {bouton.label}
                 </SheetClose>
               </nav>
             </SheetContent>

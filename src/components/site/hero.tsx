@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Countdown } from "@/components/site/countdown";
 import { RotatingVerb } from "@/components/site/rotating-verb";
 import { ShaderBackdrop } from "@/components/site/shader-backdrop";
-import { event, hero, rotatingVerbs } from "@/lib/content";
+import { boutonPhase, event, hero, rotatingVerbs } from "@/lib/content";
+import type { Phase } from "@/lib/inscription-regles";
 
 /**
  * Hero d'annonce d'événement.
@@ -25,7 +26,9 @@ import { event, hero, rotatingVerbs } from "@/lib/content";
  * `clamp` retombe sur les memes valeurs qu'avant des 640 px : la vue
  * sur ordinateur est inchangee, au pixel pres.
  */
-export function Hero() {
+export function Hero({ phase = "inscription" }: { phase?: Phase }) {
+  const etape = phase;
+  const bouton = boutonPhase[phase];
   return (
     <section className="dark relative isolate flex min-h-svh flex-col items-center justify-center overflow-hidden bg-background px-6 py-20 text-center sm:py-28 text-foreground">
       <ShaderBackdrop />
@@ -69,9 +72,9 @@ export function Hero() {
             nativeButton={false}
             size="lg"
             className="h-13 rounded-full px-9 text-base"
-            render={<a href="#inscription" />}
+            render={<a href={bouton.href} />}
           >
-            Réserver ma place
+            {etape === "paiement" ? bouton.label : "Réserver ma place"}
           </Button>
           <Button
             nativeButton={false}

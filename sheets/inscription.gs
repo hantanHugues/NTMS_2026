@@ -152,6 +152,34 @@ var COLONNES = [
   "erreur_mail_manuel",
 ];
 
+/**
+ * L'ONGLET DES PAIEMENTS.
+ *
+ * Alimenté par le site quand quelqu'un règle sa place par mobile money
+ * (Money Fusion). Deux chemins y écrivent — le webhook du prestataire
+ * et le retour de la personne sur le site — et le meme paiement change
+ * d'etat en cours de route (`pending` puis `paid`). La ligne est donc
+ * reconnue par son JETON et mise a jour, jamais dupliquee.
+ *
+ *   statut   paid, pending, failure (fonds insuffisants, refus), no paid
+ *   source   webhook ou retour, selon qui a ecrit en dernier
+ */
+var COLONNES_PAIEMENT = [
+  "horodatage",
+  "token",
+  "statut",
+  "montant",
+  "frais",
+  "moyen",
+  "numero_transaction",
+  "nom",
+  "numero",
+  "email",
+  "reference_inscription",
+  "evenement",
+  "source",
+];
+
 /** Colonnes remplies par le script, jamais par le formulaire. */
 var COLONNES_SCRIPT = [
   "horodatage", "reference",
@@ -187,6 +215,12 @@ function doPost(e) {
   var secret = secretAttendu();
   if (!secret || donnees._secret !== secret) {
     return reponse(false, "Acces refuse.");
+  }
+
+  // Un paiement n'a ni prenom ni profil : il part dans son propre
+  // onglet, avec ses propres regles.
+  if (String(donnees.type || "") === "paiement") {
+    return enregistrerPaiement(donnees);
   }
 
   var manquant = champManquant(donnees);
@@ -295,6 +329,96 @@ function feuilleDonnees(nom) {
     }
   }
   return feuille;
+}
+
+/**
+ * L'onglet des paiements, quel que soit son nom.
+ *
+ * Tolerant comme pour la configuration : tout onglet dont le nom
+ * contient « paie » ou « paye » fait l'affaire — « paiements »,
+ * « payement », « Paiements 2026 ». Sans onglet, on le cree.
+ */
+function feuillePaiements() {
+  var classeur = SpreadsheetApp.getActiveSpreadsheet();
+  var feuilles = classeur.getSheets();
+  var feuille = null;
+  for (var i = 0; i < feuilles.length && !feuille; i++) {
+    var nom = normaliser(feuilles[i].getName());
+    if (nom.indexOf("paie") !== -1 || nom.indexOf("paye") !== -1) feuille = feuilles[i];
+  }
+  if (!feuille) feuille = classeur.insertSheet("paiements");
+
+  if (feuille.getLastRow() === 0) {
+    feuille.appendRow(COLONNES_PAIEMENT);
+    feuille.setFrozenRows(1);
+    return feuille;
+  }
+
+  // En-tete absent ou incomplet : on le pose, sans toucher aux lignes
+  // deja presentes. Contrairement aux inscriptions, un onglet de
+  // paiements cree a la main ne doit pas bloquer un encaissement.
+  var entete = feuille
+    .getRange(1, 1, 1, COLONNES_PAIEMENT.length)
+    .getValues()[0]
+    .map(function (v) { return String(v).trim(); });
+  var pareil = true;
+  for (var c = 0; c < COLONNES_PAIEMENT.length; c++) {
+    if (entete[c] !== COLONNES_PAIEMENT[c]) pareil = false;
+  }
+  if (!pareil && feuille.getLastRow() <= 1) {
+    feuille.getRange(1, 1, 1, COLONNES_PAIEMENT.length).setValues([COLONNES_PAIEMENT]);
+    feuille.setFrozenRows(1);
+  }
+  return feuille;
+}
+
+/**
+ * Ecrit un paiement, ou met a jour celui qui porte deja ce jeton.
+ *
+ * Le jeton vient du prestataire et identifie l'operation : c'est lui
+ * qui evite les doublons quand le webhook et le retour de la personne
+ * arrivent tous les deux.
+ */
+function enregistrerPaiement(donnees) {
+  var jeton = nettoyer(donnees.token);
+  if (!jeton) return reponse(false, "Paiement sans jeton.");
+
+  var verrou = LockService.getScriptLock();
+  try {
+    verrou.waitLock(30000);
+  } catch (err) {
+    return reponse(false, "Serveur occupe, reessaie dans un instant.");
+  }
+
+  try {
+    var feuille = feuillePaiements();
+    var ligne = COLONNES_PAIEMENT.map(function (cle) {
+      if (cle === "horodatage") return new Date();
+      return enTexte(donnees[cle]);
+    });
+
+    var colJeton = COLONNES_PAIEMENT.indexOf("token") + 1;
+    var derniere = feuille.getLastRow();
+    var numero = 0;
+    if (derniere > 1) {
+      var jetons = feuille.getRange(2, colJeton, derniere - 1, 1).getValues();
+      for (var i = jetons.length - 1; i >= 0 && !numero; i--) {
+        if (String(jetons[i][0]) === jeton) numero = i + 2;
+      }
+    }
+
+    if (numero) {
+      feuille.getRange(numero, 1, 1, COLONNES_PAIEMENT.length).setValues([ligne]);
+      return reponse(true, "Paiement mis a jour.", jeton);
+    }
+    feuille.appendRow(ligne);
+    return reponse(true, "Paiement enregistre.", jeton);
+  } catch (err) {
+    console.error(err);
+    return reponse(false, "Erreur interne : " + (err && err.message ? err.message : err));
+  } finally {
+    verrou.releaseLock();
+  }
 }
 
 function referenceDejaAttribuee(feuille, idEnvoi) {

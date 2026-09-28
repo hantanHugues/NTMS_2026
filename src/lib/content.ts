@@ -2,6 +2,7 @@ import {
   CheckCircle2,
   ClipboardList,
   Compass,
+  CreditCard,
   GraduationCap,
   MessageCircle,
   Plane,
@@ -35,6 +36,14 @@ export const event = {
   // a l'ecran de cloture. NEXT_PUBLIC_FIN_INSCRIPTIONS permet de
   // fermer plus tot, sans toucher au compte a rebours.
   finInscriptions:
+    process.env.NEXT_PUBLIC_FIN_INSCRIPTIONS ??
+    process.env.NEXT_PUBLIC_DATE_NTMS ??
+    "2026-11-18T09:00:00+01:00",
+  // Fin des PAIEMENTS, la seconde date. Entre les deux, le formulaire
+  // est clos mais on peut encore regler sa place ; apres, plus rien.
+  // Par defaut la meme date que la cloture des inscriptions.
+  finPaiements:
+    process.env.NEXT_PUBLIC_FIN_PAIEMENTS ??
     process.env.NEXT_PUBLIC_FIN_INSCRIPTIONS ??
     process.env.NEXT_PUBLIC_DATE_NTMS ??
     "2026-11-18T09:00:00+01:00",
@@ -346,6 +355,54 @@ export const cta = {
 };
 
 /**
+ * CE QUI CHANGE UNE FOIS LES INSCRIPTIONS CLOSES.
+ *
+ * Même carte, même mise en page : seuls le titre, l'accroche, les
+ * trois étapes et le bouton changent. Le bouton de l'en-tête et celui
+ * du hero suivent, pour que le site ne promette pas une inscription
+ * gratuite quand il ne reste que le paiement.
+ */
+export const ctaPaiement = {
+  ...cta,
+  title: "Règle ta place au",
+  lead: "Les inscriptions sont closes. Il reste le paiement, qui réserve ta place pour l'édition.",
+  steps: [
+    {
+      icon: CreditCard,
+      title: "Tu règles ta place",
+      body: "Par MTN MoMo, Moov Money, Orange Money ou Wave, en une fois.",
+    },
+    {
+      icon: CheckCircle2,
+      title: "Tu reçois ta confirmation",
+      body: "Par mail, dès que l'opérateur confirme le paiement.",
+    },
+    {
+      icon: MessageCircle,
+      title: "Tu rejoins le groupe WhatsApp",
+      body: "Programme, informations pratiques et départ pour Lokossa.",
+    },
+  ],
+  button: "Payer ma place",
+  href: "/paiement",
+};
+
+export const ctaClos = {
+  ...cta,
+  title: "L'édition est complète au",
+  lead: "Les inscriptions et les paiements sont clos. Écris-nous si tu penses que c'est une erreur, ou suis le compte pour la prochaine édition.",
+  button: "Écrire au comité",
+  href: "#contact",
+};
+
+/** Le bouton court, celui de l'en-tête et du hero, selon la phase. */
+export const boutonPhase = {
+  inscription: { label: "Je m'inscris", href: "#inscription" },
+  paiement: { label: "Je paie ma place", href: "/paiement" },
+  clos: { label: "Contactez-nous", href: "#contact" },
+};
+
+/**
  * SECTION 6 — Contact.
  *
  * Placee APRES l'appel a l'action et AVANT la section Instagram, le
@@ -436,6 +493,54 @@ export const contact = {
 export const legal = {
   label: "CGU et politique de confidentialité",
   url: "https://docs.google.com/document/d/e/2PACX-1vTcsG7n-UwpY3Isj276rO8qLYK4cETA7T0Tke2V0m8yN1-wGsUF3Mh4GWeNDo9uYpSUSK3TByhPVYuI/pub",
+};
+
+/**
+ * Le paiement de la place. Prototype de billetterie : un seul tarif,
+ * reglé en une fois, par mobile money.
+ */
+export const paiement = {
+  titre: "Réserve ta place",
+  chapo:
+    "Le formulaire d'inscription est clos. Il reste le paiement, qui garde ta place pour l'édition.",
+  libelleNom: "Nom et prénom",
+  libelleEmail: "Adresse e-mail",
+  libelleNumero: "Numéro mobile money",
+  aideNumero:
+    "Le numéro qui sera débité : MTN MoMo, Moov Money, Orange Money ou Wave.",
+  bouton: "Payer ma place",
+  enCours: "Ouverture du paiement…",
+  // Ce qu'on affiche à chaque issue possible, au retour de Money Fusion.
+  retour: {
+    paid: {
+      titre: "Ton paiement est confirmé.",
+      texte:
+        "Ta place est réservée. Une confirmation t'est envoyée par mail ; garde la référence ci-dessous en cas de question.",
+    },
+    pending: {
+      titre: "Ton paiement est en cours.",
+      texte:
+        "L'opérateur n'a pas encore confirmé. Valide la demande sur ton téléphone si ce n'est pas fait, puis recharge cette page dans une minute.",
+    },
+    failure: {
+      titre: "Le paiement n'est pas passé.",
+      texte:
+        "Le plus souvent, c'est un solde insuffisant sur le compte mobile money, ou une demande refusée sur le téléphone. Rien n'a été débité : tu peux réessayer.",
+    },
+    "no paid": {
+      titre: "Le paiement n'a pas été effectué.",
+      texte:
+        "La demande a été abandonnée avant d'être confirmée. Rien n'a été débité, et ta place n'est pas encore réservée.",
+    },
+    inconnu: {
+      titre: "Nous ne retrouvons pas ce paiement.",
+      texte:
+        "L'adresse ne porte aucune référence de paiement valable. Si tu as été débité, écris-nous : on retrouve l'opération.",
+    },
+  },
+  closTitre: "Les paiements sont clos.",
+  closTexte:
+    "La billetterie de cette édition est fermée. Écris-nous si tu penses que c'est une erreur.",
 };
 
 export const inscription = {
