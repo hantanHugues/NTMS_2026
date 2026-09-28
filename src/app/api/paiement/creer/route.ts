@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { creerPaiement, montantInscription } from "@/lib/paiement";
+import { billetterieEnService, creerPaiement, montantInscription } from "@/lib/paiement";
 import { emailValide } from "@/lib/inscription-regles";
 import { paiementsOuverts } from "@/lib/inscription-regles";
 
@@ -23,6 +23,11 @@ function refus(message: string, code = 400) {
 }
 
 export async function POST(request: Request) {
+  // Même silence que les pages : tant que la billetterie n'est pas
+  // réglée, cette adresse n'existe pas.
+  if (!billetterieEnService()) {
+    return NextResponse.json({ ok: false, message: "Introuvable." }, { status: 404 });
+  }
   if (!paiementsOuverts()) {
     return refus("Les paiements sont clos.", 403);
   }

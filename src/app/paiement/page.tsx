@@ -5,8 +5,10 @@ import { ArrowLeft } from "lucide-react";
 
 import { FormulairePaiement } from "@/components/site/formulaire-paiement";
 import { event, paiement } from "@/lib/content";
+import { notFound } from "next/navigation";
+
 import { paiementsOuverts } from "@/lib/inscription-regles";
-import { montantInscription } from "@/lib/paiement";
+import { billetterieEnService, montantInscription } from "@/lib/paiement";
 
 export const metadata: Metadata = {
   title: `${paiement.titre} — ${event.name}`,
@@ -24,6 +26,7 @@ export const dynamic = "force-dynamic";
  * affiché plus bas.
  */
 export default function PagePaiement() {
+  if (!billetterieEnService()) notFound();
   const ouverts = paiementsOuverts();
 
   // Le montant manquant est une erreur de réglage, pas une erreur du

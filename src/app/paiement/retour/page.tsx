@@ -11,7 +11,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { contact, event, paiement } from "@/lib/content";
 import { enregistrerPaiement } from "@/lib/classeur";
-import { verifierPaiement, type StatutPaiement } from "@/lib/paiement";
+import { notFound } from "next/navigation";
+
+import {
+  billetterieEnService,
+  verifierPaiement,
+  type StatutPaiement,
+} from "@/lib/paiement";
 
 export const metadata: Metadata = {
   title: `Paiement — ${event.name}`,
@@ -50,6 +56,8 @@ export default async function PageRetourPaiement({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  if (!billetterieEnService()) notFound();
+
   const params = await searchParams;
   const lire = (cle: string) => {
     const v = params[cle];

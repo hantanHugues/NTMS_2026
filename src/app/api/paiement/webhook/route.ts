@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { enregistrerPaiement } from "@/lib/classeur";
-import { verifierPaiement } from "@/lib/paiement";
+import { billetterieEnService, verifierPaiement } from "@/lib/paiement";
 
 /**
  * Ce que Money Fusion appelle quand un paiement change d'état.
@@ -20,6 +20,10 @@ import { verifierPaiement } from "@/lib/paiement";
  * cloche part dans les journaux.
  */
 export async function POST(request: Request) {
+  if (!billetterieEnService()) {
+    return NextResponse.json({ ok: false }, { status: 404 });
+  }
+
   let charge: Record<string, unknown> = {};
   try {
     charge = (await request.json()) as Record<string, unknown>;
@@ -68,5 +72,8 @@ export async function POST(request: Request) {
 
 /** Ouvrir l'adresse dans un navigateur doit montrer que le service vit. */
 export function GET() {
+  if (!billetterieEnService()) {
+    return NextResponse.json({ ok: false }, { status: 404 });
+  }
   return NextResponse.json({ ok: true, message: "Webhook paiement NTMS 2026 actif." });
 }

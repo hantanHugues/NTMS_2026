@@ -38,6 +38,18 @@ export type Paiement = {
 
 const VERIFICATION = "https://pay.moneyfusion.net/paiementNotif/";
 
+/**
+ * Vrai quand la billetterie est en service.
+ *
+ * Tant que l'adresse d'API n'est pas renseignée, les pages de paiement
+ * répondent 404 : une fonctionnalité a moitié née ne doit pas être
+ * visible de qui tape l'adresse a la main. Elle réapparaît d'elle-même
+ * le jour où la variable est posée chez l'hébergeur.
+ */
+export function billetterieEnService() {
+  return Boolean(process.env.MONEYFUSION_API_URL);
+}
+
 /** L'adresse de notre application chez Money Fusion. */
 function adresseApi() {
   const url = process.env.MONEYFUSION_API_URL;
