@@ -131,7 +131,11 @@ export async function creerPaiement(client: {
         (charge?.message ?? `réponse ${reponse.status}`)
     );
   }
-  return { token: charge.token, url: charge.url };
+  // L'adresse rendue porte le nom de la boutique en clair, espaces
+  // compris : « …/250/site d'inscription pour la conferences… ». Tous
+  // les navigateurs ne les encodent pas de la meme facon, et une
+  // redirection vers une adresse a espaces casse chez certains.
+  return { token: charge.token, url: charge.url.replace(/ /g, "%20") };
 }
 
 type ReponseVerification = {
