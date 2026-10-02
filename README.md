@@ -130,7 +130,6 @@ commité) ; en ligne, le tableau de bord de l'hébergeur.
 | `INSCRIPTION_SECRET` | secret partagé avec la propriété `SECRET` du script |
 | `INSCRIPTION_MIROIR_URL` | facultatif — copie vers un second classeur |
 | `INSCRIPTION_MIROIR_SECRET` | facultatif — si ce classeur a son propre secret |
-| `INSCRIPTION_DEBUG` | `1` fait remonter le motif exact d'un refus. **Jamais en production.** |
 
 **Paiement**
 
