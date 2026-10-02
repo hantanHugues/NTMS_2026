@@ -2,12 +2,7 @@ import { NextResponse } from "next/server";
 
 import { enregistrerPaiement } from "@/lib/classeur";
 import { emailValide, paiementsOuverts } from "@/lib/inscription-regles";
-import {
-  FORMATS,
-  MOYENS,
-  POIDS_MAX,
-  billetterieEnService,
-} from "@/lib/paiement";
+import { FORMATS, POIDS_MAX, billetterieEnService } from "@/lib/paiement";
 
 /**
  * Reçoit une déclaration de paiement et la dépose dans le classeur.
@@ -52,7 +47,6 @@ export async function POST(request: Request) {
   const email = lire("email").toLowerCase();
   const numero = lire("numero");
   const moyen = lire("moyen");
-  const transaction = lire("numero_transaction");
   const montant = lire("montant_declare");
   const date = lire("date_paiement");
   const remarque = lire("remarque", MAX_REMARQUE);
@@ -61,7 +55,9 @@ export async function POST(request: Request) {
   if (!emailValide(email)) return refus("Cette adresse e-mail n'est pas valide.");
   if (numero.replace(/\D/g, "").length < 8)
     return refus("Ce numéro de téléphone n'est pas valide.");
-  if (!(MOYENS as readonly string[]).includes(moyen))
+  // « Autre » ouvre un champ libre : on accepte donc tout moyen écrit
+  // à la main, du moment qu'il ressemble à quelque chose.
+  if (moyen.length < 2 || moyen.length > 60)
     return refus("Choisis le moyen que tu as utilisé.");
   if (!montant.replace(/\D/g, ""))
     return refus("Indique le montant que tu as payé.");
@@ -90,7 +86,6 @@ export async function POST(request: Request) {
       email,
       numero,
       moyen,
-      numero_transaction: transaction,
       montant_declare: montant,
       date_paiement: date,
       remarque,

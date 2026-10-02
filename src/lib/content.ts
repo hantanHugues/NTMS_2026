@@ -511,9 +511,7 @@ export const paiement = {
   libelleEmail: "Adresse e-mail",
   libelleNumero: "Numéro de téléphone",
   libelleMoyen: "Comment as-tu payé ?",
-  libelleTransaction: "Numéro de la transaction",
-  aideTransaction:
-    "L'identifiant du SMS de confirmation de ton opérateur. Laisse vide si tu as payé en espèces.",
+  libelleMoyenAutre: "Précise le moyen",
   libelleMontant: "Montant payé",
   libelleDate: "Date du paiement",
   libellePreuve: "Preuve du paiement",
@@ -528,6 +526,10 @@ export const paiement = {
   succesTitre: "Ta déclaration est enregistrée.",
   succesTexte:
     "Le comité vérifie ta preuve, puis t'envoie ton reçu par mail. Rien d'autre à faire de ton côté.",
+  // Le groupe des personnes qui ont paye, different de celui des
+  // inscrits. Tant que le lien n'est pas renseigne, rien ne s'affiche.
+  succesBouton: "Rejoindre le groupe des participants",
+  lienWhatsApp: process.env.NEXT_PUBLIC_LIEN_WHATSAPP_PAIEMENT ?? "",
   // Ce que la personne doit comprendre AVANT de remplir.
   rappel:
     "Le site n'encaisse pas de paiement : tu paies par ton moyen habituel, puis tu le déclares ici.",

@@ -14,15 +14,23 @@
  * côté serveur pour que la page l'affiche.
  */
 
-/** Les moyens proposés, dans l'ordre d'usage au Bénin. */
+/**
+ * Les moyens proposés, dans l'ordre d'usage au Bénin.
+ *
+ * « Autre » ferme la liste : on ne peut pas tout prévoir, et mieux
+ * vaut une déclaration avec un moyen écrit à la main qu'une personne
+ * bloquée devant une liste qui ne la concerne pas.
+ */
 export const MOYENS = [
   "MTN MoMo",
   "Moov Money",
   "Celtiis Cash",
-  "Wave",
-  "Virement bancaire",
   "Espèces",
+  "Autre",
 ] as const;
+
+/** Le dernier choix ouvre un champ libre. */
+export const MOYEN_AUTRE = "Autre";
 
 /** Taille maximale d'une preuve, une fois encodée pour l'envoi. */
 export const POIDS_MAX = 3 * 1024 * 1024;

@@ -1,12 +1,22 @@
 "use client";
 
 import * as React from "react";
-import { Check, FileCheck2, Info, Paperclip, Send, X } from "lucide-react";
+import Image from "next/image";
+import {
+  CalendarDays,
+  Check,
+  FileCheck2,
+  Info,
+  MessageCircle,
+  Paperclip,
+  Send,
+  X,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { ListeDeroulante } from "@/components/site/listes-inscription";
-import { emailValide } from "@/lib/inscription-regles";
-import { FORMATS, MOYENS, POIDS_MAX } from "@/lib/paiement";
+import { ChoixPays, ListeDeroulante } from "@/components/site/listes-inscription";
+import { emailValide, numeroInternational } from "@/lib/inscription-regles";
+import { FORMATS, MOYENS, MOYEN_AUTRE, POIDS_MAX } from "@/lib/paiement";
 import { paiement } from "@/lib/content";
 import { cn } from "@/lib/utils";
 
@@ -81,12 +91,60 @@ function encoder(blob: Blob): Promise<string> {
 const poidsLisible = (o: number) =>
   o > 1_000_000 ? (o / 1_000_000).toFixed(1) + " Mo" : Math.round(o / 1000) + " Ko";
 
+/**
+ * L'écran d'attente, le même que pour l'inscription : la preuve doit
+ * monter, puis traverser Google. Sans rien à l'écran, on croit que le
+ * bouton n'a pas pris.
+ */
+function EcranEnvoi() {
+  const etapes = [
+    "On envoie ta preuve…",
+    "On enregistre ta déclaration…",
+    "Encore quelques secondes…",
+  ];
+  const [i, setI] = React.useState(0);
+  React.useEffect(() => {
+    const minuteur = window.setInterval(
+      () => setI((n) => Math.min(n + 1, etapes.length - 1)),
+      3500
+    );
+    return () => window.clearInterval(minuteur);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-background/95 px-8 text-center backdrop-blur-sm"
+    >
+      <span className="relative flex size-20 items-center justify-center">
+        <span className="absolute inset-0 animate-spin rounded-full border-4 border-primary/15 border-t-primary" />
+        <Image
+          src="/ntms-logo.png"
+          alt=""
+          width={1699}
+          height={1267}
+          className="h-8 w-auto"
+        />
+      </span>
+      <p className="font-heading text-lg font-extrabold tracking-tight text-balance">
+        {etapes[i]}
+      </p>
+      <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
+        Ne ferme pas cette page : ta déclaration part en ce moment.
+      </p>
+    </div>
+  );
+}
+
 export function FormulairePaiement({ montant }: { montant: number }) {
   const [nom, setNom] = React.useState("");
   const [email, setEmail] = React.useState("");
+  const [paysTel, setPaysTel] = React.useState("BJ");
   const [numero, setNumero] = React.useState("");
   const [moyen, setMoyen] = React.useState("");
-  const [transaction, setTransaction] = React.useState("");
+  const [moyenAutre, setMoyenAutre] = React.useState("");
   const [montantPaye, setMontantPaye] = React.useState(String(montant));
   const [date, setDate] = React.useState("");
   const [remarque, setRemarque] = React.useState("");
@@ -95,12 +153,12 @@ export function FormulairePaiement({ montant }: { montant: number }) {
   const [allege, setAllege] = React.useState<number | null>(null);
   const [erreur, setErreur] = React.useState<string | null>(null);
   const [envoi, setEnvoi] = React.useState(false);
-  // La reference du paiement existe cote classeur ; elle ne sert a
-  // rien a la personne, qui n'a aucun usage de ce numero.
   const [envoye, setEnvoye] = React.useState(false);
 
   const champFichier = React.useRef<HTMLInputElement>(null);
   const montantLisible = new Intl.NumberFormat("fr-FR").format(montant);
+  // Un paiement ne peut pas avoir eu lieu demain.
+  const aujourdhui = new Date().toISOString().slice(0, 10);
 
   async function choisirFichier(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -124,9 +182,11 @@ export function FormulairePaiement({ montant }: { montant: number }) {
     if (nom.trim().length < 2) return setErreur("Ton nom, s'il te plaît.");
     if (!emailValide(email.trim()))
       return setErreur("Cette adresse e-mail n'est pas valide.");
-    if (numero.replace(/\D/g, "").length < 8)
-      return setErreur("Ce numéro de téléphone n'est pas valide.");
+    const international = numeroInternational(paysTel, numero);
+    if (!international) return setErreur("Ce numéro de téléphone n'est pas valide.");
     if (!moyen) return setErreur("Choisis le moyen que tu as utilisé.");
+    if (moyen === MOYEN_AUTRE && moyenAutre.trim().length < 2)
+      return setErreur("Précise le moyen que tu as utilisé.");
     if (!montantPaye.replace(/\D/g, ""))
       return setErreur("Indique le montant que tu as payé.");
     if (!date) return setErreur("Indique la date du paiement.");
@@ -149,9 +209,8 @@ export function FormulairePaiement({ montant }: { montant: number }) {
         body: JSON.stringify({
           nom,
           email,
-          numero,
-          moyen,
-          numero_transaction: transaction,
+          numero: international,
+          moyen: moyen === MOYEN_AUTRE ? moyenAutre : moyen,
           montant_declare: montantPaye,
           date_paiement: date,
           remarque,
@@ -182,12 +241,32 @@ export function FormulairePaiement({ montant }: { montant: number }) {
         <p className="mx-auto mt-5 max-w-md leading-relaxed text-pretty text-muted-foreground">
           {paiement.succesTexte}
         </p>
+
+        {paiement.lienWhatsApp ? (
+          <Button
+            nativeButton={false}
+            size="lg"
+            className="mt-8 h-13 rounded-full px-8 text-base has-data-[icon=inline-start]:pl-7 max-sm:h-14 max-sm:w-full max-sm:px-6"
+            render={
+              <a
+                href={paiement.lienWhatsApp}
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+            }
+          >
+            <MessageCircle data-icon="inline-start" />
+            {paiement.succesBouton}
+          </Button>
+        ) : null}
       </div>
     );
   }
 
   return (
     <div className="rounded-3xl bg-card p-6 shadow-md sm:p-10 max-sm:rounded-none max-sm:bg-background max-sm:p-5 max-sm:shadow-none">
+      {envoi ? <EcranEnvoi /> : null}
+
       <p className="flex items-start gap-2.5 rounded-2xl bg-accent/60 px-4 py-3 text-sm leading-relaxed text-accent-foreground">
         <Info className="mt-0.5 size-4 shrink-0" />
         {paiement.rappel}
@@ -227,20 +306,30 @@ export function FormulairePaiement({ montant }: { montant: number }) {
           </label>
         </div>
 
+        {/* Même composition que l'inscription : l'indicatif à gauche,
+            le numéro à droite, et la validation par pays. */}
         <div>
-          <label className="block">
-            <Libelle obligatoire>{paiement.libelleNumero}</Libelle>
+          <Libelle obligatoire id="q-tel-paiement">
+            {paiement.libelleNumero}
+          </Libelle>
+          <div className="grid grid-cols-[6.5rem_1fr] gap-2 sm:grid-cols-[15rem_1fr]">
+            <ChoixPays
+              etiquette="q-tel-paiement"
+              valeur={paysTel}
+              onChange={setPaysTel}
+            />
             <input
               className={CHAMP}
               type="tel"
               inputMode="tel"
               value={numero}
-              onChange={(e) => setNumero(e.target.value.replace(/[^\d\s+]/g, ""))}
-              autoComplete="tel"
+              onChange={(e) => setNumero(e.target.value.replace(/[^\d\s().-]/g, ""))}
+              autoComplete="tel-national"
               maxLength={20}
+              aria-labelledby="q-tel-paiement"
               placeholder="01 97 12 34 56"
             />
-          </label>
+          </div>
         </div>
 
         <div>
@@ -256,6 +345,19 @@ export function FormulairePaiement({ montant }: { montant: number }) {
           />
         </div>
 
+        {moyen === MOYEN_AUTRE ? (
+          <label>
+            <Libelle obligatoire>{paiement.libelleMoyenAutre}</Libelle>
+            <input
+              className={CHAMP}
+              value={moyenAutre}
+              onChange={(e) => setMoyenAutre(e.target.value)}
+              maxLength={60}
+              placeholder="Western Union, dépôt en agence…"
+            />
+          </label>
+        ) : null}
+
         <div className="grid gap-6 sm:grid-cols-2">
           <label>
             <Libelle obligatoire>{paiement.libelleMontant}</Libelle>
@@ -267,32 +369,32 @@ export function FormulairePaiement({ montant }: { montant: number }) {
               maxLength={12}
             />
           </label>
-          <label>
+
+          {/* La date : le champ natif porte sa propre icône, grise et
+              minuscule. On la rend invisible mais cliquable sur toute
+              la zone de droite, et on pose la nôtre par-dessus. */}
+          <label className="relative block">
             <Libelle obligatoire>{paiement.libelleDate}</Libelle>
             <input
-              className={CHAMP}
+              className={cn(
+                CHAMP,
+                "pr-12 [&::-webkit-calendar-picker-indicator]:absolute",
+                "[&::-webkit-calendar-picker-indicator]:inset-y-0 [&::-webkit-calendar-picker-indicator]:right-0",
+                "[&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-12",
+                "[&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+              )}
               type="date"
               value={date}
+              max={aujourdhui}
               onChange={(e) => setDate(e.target.value)}
+            />
+            <CalendarDays
+              aria-hidden
+              className="pointer-events-none absolute right-4 bottom-3.5 size-5 text-primary max-sm:bottom-4"
             />
           </label>
         </div>
 
-        <label>
-          <Libelle>{paiement.libelleTransaction}</Libelle>
-          <input
-            className={CHAMP}
-            value={transaction}
-            onChange={(e) => setTransaction(e.target.value)}
-            maxLength={60}
-          />
-          <span className="mt-2 block text-xs text-muted-foreground">
-            {paiement.aideTransaction}
-          </span>
-        </label>
-
-        {/* La preuve. Le champ natif est masqué : son libellé par défaut
-            n'est pas traduisible et change d'un navigateur à l'autre. */}
         <div>
           <Libelle obligatoire>{paiement.libellePreuve}</Libelle>
           <input
