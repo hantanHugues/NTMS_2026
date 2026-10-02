@@ -510,9 +510,6 @@ export const paiement = {
   libelleNom: "Nom et prénom",
   libelleEmail: "Adresse e-mail",
   libelleNumero: "Numéro de téléphone",
-  libelleReference: "Référence d'inscription",
-  aideReference:
-    "Elle figure dans ton mail de confirmation d'inscription. Elle nous permet de relier ton paiement à ton dossier.",
   libelleMoyen: "Comment as-tu payé ?",
   libelleTransaction: "Numéro de la transaction",
   aideTransaction:
@@ -530,7 +527,7 @@ export const paiement = {
   // Une fois la declaration deposee.
   succesTitre: "Ta déclaration est enregistrée.",
   succesTexte:
-    "Le comité vérifie ta preuve, puis t'envoie ton reçu par mail. Garde la référence ci-dessous : elle identifie ta déclaration.",
+    "Le comité vérifie ta preuve, puis t'envoie ton reçu par mail. Rien d'autre à faire de ton côté.",
   // Ce que la personne doit comprendre AVANT de remplir.
   rappel:
     "Le site n'encaisse pas de paiement : tu paies par ton moyen habituel, puis tu le déclares ici.",

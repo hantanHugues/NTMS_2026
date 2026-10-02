@@ -85,7 +85,6 @@ export function FormulairePaiement({ montant }: { montant: number }) {
   const [nom, setNom] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [numero, setNumero] = React.useState("");
-  const [reference, setReference] = React.useState("");
   const [moyen, setMoyen] = React.useState("");
   const [transaction, setTransaction] = React.useState("");
   const [montantPaye, setMontantPaye] = React.useState(String(montant));
@@ -96,7 +95,9 @@ export function FormulairePaiement({ montant }: { montant: number }) {
   const [allege, setAllege] = React.useState<number | null>(null);
   const [erreur, setErreur] = React.useState<string | null>(null);
   const [envoi, setEnvoi] = React.useState(false);
-  const [refPaiement, setRefPaiement] = React.useState<string | null>(null);
+  // La reference du paiement existe cote classeur ; elle ne sert a
+  // rien a la personne, qui n'a aucun usage de ce numero.
+  const [envoye, setEnvoye] = React.useState(false);
 
   const champFichier = React.useRef<HTMLInputElement>(null);
   const montantLisible = new Intl.NumberFormat("fr-FR").format(montant);
@@ -149,7 +150,6 @@ export function FormulairePaiement({ montant }: { montant: number }) {
           nom,
           email,
           numero,
-          reference_inscription: reference,
           moyen,
           numero_transaction: transaction,
           montant_declare: montantPaye,
@@ -160,13 +160,9 @@ export function FormulairePaiement({ montant }: { montant: number }) {
           preuve_nom: fichier.name,
         }),
       });
-      const resultat = (await reponse.json()) as {
-        ok?: boolean;
-        reference?: string;
-        message?: string;
-      };
+      const resultat = (await reponse.json()) as { ok?: boolean; message?: string };
       if (!resultat.ok) throw new Error(resultat.message || "Envoi impossible.");
-      setRefPaiement(resultat.reference ?? "");
+      setEnvoye(true);
     } catch (err) {
       setErreur(err instanceof Error ? err.message : "Envoi impossible. Réessaie.");
     } finally {
@@ -174,7 +170,7 @@ export function FormulairePaiement({ montant }: { montant: number }) {
     }
   }
 
-  if (refPaiement !== null) {
+  if (envoye) {
     return (
       <div className="rounded-3xl bg-card p-8 text-center shadow-md sm:p-12 max-sm:rounded-none max-sm:bg-background max-sm:px-5 max-sm:shadow-none">
         <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
@@ -183,11 +179,6 @@ export function FormulairePaiement({ montant }: { montant: number }) {
         <h2 className="font-heading mt-6 text-2xl font-extrabold tracking-tight text-balance sm:text-3xl">
           {paiement.succesTitre}
         </h2>
-        {refPaiement ? (
-          <p className="mt-3 text-sm text-muted-foreground">
-            Référence : <strong className="text-foreground">{refPaiement}</strong>
-          </p>
-        ) : null}
         <p className="mx-auto mt-5 max-w-md leading-relaxed text-pretty text-muted-foreground">
           {paiement.succesTexte}
         </p>
@@ -236,8 +227,8 @@ export function FormulairePaiement({ montant }: { montant: number }) {
           </label>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2">
-          <label>
+        <div>
+          <label className="block">
             <Libelle obligatoire>{paiement.libelleNumero}</Libelle>
             <input
               className={CHAMP}
@@ -249,19 +240,6 @@ export function FormulairePaiement({ montant }: { montant: number }) {
               maxLength={20}
               placeholder="01 97 12 34 56"
             />
-          </label>
-          <label>
-            <Libelle>{paiement.libelleReference}</Libelle>
-            <input
-              className={CHAMP}
-              value={reference}
-              onChange={(e) => setReference(e.target.value.toUpperCase())}
-              maxLength={20}
-              placeholder="NTMS-0042"
-            />
-            <span className="mt-2 block text-xs text-muted-foreground">
-              {paiement.aideReference}
-            </span>
           </label>
         </div>
 

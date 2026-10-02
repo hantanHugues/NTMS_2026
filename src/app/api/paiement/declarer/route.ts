@@ -51,7 +51,6 @@ export async function POST(request: Request) {
   const nom = lire("nom");
   const email = lire("email").toLowerCase();
   const numero = lire("numero");
-  const reference = lire("reference_inscription").toUpperCase();
   const moyen = lire("moyen");
   const transaction = lire("numero_transaction");
   const montant = lire("montant_declare");
@@ -90,7 +89,6 @@ export async function POST(request: Request) {
       nom,
       email,
       numero,
-      reference_inscription: reference,
       moyen,
       numero_transaction: transaction,
       montant_declare: montant,
