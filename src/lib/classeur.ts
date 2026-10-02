@@ -55,12 +55,11 @@ export async function appelerScript(
 }
 
 /**
- * Écrit un paiement dans l'onglet des paiements du classeur.
+ * Dépose une déclaration de paiement dans le classeur.
  *
- * Appelée depuis le webhook ET depuis la page de retour : Money Fusion
- * peut prévenir avant ou après le retour de la personne, et l'un des
- * deux chemins peut échouer. Le script reconnaît le jeton et met la
- * ligne à jour au lieu d'en créer une seconde.
+ * La preuve voyage encodée dans le même envoi : Apps Script ne sait
+ * pas lire un formulaire multipart, et c'est lui qui range le fichier
+ * dans Drive, sous le compte propriétaire du classeur.
  */
 export async function enregistrerPaiement(champs: Record<string, string>) {
   const url = process.env.INSCRIPTION_WEBAPP_URL;

@@ -47,7 +47,7 @@ git push origin main && git push imbenin main
 - `src/lib/content.ts` — **tout le texte du site**, un seul fichier
 - `src/lib/inscription-regles.ts` — règles de validation **partagées**
   entre le navigateur et le serveur, et les trois phases de l'édition
-- `src/lib/paiement.ts` — le dialogue avec Money Fusion
+- `src/lib/paiement.ts` — montant attendu, moyens et formats acceptes
 - `src/lib/classeur.ts` — l'appel au script Google
 - `src/components/site/` — une section = un composant
 - `sheets/` — les scripts Apps Script et le mode d'emploi du classeur
@@ -84,24 +84,38 @@ jointes, envoi manuel, quotas — est dans [`sheets/README.md`](sheets/README.md
 
 ## La chaîne de paiement
 
+Le site **n'encaisse pas**. Aucun agrégateur disponible ne couvre tous
+les opérateurs du pays — MTN et Celtiis manquaient à l'appel — alors
+la personne paie par son moyen habituel, puis **déclare** son paiement
+avec une preuve.
+
 ```
-/paiement → /api/paiement/creer → Money Fusion → page de paiement
-                                              ├→ /paiement/retour
-                                              └→ /api/paiement/webhook
-                                                 puis onglet « payement »
+/paiement → /api/paiement/declarer → Apps Script
+                                     ├→ preuve rangee dans Drive
+                                     └→ ligne « a_verifier » dans l'onglet des paiements
+
+              le comite verifie, ecrit « valide » dans la colonne statut
+                                     ↓
+              menu NTMS → « Envoyer les reçus aux paiements validés »
 ```
 
-Trois règles à ne pas défaire :
+Trois points à ne pas défaire :
 
-1. **Le montant est lu côté serveur**, jamais envoyé par le formulaire.
-2. **L'état d'un paiement est redemandé à Money Fusion** après coup. Ce
-   qui revient par le navigateur ne prouve rien.
-3. **La ligne est écrite par deux chemins** (le retour et le webhook),
-   le script reconnaissant le jeton pour ne pas la doubler.
+1. **Le site ne valide rien.** Il vérifie la forme — champs, format et
+   poids du fichier — et transmet. La décision appartient au comité.
+2. **La preuve est allégée dans le navigateur** avant l'envoi : une
+   capture d'écran de téléphone pèse souvent 4 Mo, et la limite d'un
+   envoi est de 3 Mo. Les PDF partent tels quels.
+3. **Les reçus partent par lot**, aux paiements marqués `valide` qui
+   n'en ont pas encore reçu. Pas de sélection ligne par ligne : on
+   trie par la colonne.
 
-Tant que `MONEYFUSION_API_URL` n'est pas renseignée, ces pages
-répondent **404** : la billetterie n'existe pas tant qu'elle n'est pas
-réglée.
+Le contenu du reçu se règle dans l'onglet **`config recu`** du
+classeur, avec les mêmes libellés que les autres mails. Variables
+disponibles : `{{nom}}`, `{{reference}}`, `{{montant}}`, `{{moyen}}`.
+
+Tant que `MONTANT_INSCRIPTION` n'est pas renseignée, `/paiement`
+répond **404**.
 
 ## Variables d'environnement
 
@@ -122,9 +136,7 @@ commité) ; en ligne, le tableau de bord de l'hébergeur.
 
 | variable | rôle |
 |---|---|
-| `MONEYFUSION_API_URL` | adresse d'API de l'application Money Fusion. Elle **tient lieu de clé** : elle ne doit jamais atteindre le navigateur. |
-| `MONTANT_INSCRIPTION` | montant en FCFA. Minimum imposé par Money Fusion : **plus de 200 F**. |
-| `NEXT_PUBLIC_SITE_URL` | adresse publique du site, pour bâtir le retour et le webhook |
+| `MONTANT_INSCRIPTION` | montant attendu, en FCFA, affiché sur la page. Vide = `/paiement` répond 404. |
 
 **Dates et liens** (insérés au moment du build : redéployer après
 changement)
@@ -147,6 +159,5 @@ closes. Elle répond **404 hors développement**.
 ## À finir
 
 - confirmer le nombre de places (180 est une valeur provisoire)
-- trancher la liste d'adresses IP de Money Fusion : Vercel n'a pas
-  d'IP fixe, et l'appel sort d'une adresse différente à chaque fois
+- remplir l'onglet `config recu` du classeur (objet et corps du reçu)
 - supprimer les lignes de test des classeurs avant l'ouverture

@@ -496,48 +496,44 @@ export const legal = {
 };
 
 /**
- * Le paiement de la place. Prototype de billetterie : un seul tarif,
- * reglé en une fois, par mobile money.
+ * Le paiement de la place.
+ *
+ * Le site n'encaisse pas : la personne paie par ses propres moyens,
+ * puis DECLARE son paiement ici avec une preuve. Le comite verifie et
+ * envoie un recu. C'est un choix assume — aucun agregateur disponible
+ * ne couvre tous les operateurs du pays.
  */
 export const paiement = {
-  titre: "Réserve ta place",
+  titre: "Déclare ton paiement",
   chapo:
-    "Le formulaire d'inscription est clos. Il reste le paiement, qui garde ta place pour l'édition.",
+    "Tu as réglé ta place ? Dis-le-nous ici avec une preuve. Le comité vérifie, puis t'envoie ton reçu par mail.",
   libelleNom: "Nom et prénom",
   libelleEmail: "Adresse e-mail",
-  libelleNumero: "Numéro mobile money",
-  aideNumero:
-    "Le numéro qui sera débité : MTN MoMo, Moov Money, Orange Money ou Wave.",
-  bouton: "Payer ma place",
-  enCours: "Ouverture du paiement…",
-  // Ce qu'on affiche à chaque issue possible, au retour de Money Fusion.
-  retour: {
-    paid: {
-      titre: "Ton paiement est confirmé.",
-      texte:
-        "Ta place est réservée. Une confirmation t'est envoyée par mail ; garde la référence ci-dessous en cas de question.",
-    },
-    pending: {
-      titre: "Ton paiement est en cours.",
-      texte:
-        "L'opérateur n'a pas encore confirmé. Valide la demande sur ton téléphone si ce n'est pas fait, puis recharge cette page dans une minute.",
-    },
-    failure: {
-      titre: "Le paiement n'est pas passé.",
-      texte:
-        "Le plus souvent, c'est un solde insuffisant sur le compte mobile money, ou une demande refusée sur le téléphone. Rien n'a été débité : tu peux réessayer.",
-    },
-    "no paid": {
-      titre: "Le paiement n'a pas été effectué.",
-      texte:
-        "La demande a été abandonnée avant d'être confirmée. Rien n'a été débité, et ta place n'est pas encore réservée.",
-    },
-    inconnu: {
-      titre: "Nous ne retrouvons pas ce paiement.",
-      texte:
-        "L'adresse ne porte aucune référence de paiement valable. Si tu as été débité, écris-nous : on retrouve l'opération.",
-    },
-  },
+  libelleNumero: "Numéro de téléphone",
+  libelleReference: "Référence d'inscription",
+  aideReference:
+    "Elle figure dans ton mail de confirmation d'inscription. Elle nous permet de relier ton paiement à ton dossier.",
+  libelleMoyen: "Comment as-tu payé ?",
+  libelleTransaction: "Numéro de la transaction",
+  aideTransaction:
+    "L'identifiant du SMS de confirmation de ton opérateur. Laisse vide si tu as payé en espèces.",
+  libelleMontant: "Montant payé",
+  libelleDate: "Date du paiement",
+  libellePreuve: "Preuve du paiement",
+  aidePreuve:
+    "Capture du SMS, du reçu de l'opérateur, ou photo du bordereau. Image ou PDF, 3 Mo au maximum.",
+  libelleRemarque: "Remarque",
+  aideRemarque: "Facultatif — tout ce qui nous aiderait à retrouver ton paiement.",
+  bouton: "Envoyer ma déclaration",
+  enCours: "Envoi en cours…",
+  allege: "Image allégée pour l'envoi.",
+  // Une fois la declaration deposee.
+  succesTitre: "Ta déclaration est enregistrée.",
+  succesTexte:
+    "Le comité vérifie ta preuve, puis t'envoie ton reçu par mail. Garde la référence ci-dessous : elle identifie ta déclaration.",
+  // Ce que la personne doit comprendre AVANT de remplir.
+  rappel:
+    "Le site n'encaisse pas de paiement : tu paies par ton moyen habituel, puis tu le déclares ici.",
   closTitre: "Les paiements sont clos.",
   closTexte:
     "La billetterie de cette édition est fermée. Écris-nous si tu penses que c'est une erreur.",

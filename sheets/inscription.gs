@@ -102,6 +102,15 @@ var MODELES = {
     date: "mail_manuel_le",
     erreur: "erreur_mail_manuel",
   },
+  // Le recu de paiement. Il vit dans l'onglet des PAIEMENTS, pas dans
+  // celui des inscrits : ses colonnes de suivi sont celles-la.
+  recu: {
+    nom: "recu",
+    onglets: ["config recu"],
+    etat: "recu_envoye",
+    date: "recu_envoye_le",
+    erreur: "erreur_recu",
+  },
 };
 var ONGLET_PAR_DEFAUT = "inscriptions";
 
@@ -155,30 +164,43 @@ var COLONNES = [
 /**
  * L'ONGLET DES PAIEMENTS.
  *
- * Alimenté par le site quand quelqu'un règle sa place par mobile money
- * (Money Fusion). Deux chemins y écrivent — le webhook du prestataire
- * et le retour de la personne sur le site — et le meme paiement change
- * d'etat en cours de route (`pending` puis `paid`). La ligne est donc
- * reconnue par son JETON et mise a jour, jamais dupliquee.
+ * Le site n'encaisse pas : la personne paie par ses propres moyens
+ * (MTN MoMo, Moov, Celtiis, Wave, especes…), puis DECLARE son paiement
+ * sur le site en joignant une preuve. Le comite verifie, puis envoie
+ * un recu.
  *
- *   statut   paid, pending, failure (fonds insuffisants, refus), no paid
- *   source   webhook ou retour, selon qui a ecrit en dernier
+ *   statut        a_verifier (depose par le site), valide, refuse
+ *                 — c'est le COMITE qui ecrit valide ou refuse
+ *   preuve        lien vers le fichier depose, range dans un dossier
+ *                 Drive cree par le script
+ *   recu_envoye   oui / non, rempli par le menu NTMS
+ *
+ * La colonne « statut » est la seule que le comite modifie a la main.
  */
 var COLONNES_PAIEMENT = [
   "horodatage",
-  "token",
+  "reference_paiement",
   "statut",
-  "montant",
-  "frais",
+  "nom",
+  "email",
+  "numero",
+  "reference_inscription",
   "moyen",
   "numero_transaction",
-  "nom",
-  "numero",
-  "email",
-  "reference_inscription",
-  "evenement",
-  "source",
+  "montant_declare",
+  "date_paiement",
+  "preuve",
+  "remarque",
+  "recu_envoye",
+  "recu_envoye_le",
+  "erreur_recu",
 ];
+
+/** Etat d'une declaration au depot : rien n'est verifie encore. */
+var STATUT_DEPOT = "a_verifier";
+
+/** Ce que le comite ecrit pour declencher l'envoi du recu. */
+var STATUT_VALIDE = "valide";
 
 /** Colonnes remplies par le script, jamais par le formulaire. */
 var COLONNES_SCRIPT = [
@@ -296,6 +318,12 @@ function enTexte(v) {
   return t === "" ? "" : "'" + t;
 }
 
+/** Comme `nettoyer`, mais sans couper : un fichier encode est long. */
+function nettoyerLong(v) {
+  if (v === undefined || v === null) return "";
+  return String(v).trim();
+}
+
 function champManquant(d) {
   for (var i = 0; i < REQUIS.length; i++) {
     if (nettoyer(d[REQUIS[i]]) === "") return REQUIS[i];
@@ -346,7 +374,9 @@ function feuillePaiements() {
     var nom = normaliser(feuilles[i].getName());
     if (nom.indexOf("paie") !== -1 || nom.indexOf("paye") !== -1) feuille = feuilles[i];
   }
-  if (!feuille) feuille = classeur.insertSheet("paiements");
+  // Aucun onglet de paiements : on le cree, sous le nom que le
+  // classeur de test utilise deja.
+  if (!feuille) feuille = classeur.insertSheet("payement");
 
   if (feuille.getLastRow() === 0) {
     feuille.appendRow(COLONNES_PAIEMENT);
@@ -373,16 +403,71 @@ function feuillePaiements() {
 }
 
 /**
- * Ecrit un paiement, ou met a jour celui qui porte deja ce jeton.
+ * Le dossier Drive des preuves de paiement.
  *
- * Le jeton vient du prestataire et identifie l'operation : c'est lui
- * qui evite les doublons quand le webhook et le retour de la personne
- * arrivent tous les deux.
+ * Cree a la premiere declaration et retenu dans les proprietes du
+ * script : aucun identifiant a renseigner a la main. Il appartient au
+ * compte qui a deploye le script, donc au proprietaire du classeur.
+ */
+function dossierPreuves() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty("dossier_preuves");
+  if (id) {
+    try {
+      return DriveApp.getFolderById(id);
+    } catch (err) {
+      // Dossier supprime ou hors de portee : on en refait un.
+    }
+  }
+  var dossier = DriveApp.createFolder("NTMS 2026 — preuves de paiement");
+  props.setProperty("dossier_preuves", dossier.getId());
+  return dossier;
+}
+
+/**
+ * Range la preuve envoyee par le site et renvoie son adresse.
+ *
+ * Le fichier arrive encode en base64 — c'est la seule facon de le
+ * faire passer dans du JSON. Un envoi sans fichier n'est pas une
+ * erreur : la declaration vaut d'etre enregistree, le comite reclamera
+ * la preuve.
+ */
+function rangerPreuve(donnees, reference) {
+  var contenu = nettoyerLong(donnees.preuve_base64);
+  if (!contenu) return "";
+  try {
+    var type = nettoyer(donnees.preuve_type) || "application/octet-stream";
+    var nom = nettoyer(donnees.preuve_nom) || "preuve";
+    var blob = Utilities.newBlob(
+      Utilities.base64Decode(contenu),
+      type,
+      reference + " — " + nom
+    );
+    var fichier = dossierPreuves().createFile(blob);
+    return fichier.getUrl();
+  } catch (err) {
+    return "Preuve non enregistree : " + (err && err.message ? err.message : err);
+  }
+}
+
+/** PAY-0001, PAY-0002… Compteur a part, comme pour les inscriptions. */
+function prochaineReferencePaiement() {
+  var props = PropertiesService.getScriptProperties();
+  var n = parseInt(props.getProperty("dernier_paiement") || "", 10);
+  if (isNaN(n)) n = 0;
+  n += 1;
+  props.setProperty("dernier_paiement", String(n));
+  return "PAY-" + ("0000" + n).slice(-4);
+}
+
+/**
+ * Enregistre une declaration de paiement.
+ *
+ * Elle arrive en « a_verifier » : le site ne decide de rien, il ne
+ * fait que transmettre ce que la personne declare, preuve comprise.
+ * C'est le comite qui tranche ensuite dans la colonne « statut ».
  */
 function enregistrerPaiement(donnees) {
-  var jeton = nettoyer(donnees.token);
-  if (!jeton) return reponse(false, "Paiement sans jeton.");
-
   var verrou = LockService.getScriptLock();
   try {
     verrou.waitLock(30000);
@@ -392,27 +477,20 @@ function enregistrerPaiement(donnees) {
 
   try {
     var feuille = feuillePaiements();
+    var reference = prochaineReferencePaiement();
+    var preuve = rangerPreuve(donnees, reference);
+
     var ligne = COLONNES_PAIEMENT.map(function (cle) {
       if (cle === "horodatage") return new Date();
+      if (cle === "reference_paiement") return reference;
+      if (cle === "statut") return STATUT_DEPOT;
+      if (cle === "preuve") return preuve;
+      // Colonnes tenues par le comite ou par le menu.
+      if (cle === "recu_envoye" || cle === "recu_envoye_le" || cle === "erreur_recu") return "";
       return enTexte(donnees[cle]);
     });
-
-    var colJeton = COLONNES_PAIEMENT.indexOf("token") + 1;
-    var derniere = feuille.getLastRow();
-    var numero = 0;
-    if (derniere > 1) {
-      var jetons = feuille.getRange(2, colJeton, derniere - 1, 1).getValues();
-      for (var i = jetons.length - 1; i >= 0 && !numero; i--) {
-        if (String(jetons[i][0]) === jeton) numero = i + 2;
-      }
-    }
-
-    if (numero) {
-      feuille.getRange(numero, 1, 1, COLONNES_PAIEMENT.length).setValues([ligne]);
-      return reponse(true, "Paiement mis a jour.", jeton);
-    }
     feuille.appendRow(ligne);
-    return reponse(true, "Paiement enregistre.", jeton);
+    return reponse(true, "Declaration enregistree.", reference);
   } catch (err) {
     console.error(err);
     return reponse(false, "Erreur interne : " + (err && err.message ? err.message : err));
@@ -487,17 +565,20 @@ function normaliser(libelle) {
  * l'automatique. Un nom mal ecrit a deja coute une serie de mails.
  */
 function lireConfig(modele) {
-  var manuel = (modele || MODELES.auto) === MODELES.manuel;
+  var vise = (modele || MODELES.auto).nom;
   var feuille = null;
   var feuilles = SpreadsheetApp.getActiveSpreadsheet().getSheets();
   for (var f = 0; f < feuilles.length; f++) {
     var nom = normaliser(feuilles[f].getName());
     if (nom.indexOf("config") === -1) continue;
-    var estManuel = nom.indexOf("manuel") !== -1 || nom.indexOf("manual") !== -1;
-    if (estManuel !== manuel) continue;
+    // Trois familles, reconnues au mot-cle present dans le nom.
+    var famille = "automatique";
+    if (nom.indexOf("manuel") !== -1 || nom.indexOf("manual") !== -1) famille = "manuel";
+    else if (nom.indexOf("recu") !== -1 || nom.indexOf("recu") !== -1) famille = "recu";
+    if (famille !== vise) continue;
     // A defaut, le premier trouve ; mais « auto » l'emporte pour le
     // modele automatique si plusieurs onglets correspondent.
-    if (!feuille || (!manuel && nom.indexOf("auto") !== -1)) feuille = feuilles[f];
+    if (!feuille || (vise === "automatique" && nom.indexOf("auto") !== -1)) feuille = feuilles[f];
   }
   var conf = {};
   if (!feuille) return conf;
@@ -939,8 +1020,11 @@ function onOpen() {
     .addSeparator()
     .addItem("Envoyer le mail automatique à ceux qui ne l'ont pas reçu", "envoyerLesMailsEnAttente")
     .addSeparator()
+    .addItem("Envoyer les reçus aux paiements validés", "envoyerLesRecus")
+    .addSeparator()
     .addItem("M'envoyer un aperçu du mail automatique", "testerLeMail")
     .addItem("M'envoyer un aperçu du mail manuel", "testerLeMailManuel")
+    .addItem("M'envoyer un aperçu du reçu", "testerLeRecu")
     .addToUi();
 }
 
@@ -960,6 +1044,113 @@ function envoyerManuelNonRecus() {
 function envoyerLesMailsEnAttente() {
   demanderPuisEnvoyer(MODELES.auto, nonRecu,
     "Envoyer le mail automatique aux inscrits qui ne l'ont pas reçu ?");
+}
+
+/**
+ * LES RECUS DE PAIEMENT.
+ *
+ * Le site ne decide de rien : il depose des declarations en
+ * « a_verifier ». Le comite regarde la preuve, puis ecrit « valide »
+ * dans la colonne « statut ». Ce bouton envoie alors le recu a TOUS
+ * les paiements valides qui n'en ont pas encore recu — pas de
+ * selection ligne par ligne, on trie par la colonne.
+ *
+ * Le contenu du recu se regle dans l'onglet « config recu », avec les
+ * memes libelles que les autres mails. Variables disponibles :
+ * {{nom}}, {{reference}} (celle du paiement), {{montant}}, {{moyen}}.
+ */
+function envoyerLesRecus() {
+  var ui = SpreadsheetApp.getUi();
+  var conf = lireConfig(MODELES.recu);
+  if (!conf.objet || !conf.corps) {
+    ui.alert("L'onglet « config recu » est incomplet : remplis Objet et Corps.");
+    return;
+  }
+
+  var feuille = feuillePaiements();
+  var valeurs = feuille.getDataRange().getValues();
+  var i0 = {};
+  COLONNES_PAIEMENT.forEach(function (cle, i) {
+    i0[cle] = i;
+  });
+
+  var aEnvoyer = 0;
+  for (var i = 1; i < valeurs.length; i++) {
+    if (String(valeurs[i][i0.statut]).trim().toLowerCase() !== STATUT_VALIDE) continue;
+    if (String(valeurs[i][i0.recu_envoye]).trim().toLowerCase() === "oui") continue;
+    if (!valeurs[i][i0.email]) continue;
+    aEnvoyer++;
+  }
+  if (!aEnvoyer) {
+    ui.alert("Aucun paiement valide en attente de recu.");
+    return;
+  }
+  if (
+    ui.alert(
+      "Recus de paiement",
+      "Envoyer le recu a " + aEnvoyer + " paiement(s) valide(s) ?",
+      ui.ButtonSet.OK_CANCEL
+    ) !== ui.Button.OK
+  ) {
+    return;
+  }
+
+  var verrou = LockService.getScriptLock();
+  verrou.waitLock(30000);
+  var envoyes = 0;
+  var echecs = 0;
+  var quota = false;
+  try {
+    for (var j = 1; j < valeurs.length; j++) {
+      if (String(valeurs[j][i0.statut]).trim().toLowerCase() !== STATUT_VALIDE) continue;
+      if (String(valeurs[j][i0.recu_envoye]).trim().toLowerCase() === "oui") continue;
+      var destinataire = String(valeurs[j][i0.email]).trim();
+      if (!destinataire) continue;
+
+      var variables = {
+        nom: String(valeurs[j][i0.nom]),
+        prenom: String(valeurs[j][i0.nom]),
+        reference: String(valeurs[j][i0.reference_paiement]),
+        montant: String(valeurs[j][i0.montant_declare]),
+        moyen: String(valeurs[j][i0.moyen]),
+      };
+
+      if (quota || MailApp.getRemainingDailyQuota() < 1) {
+        quota = true;
+        continue;
+      }
+      try {
+        MailApp.sendEmail({
+          to: destinataire,
+          subject: remplirTexte(conf.objet, variables),
+          body: construireTexte(conf, variables),
+          htmlBody: construireHtml(conf, variables),
+          name: conf.nomexpediteur || "AIESEC in Benin",
+        });
+        feuille.getRange(j + 1, i0.recu_envoye + 1).setValue("oui");
+        feuille.getRange(j + 1, i0.recu_envoye_le + 1).setValue(new Date());
+        feuille.getRange(j + 1, i0.erreur_recu + 1).setValue("");
+        envoyes++;
+      } catch (err) {
+        feuille.getRange(j + 1, i0.recu_envoye + 1).setValue("non");
+        feuille.getRange(j + 1, i0.erreur_recu + 1).setValue(String(err));
+        echecs++;
+      }
+    }
+  } finally {
+    verrou.releaseLock();
+  }
+
+  ui.alert(
+    "Recus envoyes : " + envoyes +
+    (echecs ? "\nEchecs : " + echecs + " (voir la colonne d'erreur)" : "") +
+    (quota ? "\n\nQuota du jour atteint : relance demain, les recus deja envoyes ne repartiront pas." : "")
+  );
+}
+
+/** Le meme apercu que pour les autres mails, pour le recu. */
+function testerLeRecu() {
+  testerLeMail(MODELES.recu);
 }
 
 /** Tout ce qui n'est pas « oui » reste a envoyer. */
@@ -1048,7 +1239,11 @@ function testerLeMail(modele) {
   if (!conf.objet || !conf.corps) {
     throw new Error("Onglet de réglage du mail " + modele.nom + " incomplet : Objet et Corps sont obligatoires.");
   }
-  var valeurs = { prenom: "Test", nom: "Utilisateur", lc: "Cotonou", role: "TM", reference: "NTMS-TEST" };
+  var valeurs = {
+    prenom: "Test", nom: "Utilisateur", lc: "Cotonou", role: "TM",
+    reference: modele === MODELES.recu ? "PAY-TEST" : "NTMS-TEST",
+    montant: "15000", moyen: "MTN MoMo",
+  };
   var compte = Session.getEffectiveUser().getEmail();
   var soucis = [];
   var options = {
