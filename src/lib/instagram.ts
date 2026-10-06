@@ -63,23 +63,23 @@ export type InstagramPost =
  * l'adresse courte qui s'integre.
  */
 const REPLI: { url: string; image?: string }[] = [
+  // LA GRILLE NE MONTRE QUE LE NTMS. Le compte publie aussi pour
+  // EST'Co, une autre conference : ses publications n'ont rien a faire
+  // sur ce site. Releve du 6 octobre 2026, de la plus recente a la
+  // plus ancienne.
+  { url: "https://www.instagram.com/p/Ddrv5m1DWPx/" },
   { url: "https://www.instagram.com/p/DdoJX3sDf1j/" },
   // UNE VIDEO. Son integration officielle pose une grande fleche
   // blanche et « Regarder sur Instagram » par-dessus l'image, et cette
-  // surcouche est DANS l'iframe d'Instagram : aucun style de notre cote
-  // ne peut l'atteindre. On garde donc l'image de couverture, relevee
-  // sur cette page d'integration et servie depuis `public` (les
-  // adresses du CDN d'Instagram sont signees et expirent), avec notre
-  // propre repere de lecture, discret.
+  // surcouche est DANS l'iframe d'Instagram : aucun style de notre
+  // cote ne peut l'atteindre. On garde donc l'image de couverture,
+  // servie depuis `public`, avec notre propre repere de lecture.
   {
     url: "https://www.instagram.com/reel/DdSHHoRTcet/",
     image: "/instagram/reel-DdSHHoRTcet.jpg",
   },
-  { url: "https://www.instagram.com/p/DbdUnstNia8/" },
-  { url: "https://www.instagram.com/p/DbbmNHktX6K/" },
-  { url: "https://www.instagram.com/p/DbYuQCYtnyl/" },
-  { url: "https://www.instagram.com/p/DbTlKdaDblq/" },
 ];
+
 
 type MediaGraph = {
   permalink?: string;

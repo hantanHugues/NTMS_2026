@@ -150,8 +150,13 @@ export async function InstagramSection() {
   const { instagram } = await contenu();
   const posts = await getInstagramPosts(6);
 
-  // Trois colonnes de deux, celle du milieu à contresens.
-  const colonnes = [posts.slice(0, 2), posts.slice(2, 4), posts.slice(4, 6)];
+  // Trois colonnes, celle du milieu à contresens. La répartition se
+  // fait en quinconce plutôt que par tranches : avec trois
+  // publications, chaque colonne en reçoit une au lieu d'en laisser
+  // une vide.
+  const colonnes = [0, 1, 2].map((rang) =>
+    posts.filter((_, i) => i % 3 === rang)
+  );
 
   return (
     <section

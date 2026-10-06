@@ -72,12 +72,16 @@ export function SelecteurLangue({ className }: { className?: string }) {
       aria-label={`Switch to ${LIBELLES[autre]}`}
       title={LIBELLES[autre]}
       className={cn(
-        "flex h-10 items-center gap-1.5 rounded-full border border-border px-3 text-sm font-medium",
-        "transition-colors hover:border-primary/40 disabled:opacity-60",
+        // `currentColor` plutôt qu'une couleur fixe : sur l'en-tête
+        // sombre du hero comme sur le fond clair d'une page, le bouton
+        // prend la couleur du texte voisin et reste lisible.
+        "flex h-10 items-center gap-1.5 rounded-full border border-current/25 px-3",
+        "text-sm font-medium text-foreground transition-colors",
+        "hover:border-current/50 hover:bg-current/10 disabled:opacity-60",
         className
       )}
     >
-      <Languages className="size-4 text-primary" />
+      <Languages className="size-4 opacity-80" />
       <span className="tabular-nums uppercase">{autre}</span>
     </button>
   );

@@ -7,7 +7,6 @@ import {
   EcranSucces,
   SecoursContact,
 } from "@/components/site/formulaire-inscription";
-import { InscriptionsCloses } from "@/components/site/inscriptions-closes";
 import { VIDE } from "@/lib/inscription-regles";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +35,7 @@ const ECRANS: { cle: Ecran; libelle: string }[] = [
   { cle: "closes", libelle: "Inscriptions closes" },
 ];
 
-export function EcransEssai() {
+export function EcransEssai({ closes }: { closes: React.ReactNode }) {
   const [ecran, setEcran] = React.useState<Ecran>("attente");
 
   return (
@@ -85,7 +84,7 @@ export function EcransEssai() {
         {ecran === "succes" ? <EcranSucces /> : null}
         {/* Ce que verra un visiteur qui clique « Je m'inscris » une fois
             le compte à rebours à zéro. */}
-        {ecran === "closes" ? <InscriptionsCloses /> : null}
+        {ecran === "closes" ? closes : null}
       </div>
     </div>
   );

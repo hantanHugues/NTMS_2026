@@ -114,7 +114,7 @@ export function SiteHeader({ phase = "inscription" }: { phase?: Phase }) {
         </nav>
 
         <div className="flex items-center gap-2">
-          <SelecteurLangue className="max-md:hidden" />
+          <SelecteurLangue className="max-sm:h-9 max-sm:px-2.5" />
           <Button
             nativeButton={false}
             className="hidden h-10 rounded-full px-5 md:inline-flex"
@@ -165,7 +165,6 @@ export function SiteHeader({ phase = "inscription" }: { phase?: Phase }) {
                 >
                   {bouton.label}
                 </SheetClose>
-                <SelecteurLangue className="mt-2 w-fit" />
               </nav>
             </SheetContent>
           </Sheet>
