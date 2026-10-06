@@ -536,6 +536,34 @@ export const paiement = {
     "Capture du SMS, du reçu de l'opérateur, ou photo du bordereau. Image ou PDF, 3 Mo au maximum.",
   libelleRemarque: "Remarque",
   aideRemarque: "Facultatif — tout ce qui nous aiderait à retrouver ton paiement.",
+  placeholderEmail: "prenom.nom@exemple.bj",
+  indicationMoyen: "Choisis ton moyen de paiement",
+  placeholderMoyenAutre: "Western Union, dépôt en agence…",
+  placeholderRemarque: "Facultatif",
+  boutonPreuve: "Choisir une image ou un PDF",
+  // Reglage manquant cote site, pas erreur du visiteur.
+  montantManquant:
+    "La billetterie n'est pas encore réglée : le montant n'a pas été renseigné. Écris-nous à",
+  retirerPreuve: "Retirer la preuve",
+  // Les trois listes de la date, et les mois au complet.
+  dateJour: "Jour",
+  dateMois: "Mois",
+  dateAnnee: "Année",
+  mois: [
+    "janvier", "février", "mars", "avril", "mai", "juin",
+    "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+  ],
+  // Ce qui defile pendant que la preuve monte.
+  attente: [
+    "On envoie ta preuve…",
+    "On enregistre ta déclaration…",
+    "Encore quelques secondes…",
+  ],
+  attenteNote: "Ne ferme pas cette page : ta déclaration part en ce moment.",
+  // La langue sert aussi a formater le montant et le poids du fichier.
+  locale: "fr-FR",
+  uniteMega: "Mo",
+  uniteKilo: "Ko",
   bouton: "Envoyer ma déclaration",
   enCours: "Envoi en cours…",
   allege: "Image allégée pour l'envoi.",
@@ -550,6 +578,25 @@ export const paiement = {
   // Ce que la personne doit comprendre AVANT de remplir.
   rappel:
     "Le site n'encaisse pas de paiement : tu paies par ton moyen habituel, puis tu le déclares ici.",
+  /** Les refus de la declaration, partages par le site et le serveur. */
+  erreurs: {
+    clos: "Les paiements sont clos.",
+    illisible: "Requête illisible.",
+    preuveIllisible: "Ce fichier n'a pas pu être lu. Choisis-en un autre.",
+    nom: "Ton nom, s'il te plaît.",
+    email: "Cette adresse e-mail n'est pas valide.",
+    numero: "Ce numéro de téléphone n'est pas valide.",
+    moyen: "Choisis le moyen que tu as utilisé.",
+    moyenAutre: "Précise le moyen que tu as utilisé.",
+    montant: "Indique le montant que tu as payé.",
+    date: "Indique la date du paiement.",
+    dateFuture: "Cette date est dans le futur : vérifie le jour du paiement.",
+    preuveFormat: "La preuve doit être une image (JPG, PNG, WEBP) ou un PDF.",
+    preuveLourde: "La preuve est trop lourde : 3 Mo au maximum.",
+    preuveManquante: "Joins une preuve de ton paiement.",
+    enregistrement: "Ta déclaration n'a pas pu être enregistrée. Réessaie.",
+    indisponible: "Le service est momentanément indisponible. Réessaie.",
+  },
   closTitre: "Les paiements sont clos.",
   closTexte:
     "La billetterie de cette édition est fermée. Écris-nous si tu penses que c'est une erreur.",
@@ -673,6 +720,12 @@ export const inscription = {
       "L'ajout au groupe WhatsApp est nécessaire pour suivre l'édition.",
     consentementPolitique:
       "Il faut accepter les CGU et la politique de confidentialité pour t'inscrire.",
+    // Les refus que seul le serveur peut prononcer.
+    service: "Le service d'inscription est indisponible. Écris-nous.",
+    illisible: "Requête illisible.",
+    closes: "Les inscriptions sont closes.",
+    enregistrement: "L'inscription n'a pas pu être enregistrée. Réessaie.",
+    indisponible: "Le service est momentanément indisponible. Réessaie.",
   },
   // Affiche a la place du formulaire une fois la date passee.
   closesTitre: "Les inscriptions sont closes.",

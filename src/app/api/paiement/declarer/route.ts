@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { enregistrerPaiement } from "@/lib/classeur";
+import { contenu as dictionnaire } from "@/lib/contenu";
 import { emailValide, paiementsOuverts } from "@/lib/inscription-regles";
 import { FORMATS, POIDS_MAX, billetterieEnService } from "@/lib/paiement";
 
@@ -24,20 +25,23 @@ function refus(message: string, code = 400) {
 }
 
 export async function POST(request: Request) {
+  // Les refus parlent la langue du visiteur, comme le formulaire.
+  const { paiement } = await dictionnaire();
+  const msg = paiement.erreurs;
   if (!billetterieEnService()) {
     return NextResponse.json({ ok: false, message: "Introuvable." }, { status: 404 });
   }
   if (!paiementsOuverts()) {
-    return refus("Les paiements sont clos.", 403);
+    return refus(msg.clos, 403);
   }
 
   let brut: unknown;
   try {
     brut = await request.json();
   } catch {
-    return refus("Requête illisible.");
+    return refus(msg.illisible);
   }
-  if (!brut || typeof brut !== "object") return refus("Requête illisible.");
+  if (!brut || typeof brut !== "object") return refus(msg.illisible);
   const entree = brut as Record<string, unknown>;
 
   const lire = (cle: string, max = MAX) =>
@@ -51,17 +55,17 @@ export async function POST(request: Request) {
   const date = lire("date_paiement");
   const remarque = lire("remarque", MAX_REMARQUE);
 
-  if (nom.length < 2) return refus("Ton nom, s'il te plaît.");
-  if (!emailValide(email)) return refus("Cette adresse e-mail n'est pas valide.");
+  if (nom.length < 2) return refus(msg.nom);
+  if (!emailValide(email)) return refus(msg.email);
   if (numero.replace(/\D/g, "").length < 8)
-    return refus("Ce numéro de téléphone n'est pas valide.");
+    return refus(msg.numero);
   // « Autre » ouvre un champ libre : on accepte donc tout moyen écrit
   // à la main, du moment qu'il ressemble à quelque chose.
   if (moyen.length < 2 || moyen.length > 60)
-    return refus("Choisis le moyen que tu as utilisé.");
+    return refus(msg.moyen);
   if (!montant.replace(/\D/g, ""))
-    return refus("Indique le montant que tu as payé.");
-  if (!date) return refus("Indique la date du paiement.");
+    return refus(msg.montant);
+  if (!date) return refus(msg.date);
 
   // La preuve : facultative à la forme, mais le comité la réclamera.
   const contenu = typeof entree.preuve_base64 === "string" ? entree.preuve_base64 : "";
@@ -70,14 +74,14 @@ export async function POST(request: Request) {
 
   if (contenu) {
     if (!FORMATS.includes(type)) {
-      return refus("La preuve doit être une image (JPG, PNG, WEBP) ou un PDF.");
+      return refus(msg.preuveFormat);
     }
     // Trois caractères encodés valent quatre octets transmis.
     if (contenu.length * 0.75 > POIDS_MAX) {
-      return refus("La preuve est trop lourde : 3 Mo au maximum.");
+      return refus(msg.preuveLourde);
     }
   } else {
-    return refus("Joins une preuve de ton paiement.");
+    return refus(msg.preuveManquante);
   }
 
   try {
@@ -95,11 +99,11 @@ export async function POST(request: Request) {
     });
     if (!resultat.ok) {
       console.error("Déclaration refusée par le classeur :", resultat.message);
-      return refus("Ta déclaration n'a pas pu être enregistrée. Réessaie.", 502);
+      return refus(msg.enregistrement, 502);
     }
     return NextResponse.json({ ok: true, reference: resultat.reference ?? "" });
   } catch (err) {
     console.error("Déclaration de paiement impossible :", err);
-    return refus("Le service est momentanément indisponible. Réessaie.", 504);
+    return refus(msg.indisponible, 504);
   }
 }

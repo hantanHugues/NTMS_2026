@@ -94,8 +94,7 @@ export default async function PagePaiement() {
             role="alert"
             className="mt-10 rounded-xl bg-accent px-4 py-3 text-sm text-accent-foreground max-sm:mx-5"
           >
-            La billetterie n&apos;est pas encore réglée : le montant n&apos;a pas
-            été renseigné. Écris-nous à {event.email}.
+            {paiement.montantManquant} {event.email}.
           </p>
         ) : null}
       </main>

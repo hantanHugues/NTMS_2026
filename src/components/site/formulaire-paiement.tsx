@@ -75,14 +75,14 @@ async function alleger(fichier: File): Promise<Blob> {
 }
 
 /** Le contenu d'un fichier, encodé pour voyager dans du JSON. */
-function encoder(blob: Blob): Promise<string> {
+function encoder(blob: Blob, erreur: string): Promise<string> {
   return new Promise((resoudre, rejeter) => {
     const lecteur = new FileReader();
     lecteur.onload = () => {
       const resultat = String(lecteur.result);
       resoudre(resultat.slice(resultat.indexOf(",") + 1));
     };
-    lecteur.onerror = () => rejeter(new Error("Fichier illisible."));
+    lecteur.onerror = () => rejeter(new Error(erreur));
     lecteur.readAsDataURL(blob);
   });
 }
@@ -96,11 +96,6 @@ function encoder(blob: Blob): Promise<string> {
  * même chose, dans notre langue et notre habillage, et donnent une
  * date impossible à saisir de travers.
  */
-const MOIS = [
-  "janvier", "février", "mars", "avril", "mai", "juin",
-  "juillet", "août", "septembre", "octobre", "novembre", "décembre",
-];
-
 function ChoixDate({
   valeur,
   onChange,
@@ -111,6 +106,7 @@ function ChoixDate({
   onChange: (v: string) => void;
   etiquette: string;
 }) {
+  const { paiement } = useContenu();
   const [annee, mois, jour] = valeur ? valeur.split("-") : ["", "", ""];
   const maintenant = new Date();
 
@@ -128,15 +124,15 @@ function ChoixDate({
     <div className="grid grid-cols-[1fr_1.4fr_1fr] gap-2">
       <ListeDeroulante
         etiquette={etiquette}
-        indication="Jour"
+        indication={paiement.dateJour}
         options={Array.from({ length: nbJours }, (_, i) => String(i + 1).padStart(2, "0"))}
         valeur={jour || ""}
         onChange={(j) => poser(j, mois, annee)}
       />
       <ListeDeroulante
         etiquette={etiquette}
-        indication="Mois"
-        options={MOIS.map((nom, i) => ({
+        indication={paiement.dateMois}
+        options={paiement.mois.map((nom, i) => ({
           valeur: String(i + 1).padStart(2, "0"),
           libelle: nom,
         }))}
@@ -145,7 +141,7 @@ function ChoixDate({
       />
       <ListeDeroulante
         etiquette={etiquette}
-        indication="Année"
+        indication={paiement.dateAnnee}
         options={annees}
         valeur={annee || ""}
         onChange={(a) => poser(jour, mois, a)}
@@ -154,8 +150,10 @@ function ChoixDate({
   );
 }
 
-const poidsLisible = (o: number) =>
-  o > 1_000_000 ? (o / 1_000_000).toFixed(1) + " Mo" : Math.round(o / 1000) + " Ko";
+const poidsLisible = (o: number, mega: string, kilo: string) =>
+  o > 1_000_000
+    ? (o / 1_000_000).toFixed(1) + " " + mega
+    : Math.round(o / 1000) + " " + kilo;
 
 /**
  * L'écran d'attente, le même que pour l'inscription : la preuve doit
@@ -163,11 +161,8 @@ const poidsLisible = (o: number) =>
  * bouton n'a pas pris.
  */
 function EcranEnvoi() {
-  const etapes = [
-    "On envoie ta preuve…",
-    "On enregistre ta déclaration…",
-    "Encore quelques secondes…",
-  ];
+  const { paiement } = useContenu();
+  const etapes = paiement.attente;
   const [i, setI] = React.useState(0);
   React.useEffect(() => {
     const minuteur = window.setInterval(
@@ -198,7 +193,7 @@ function EcranEnvoi() {
         {etapes[i]}
       </p>
       <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-        Ne ferme pas cette page : ta déclaration part en ce moment.
+        {paiement.attenteNote}
       </p>
     </div>
   );
@@ -206,6 +201,7 @@ function EcranEnvoi() {
 
 export function FormulairePaiement({ montant }: { montant: number }) {
   const { paiement } = useContenu();
+  const msg = paiement.erreurs;
   const [nom, setNom] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [paysTel, setPaysTel] = React.useState("BJ");
@@ -223,7 +219,7 @@ export function FormulairePaiement({ montant }: { montant: number }) {
   const [envoye, setEnvoye] = React.useState(false);
 
   const champFichier = React.useRef<HTMLInputElement>(null);
-  const montantLisible = new Intl.NumberFormat("fr-FR").format(montant);
+  const montantLisible = new Intl.NumberFormat(paiement.locale).format(montant);
   // Un paiement ne peut pas avoir eu lieu demain.
   const aujourdhui = new Date().toISOString().slice(0, 10);
 
@@ -233,7 +229,7 @@ export function FormulairePaiement({ montant }: { montant: number }) {
     if (!f) return setFichier(null);
     if (!FORMATS.includes(f.type)) {
       setFichier(null);
-      return setErreur("La preuve doit être une image (JPG, PNG, WEBP) ou un PDF.");
+      return setErreur(msg.preuveFormat);
     }
     setErreur(null);
     setFichier(f);
@@ -246,31 +242,29 @@ export function FormulairePaiement({ montant }: { montant: number }) {
   }
 
   async function envoyer() {
-    if (nom.trim().length < 2) return setErreur("Ton nom, s'il te plaît.");
+    if (nom.trim().length < 2) return setErreur(msg.nom);
     if (!emailValide(email.trim()))
-      return setErreur("Cette adresse e-mail n'est pas valide.");
+      return setErreur(msg.email);
     const international = numeroInternational(paysTel, numero);
-    if (!international) return setErreur("Ce numéro de téléphone n'est pas valide.");
-    if (!moyen) return setErreur("Choisis le moyen que tu as utilisé.");
+    if (!international) return setErreur(msg.numero);
+    if (!moyen) return setErreur(msg.moyen);
     if (moyen === MOYEN_AUTRE && moyenAutre.trim().length < 2)
-      return setErreur("Précise le moyen que tu as utilisé.");
+      return setErreur(msg.moyenAutre);
     if (!montantPaye.replace(/\D/g, ""))
-      return setErreur("Indique le montant que tu as payé.");
-    if (!date) return setErreur("Indique la date du paiement.");
+      return setErreur(msg.montant);
+    if (!date) return setErreur(msg.date);
     if (date > aujourdhui)
-      return setErreur("Cette date est dans le futur : vérifie le jour du paiement.");
-    if (!fichier) return setErreur("Joins une preuve de ton paiement.");
+      return setErreur(msg.dateFuture);
+    if (!fichier) return setErreur(msg.preuveManquante);
 
     setErreur(null);
     setEnvoi(true);
     try {
       const charge = await alleger(fichier);
       if (charge.size > POIDS_MAX) {
-        throw new Error(
-          `Cette preuve pèse ${poidsLisible(charge.size)} ; la limite est de 3 Mo.`
-        );
+        throw new Error(`${msg.preuveLourde} (${poidsLisible(charge.size, paiement.uniteMega, paiement.uniteKilo)})`);
       }
-      const contenu = await encoder(charge);
+      const contenu = await encoder(charge, msg.preuveIllisible);
 
       const reponse = await fetch("/api/paiement/declarer", {
         method: "POST",
@@ -289,10 +283,10 @@ export function FormulairePaiement({ montant }: { montant: number }) {
         }),
       });
       const resultat = (await reponse.json()) as { ok?: boolean; message?: string };
-      if (!resultat.ok) throw new Error(resultat.message || "Envoi impossible.");
+      if (!resultat.ok) throw new Error(resultat.message || msg.enregistrement);
       setEnvoye(true);
     } catch (err) {
-      setErreur(err instanceof Error ? err.message : "Envoi impossible. Réessaie.");
+      setErreur(err instanceof Error ? err.message : msg.enregistrement);
     } finally {
       setEnvoi(false);
     }
@@ -370,7 +364,7 @@ export function FormulairePaiement({ montant }: { montant: number }) {
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
               maxLength={120}
-              placeholder="prenom.nom@exemple.bj"
+              placeholder={paiement.placeholderEmail}
             />
           </label>
         </div>
@@ -410,7 +404,7 @@ export function FormulairePaiement({ montant }: { montant: number }) {
             options={MOYENS as readonly string[]}
             valeur={moyen}
             onChange={setMoyen}
-            indication="Choisis ton moyen de paiement"
+            indication={paiement.indicationMoyen}
           />
         </div>
 
@@ -422,7 +416,7 @@ export function FormulairePaiement({ montant }: { montant: number }) {
               value={moyenAutre}
               onChange={(e) => setMoyenAutre(e.target.value)}
               maxLength={60}
-              placeholder="Western Union, dépôt en agence…"
+              placeholder={paiement.placeholderMoyenAutre}
             />
           </label>
         ) : null}
@@ -468,13 +462,13 @@ export function FormulairePaiement({ montant }: { montant: number }) {
                   {fichier.name}
                 </span>
                 <span className="block text-xs text-muted-foreground">
-                  {poidsLisible(fichier.size)}
-                  {allege ? ` · ${paiement.allege} ${poidsLisible(allege)}` : null}
+                  {poidsLisible(fichier.size, paiement.uniteMega, paiement.uniteKilo)}
+                  {allege ? ` · ${paiement.allege} ${poidsLisible(allege, paiement.uniteMega, paiement.uniteKilo)}` : null}
                 </span>
               </span>
               <button
                 type="button"
-                aria-label="Retirer la preuve"
+                aria-label={paiement.retirerPreuve}
                 onClick={() => {
                   setFichier(null);
                   setAllege(null);
@@ -495,7 +489,7 @@ export function FormulairePaiement({ montant }: { montant: number }) {
               )}
             >
               <Paperclip className="size-4 text-primary" />
-              Choisir une image ou un PDF
+              {paiement.boutonPreuve}
             </button>
           )}
           <span className="mt-2 block text-xs leading-relaxed text-muted-foreground">
@@ -510,7 +504,7 @@ export function FormulairePaiement({ montant }: { montant: number }) {
             value={remarque}
             onChange={(e) => setRemarque(e.target.value)}
             maxLength={600}
-            placeholder="Facultatif"
+            placeholder={paiement.placeholderRemarque}
           />
           <span className="mt-2 block text-xs text-muted-foreground">
             {paiement.aideRemarque}
