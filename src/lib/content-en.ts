@@ -506,3 +506,35 @@ export const faq = [
 ];
 
 export const values = fr.values;
+
+export const affiche = {
+  ...fr.affiche,
+  titre: "Your “J'y serai” poster",
+  chapo:
+    "Your NTMS 2026 badge, ready to post. Add your photo, check the framing, download.",
+  libellePrenom: "First name",
+  libelleNom: "Last name",
+  libelleRole: "Role",
+  libelleAffiliation: "Committee or entity",
+  placeholderRole: "TM, LCVP, TL…",
+  placeholderAffiliation: "LC Cotonou",
+  aideRole:
+    "Leave both fields empty if you are not an AIESECer: the badge reads perfectly well without that line.",
+  boutonPhoto: "Choose your photo",
+  aidePhoto: "A well-lit portrait, face in the middle, works best.",
+  zoom: "Zoom",
+  horizontal: "Left / right",
+  vertical: "Up / down",
+  boutonTelecharger: "Download the poster",
+  boutonPartager: "Share",
+  textePartage: "I'll be there! NTMS 2026, 18–22 November in Lokossa.",
+  format: "1080 × 1350 px, portrait",
+  chargement: "Preparing your poster…",
+  apercuAlt: "Preview of your poster",
+  photoPrivee:
+    "Your photo stays on your phone: it is never sent to the site.",
+  erreurPreparation: "The poster could not be prepared. Reload the page.",
+  erreurPhoto: "This image could not be read. Try a JPG or PNG photo.",
+  erreurImage: "The image could not be produced. Try again.",
+  depuisInscription: "Create your “J'y serai” poster",
+};

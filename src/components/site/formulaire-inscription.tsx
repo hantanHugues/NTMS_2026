@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
+  BadgeCheck,
   Check,
   Copy,
   Home,
@@ -16,6 +17,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { useContenu } from "@/components/site/langue";
+import { CLE_AFFICHE, type DonneesAffiche } from "@/components/site/affiche";
 import {
   ChoixPays,
   ListeDeroulante,
@@ -359,7 +361,7 @@ export function SecoursContact({
  * qui vient de disparaître.
  */
 export function EcranSucces() {
-  const { event, inscription } = useContenu();
+  const { affiche, event, inscription } = useContenu();
   const f = inscription.formulaire;
   const titre = React.useRef<HTMLHeadingElement>(null);
   React.useEffect(() => {
@@ -426,6 +428,17 @@ export function EcranSucces() {
           {f.lienParMail}
         </p>
       )}
+
+      <Button
+        nativeButton={false}
+        size="lg"
+        variant="outline"
+        className="mx-auto mt-4 h-13 rounded-full px-8 text-base has-data-[icon=inline-start]:pl-7 max-sm:h-14 max-sm:w-full max-sm:px-6"
+        render={<Link href="/affiche" />}
+      >
+        <BadgeCheck data-icon="inline-start" />
+        {affiche.depuisInscription}
+      </Button>
 
       {/* Pour qui ne rejoint pas le groupe tout de suite : une sortie,
           plutôt qu'un écran sans issue. Sur ordinateur, l'en-tête de
@@ -519,6 +532,22 @@ export function FormulaireInscription() {
       }
       if (!resultat.ok) {
         throw new Error(resultat.message || f.erreurEnvoi);
+      }
+      // De quoi pré-remplir l'affiche « J'y serai », le temps de
+      // l'onglet : la personne ne resaisit pas ce qu'elle vient de
+      // donner. Rien dans l'adresse, rien côté serveur.
+      try {
+        const pourAffiche: DonneesAffiche = {
+          prenom: donnees.prenom,
+          nom: donnees.nom,
+          role: donnees.role,
+          affiliation: donnees.lc
+            ? `LC ${donnees.lc}`
+            : donnees.pays || "",
+        };
+        sessionStorage.setItem(CLE_AFFICHE, JSON.stringify(pourAffiche));
+      } catch {
+        // Stockage refusé : la page d'affiche partira de champs vides.
       }
       setReference(resultat.reference ?? "");
     } catch (err) {
