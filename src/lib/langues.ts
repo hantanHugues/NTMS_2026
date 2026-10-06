@@ -61,6 +61,7 @@ export type DictionnaireClient = {
   paiement: Dictionnaire["paiement"];
   contact: Dictionnaire["contact"];
   legal: Dictionnaire["legal"];
+  affiche: Dictionnaire["affiche"];
 };
 
 export function pourLeClient(langue: Langue): DictionnaireClient {
@@ -74,5 +75,6 @@ export function pourLeClient(langue: Langue): DictionnaireClient {
     paiement: d.paiement,
     contact: d.contact,
     legal: d.legal,
+    affiche: d.affiche,
   };
 }

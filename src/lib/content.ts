@@ -691,6 +691,46 @@ export const inscription = {
   lienWhatsApp: process.env.NEXT_PUBLIC_LIEN_WHATSAPP ?? "",
 };
 
+/**
+ * LA PAGE DE L'AFFICHE « J'y serai ».
+ *
+ * L'affiche elle-meme ne se traduit pas : son badge porte « J'Y SERAI »
+ * et « DELEGATE » dans les deux langues. Seule la page autour parle la
+ * langue du lecteur.
+ */
+export const affiche = {
+  titre: "Ton affiche « J'y serai »",
+  chapo:
+    "Ton badge du NTMS 2026, prêt à publier. Ajoute ta photo, vérifie le cadrage, télécharge.",
+  libellePrenom: "Prénom",
+  libelleNom: "Nom",
+  libelleRole: "Rôle",
+  libelleAffiliation: "Comité ou entité",
+  placeholderRole: "TM, LCVP, TL…",
+  placeholderAffiliation: "LC Cotonou",
+  aideRole:
+    "Laisse ces deux champs vides si tu n'es pas AIESECer : le badge se passe très bien de cette ligne.",
+  boutonPhoto: "Choisir ta photo",
+  aidePhoto: "Un portrait bien éclairé, le visage au centre, rend le mieux.",
+  zoom: "Zoom",
+  horizontal: "Gauche / droite",
+  vertical: "Haut / bas",
+  boutonTelecharger: "Télécharger l'affiche",
+  boutonPartager: "Partager",
+  textePartage: "J'y serai ! NTMS 2026, du 18 au 22 novembre à Lokossa.",
+  format: "1080 × 1350 px, format portrait",
+  chargement: "Préparation de l'affiche…",
+  apercuAlt: "Aperçu de ton affiche",
+  photoPrivee:
+    "Ta photo reste sur ton téléphone : elle n'est jamais envoyée au site.",
+  erreurPreparation:
+    "L'affiche n'a pas pu être préparée. Recharge la page.",
+  erreurPhoto: "Cette image n'a pas pu être lue. Essaie une photo JPG ou PNG.",
+  erreurImage: "L'image n'a pas pu être produite. Réessaie.",
+  // Depuis l'ecran de fin d'inscription.
+  depuisInscription: "Crée ton affiche « J'y serai »",
+};
+
 export const programme = [
   {
     value: "j1",
