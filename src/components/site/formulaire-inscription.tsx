@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { contact, event, inscription, legal } from "@/lib/content";
+import { useContenu } from "@/components/site/langue";
 import {
   ChoixPays,
   ListeDeroulante,
@@ -98,16 +98,21 @@ function Libelle({
  */
 function Choix({
   options,
+  libelles,
   valeur,
   onChange,
   etiquette,
 }: {
+  /** Les VALEURS, toujours en français : ce sont elles qui partent. */
   options: readonly string[];
+  /** Ce qui s'affiche, selon la langue. Vide = la valeur elle-même. */
+  libelles: Record<string, string>;
   valeur: string;
   onChange: (v: string) => void;
   etiquette: string;
 }) {
-  const courts = options.every((o) => o.length <= 10);
+  const lire = (o: string) => libelles[o] ?? o;
+  const courts = options.every((o) => lire(o).length <= 10);
   return (
     <div
       role="radiogroup"
@@ -133,7 +138,7 @@ function Choix({
               : "border-border bg-background hover:border-primary/40"
           )}
         >
-          {option}
+          {lire(option)}
           <Check
             aria-hidden
             className={cn(
@@ -152,7 +157,13 @@ function Choix({
  * personne ne le lit, tout le monde le copie. Le bouton copie le lien
  * entier ; l'adresse reste sélectionnable à la main si besoin.
  */
-function LienACopier({ lien }: { lien: string }) {
+function LienACopier({
+  lien,
+  libelles,
+}: {
+  lien: string;
+  libelles: { ouCopier: string; copier: string; copie: string };
+}) {
   const [copie, setCopie] = React.useState(false);
 
   async function copier() {
@@ -167,7 +178,7 @@ function LienACopier({ lien }: { lien: string }) {
 
   return (
     <div className="mx-auto mt-6 w-full max-w-md text-left">
-      <p className="text-xs text-muted-foreground">Ou copie ce lien :</p>
+      <p className="text-xs text-muted-foreground">{libelles.ouCopier}</p>
       <div className="mt-2 flex items-center gap-2 rounded-xl border border-border bg-background py-2 pr-2 pl-3">
         <span className="min-w-0 flex-1 truncate text-sm select-all">
           {lien.replace(/^https?:\/\//, "")}
@@ -178,11 +189,11 @@ function LienACopier({ lien }: { lien: string }) {
           className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors hover:bg-primary/10 active:bg-primary/10"
         >
           {copie ? <Check className="size-4" /> : <Copy className="size-4" />}
-          {copie ? "Copié" : "Copier"}
+          {copie ? libelles.copie : libelles.copier}
         </button>
       </div>
       <span className="sr-only" aria-live="polite">
-        {copie ? "Lien copié" : ""}
+        {copie ? libelles.copie : ""}
       </span>
     </div>
   );
@@ -231,11 +242,9 @@ function TexteAvecLien({
 export function EcranEnvoi() {
   // Des phrases qui parlent de l'inscription, jamais de la machine :
   // personne n'a à connaître l'existence d'un serveur.
-  const etapes = [
-    "On enregistre ton inscription…",
-    "On prépare ton mail de confirmation…",
-    "Encore quelques secondes…",
-  ];
+  const { inscription } = useContenu();
+  const f = inscription.formulaire;
+  const etapes = f.attente;
   const [i, setI] = React.useState(0);
   React.useEffect(() => {
     const minuteur = window.setInterval(
@@ -268,7 +277,7 @@ export function EcranEnvoi() {
         {etapes[i]}
       </p>
       <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-        Ne ferme pas cette page : ton inscription part en ce moment.
+        {f.neFermePas}
       </p>
     </div>
   );
@@ -287,26 +296,24 @@ export function SecoursContact({
   donnees: Donnees;
   erreur: string | null;
 }) {
-  const details =
-    `Bonjour,
-
-Je n'arrive pas à finaliser mon inscription au NTMS 2026 ` +
-    `depuis le site.
-
-` +
-    `Nom : ${donnees.nom}
-Prénom : ${donnees.prenom}
-` +
-    `E-mail : ${donnees.email}
-WhatsApp : ${donnees.telephone}
-
-` +
-    `Message affiché : ${erreur ?? "aucun"}
-`;
+  const { contact, event, inscription } = useContenu();
+  const f = inscription.formulaire;
+  // Le message est pré-rempli dans la langue du lecteur ; les libellés
+  // des champs restent en clair, le comité lit les deux.
+  const details = [
+    f.secoursCorps,
+    "",
+    `${f.nom} : ${donnees.nom}`,
+    `${f.prenom} : ${donnees.prenom}`,
+    `${f.email} : ${donnees.email}`,
+    `${f.whatsapp} : ${donnees.telephone}`,
+    "",
+    `${erreur ?? ""}`,
+  ].join("\n");
 
   const lienMail =
     `mailto:${event.email}` +
-    `?subject=${encodeURIComponent("NTMS 2026 — problème d'inscription")}` +
+    `?subject=${encodeURIComponent(f.secoursObjet)}` +
     `&body=${encodeURIComponent(details)}`;
   const lienWhatsApp = `${contact.whatsappLien}?text=${encodeURIComponent(details)}`;
 
@@ -314,8 +321,8 @@ WhatsApp : ${donnees.telephone}
     <div className="mt-4 rounded-2xl border border-border bg-card p-5 text-left max-sm:mx-5">
       <p className="flex items-start gap-2.5 text-sm font-medium">
         <LifeBuoy className="mt-0.5 size-4 shrink-0 text-primary" />
-        Réessaie dans un instant. Si ça recommence, écris-nous : on
-        t&apos;inscrit à la main, ta place n&apos;est pas perdue.
+        {f.secours}
+
       </p>
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         <Button
@@ -336,7 +343,7 @@ WhatsApp : ${donnees.telephone}
           render={<a href={lienMail} />}
         >
           <Mail data-icon="inline-start" />
-          Écrire par mail
+          {f.secoursMail}
         </Button>
       </div>
       <p className="mt-3 text-xs text-muted-foreground">
@@ -352,6 +359,8 @@ WhatsApp : ${donnees.telephone}
  * qui vient de disparaître.
  */
 export function EcranSucces() {
+  const { event, inscription } = useContenu();
+  const f = inscription.formulaire;
   const titre = React.useRef<HTMLHeadingElement>(null);
   React.useEffect(() => {
     titre.current?.focus();
@@ -374,7 +383,7 @@ export function EcranSucces() {
           className="-mr-2 flex items-center gap-1.5 rounded-full px-2 py-2 text-sm text-muted-foreground"
         >
           <Home className="size-4" />
-          Accueil
+          {f.accueil}
         </Link>
       </div>
 
@@ -410,11 +419,11 @@ export function EcranSucces() {
             <MessageCircle data-icon="inline-start" />
             {inscription.succesBouton}
           </Button>
-          <LienACopier lien={inscription.lienWhatsApp} />
+          <LienACopier lien={inscription.lienWhatsApp} libelles={f} />
         </>
       ) : (
         <p className="mt-8 text-sm text-muted-foreground">
-          Le lien du groupe t&apos;est envoyé par mail.
+          {f.lienParMail}
         </p>
       )}
 
@@ -426,7 +435,7 @@ export function EcranSucces() {
         className="mx-auto mt-10 flex h-12 items-center justify-center gap-2 rounded-full px-5 text-sm font-medium text-muted-foreground transition-colors active:bg-primary/10 sm:hidden"
       >
         <ArrowLeft className="size-4" />
-        Revenir à l&apos;accueil
+        {f.revenirAccueil}
       </Link>
       </div>
     </div>
@@ -434,6 +443,8 @@ export function EcranSucces() {
 }
 
 export function FormulaireInscription() {
+  const { event, inscription, legal } = useContenu();
+  const f = inscription.formulaire;
   const [etape, setEtape] = React.useState(0);
   const [donnees, setDonnees] = React.useState<Donnees>(VIDE);
   const [erreur, setErreur] = React.useState<string | null>(null);
@@ -484,7 +495,7 @@ export function FormulaireInscription() {
       return elaguer(suivant);
     });
 
-  const valider = () => problemeEtape(donnees, etape);
+  const valider = () => problemeEtape(donnees, etape, inscription.erreurs);
   const exemple = exempleNumero(donnees.pays_tel);
 
   async function envoyer() {
@@ -504,15 +515,15 @@ export function FormulaireInscription() {
       try {
         resultat = await reponse.json();
       } catch {
-        throw new Error("Le service ne répond pas. Réessaie dans un instant.");
+        throw new Error(f.erreurReseau);
       }
       if (!resultat.ok) {
-        throw new Error(resultat.message || "Envoi impossible. Réessaie.");
+        throw new Error(resultat.message || f.erreurEnvoi);
       }
       setReference(resultat.reference ?? "");
     } catch (err) {
       setErreur(
-        err instanceof Error ? err.message : "Envoi impossible. Réessaie."
+        err instanceof Error ? err.message : f.erreurEnvoi
       );
       setEchec(true);
     } finally {
@@ -546,7 +557,7 @@ export function FormulaireInscription() {
             <button
               type="button"
               onClick={precedent}
-              aria-label="Étape précédente"
+              aria-label={f.etapePrecedente}
               className="flex size-11 shrink-0 items-center justify-center rounded-full transition-colors active:bg-primary/10"
             >
               <ArrowLeft className="size-5" />
@@ -554,7 +565,7 @@ export function FormulaireInscription() {
           ) : (
             <Link
               href="/"
-              aria-label="Revenir à l'accueil"
+              aria-label={f.revenirAccueil}
               className="flex size-11 shrink-0 items-center justify-center rounded-full transition-colors active:bg-primary/10"
             >
               <ArrowLeft className="size-5" />
@@ -565,7 +576,9 @@ export function FormulaireInscription() {
               {inscription.titre}
             </p>
             <p className="text-[11px] text-muted-foreground">
-              Étape {etape + 1} sur {inscription.etapes.length}
+              {f.etapeSur
+                .replace("{n}", String(etape + 1))
+                .replace("{m}", String(inscription.etapes.length))}
             </p>
           </div>
           <Image
@@ -604,7 +617,9 @@ export function FormulaireInscription() {
         ))}
       </div>
       <p className="mt-4 text-sm text-muted-foreground max-sm:hidden">
-        Étape {etape + 1} sur {inscription.etapes.length}
+        {f.etapeSur
+          .replace("{n}", String(etape + 1))
+          .replace("{m}", String(inscription.etapes.length))}
       </p>
 
       <h2
@@ -634,7 +649,7 @@ export function FormulaireInscription() {
           <>
             <div className="grid gap-6 sm:grid-cols-2 max-sm:gap-7">
               <label>
-                <Libelle obligatoire>Prénom</Libelle>
+                <Libelle obligatoire>{f.prenom}</Libelle>
                 <input
                   className={CHAMP}
                   value={donnees.prenom}
@@ -645,7 +660,7 @@ export function FormulaireInscription() {
                 />
               </label>
               <label>
-                <Libelle obligatoire>Nom</Libelle>
+                <Libelle obligatoire>{f.nom}</Libelle>
                 <input
                   className={CHAMP}
                   value={donnees.nom}
@@ -657,7 +672,7 @@ export function FormulaireInscription() {
               </label>
             </div>
             <label>
-              <Libelle obligatoire>Adresse e-mail</Libelle>
+              <Libelle obligatoire>{f.email}</Libelle>
               <input
                 className={CHAMP}
                 type="email"
@@ -667,11 +682,13 @@ export function FormulaireInscription() {
                 autoComplete="email"
                 maxLength={200}
                 aria-required="true"
-                placeholder="prenom.nom@exemple.bj"
+                placeholder={f.emailExemple}
               />
             </label>
             <div>
-              <Libelle obligatoire id="q-whatsapp">Numéro WhatsApp</Libelle>
+              <Libelle obligatoire id="q-whatsapp">
+                {f.whatsapp}
+              </Libelle>
               {/* Sur téléphone, l'indicatif tient dans une case étroite à
                   gauche du numéro : le schéma de toutes les messageries. */}
               <div className="grid gap-2 grid-cols-[6.5rem_1fr] sm:grid-cols-[15rem_1fr]">
@@ -696,21 +713,21 @@ export function FormulaireInscription() {
                 />
               </div>
               <span className="mt-2 block text-xs text-muted-foreground">
-                {exemple ? <>Format attendu : {exemple}. </> : null}
-                C&apos;est ce numéro qui sera ajouté au groupe de
-                l&apos;édition.
+                {exemple ? <>{f.formatAttendu} : {exemple}. </> : null}
+                {f.whatsappAide}
               </span>
             </div>
             <div>
-              <Libelle obligatoire id="q-sexe">Sexe</Libelle>
+              <Libelle obligatoire id="q-sexe">{f.sexe}</Libelle>
               <Choix
                 etiquette="q-sexe"
+                libelles={inscription.libelles}
                 options={inscription.sexes}
                 valeur={donnees.sexe}
                 onChange={set("sexe")}
               />
               <span className="mt-2 block text-xs text-muted-foreground">
-                Utilisé uniquement pour l&apos;attribution des chambres.
+                {f.sexeAide}
               </span>
             </div>
           </>
@@ -719,9 +736,10 @@ export function FormulaireInscription() {
         {etape === 1 ? (
           <>
             <div>
-              <Libelle obligatoire id="q-profil">Tu es…</Libelle>
+              <Libelle obligatoire id="q-profil">{f.profil}</Libelle>
               <Choix
                 etiquette="q-profil"
+                libelles={inscription.libelles}
                 options={inscription.profils}
                 valeur={donnees.profil}
                 onChange={set("profil")}
@@ -731,13 +749,13 @@ export function FormulaireInscription() {
             {donnees.profil === PROFIL_BENIN ? (
               <>
                 <div>
-                  <Libelle obligatoire id="q-role">Ton rôle</Libelle>
+                  <Libelle obligatoire id="q-role">{f.role}</Libelle>
                   <ListeDeroulante
                     etiquette="q-role"
-                    options={inscription.roles}
+                options={inscription.roles}
                     valeur={donnees.role}
                     onChange={set("role")}
-                    indication="Choisis ton rôle"
+                    indication={f.roleIndication}
                   />
                   <span className="mt-2 block text-xs text-muted-foreground">
                     {inscription.noteMC}
@@ -745,13 +763,13 @@ export function FormulaireInscription() {
                 </div>
 
                 <div>
-                  <Libelle obligatoire id="q-lc">Ton comité local</Libelle>
+                  <Libelle obligatoire id="q-lc">{f.lc}</Libelle>
                   <ListeDeroulante
                     etiquette="q-lc"
-                    options={inscription.comites}
+                options={inscription.comites}
                     valeur={donnees.lc}
                     onChange={set("lc")}
-                    indication="Choisis ton comité"
+                    indication={f.lcIndication}
                   />
                 </div>
               </>
@@ -760,7 +778,7 @@ export function FormulaireInscription() {
             {donnees.profil === PROFIL_ETRANGER ? (
               <div className="grid gap-6 sm:grid-cols-2 max-sm:gap-7">
                 <label>
-                  <Libelle obligatoire>Ton poste</Libelle>
+                  <Libelle obligatoire>{f.poste}</Libelle>
                   <input
                     className={CHAMP}
                     value={donnees.role}
@@ -769,7 +787,7 @@ export function FormulaireInscription() {
                   />
                 </label>
                 <label>
-                  <Libelle obligatoire>Ton pays</Libelle>
+                  <Libelle obligatoire>{f.pays}</Libelle>
                   <input
                     className={CHAMP}
                     value={donnees.pays}
@@ -783,9 +801,7 @@ export function FormulaireInscription() {
 
             {donnees.profil === PROFIL_EXTERNE ? (
               <label>
-                <Libelle obligatoire>
-                  Comment as-tu entendu parler du NTMS ?
-                </Libelle>
+                <Libelle obligatoire>{f.source}</Libelle>
                 <textarea
                   className={cn(CHAMP, "min-h-28 resize-y")}
                   value={donnees.source}
@@ -805,6 +821,7 @@ export function FormulaireInscription() {
               </Libelle>
               <Choix
                 etiquette="q-chambre"
+                libelles={inscription.libelles}
                 options={inscription.chambres}
                 valeur={donnees.chambre}
                 onChange={set("chambre")}
@@ -816,10 +833,11 @@ export function FormulaireInscription() {
 
             <div>
               <Libelle obligatoire id="q-allergie">
-                Es-tu allergique à un aliment particulier ?
+                {f.allergieQuestion}
               </Libelle>
               <Choix
                 etiquette="q-allergie"
+                libelles={inscription.libelles}
                 options={inscription.ouiNon}
                 valeur={donnees.allergie}
                 onChange={set("allergie")}
@@ -828,7 +846,7 @@ export function FormulaireInscription() {
 
             {donnees.allergie === "Oui" ? (
               <label>
-                <Libelle obligatoire>À quoi ?</Libelle>
+                <Libelle obligatoire>{f.allergieQuoi}</Libelle>
                 <input
                   className={CHAMP}
                   value={donnees.allergie_detail}
@@ -839,13 +857,13 @@ export function FormulaireInscription() {
             ) : null}
 
             <label>
-              <Libelle>Attentes en matière de restauration</Libelle>
+              <Libelle>{f.restauration}</Libelle>
               <textarea
                 className={cn(CHAMP, "min-h-24 resize-y")}
                 value={donnees.restauration}
                 onChange={(e) => set("restauration")(e.target.value)}
                 maxLength={1000}
-                placeholder="Facultatif"
+                placeholder={f.facultatif}
               />
             </label>
 
@@ -917,7 +935,7 @@ export function FormulaireInscription() {
             onClick={precedent}
           >
             <ArrowLeft data-icon="inline-start" />
-            Retour
+            {f.retour}
           </Button>
         ) : null}
 
@@ -926,7 +944,7 @@ export function FormulaireInscription() {
             className="h-12 flex-1 rounded-full text-base sm:flex-none sm:px-8 sm:has-data-[icon=inline-end]:pr-7 max-sm:h-14 max-sm:w-full"
             onClick={suivant}
           >
-            Continuer
+            {f.continuer}
             <ArrowRight data-icon="inline-end" />
           </Button>
         ) : (
@@ -938,7 +956,7 @@ export function FormulaireInscription() {
             disabled={envoi || donnees.consentement_politique !== "oui"}
             onClick={envoyer}
           >
-            {envoi ? "Envoi…" : inscription.boutonFinal}
+            {envoi ? f.envoiEnCours : inscription.boutonFinal}
           </Button>
         )}
       </div>

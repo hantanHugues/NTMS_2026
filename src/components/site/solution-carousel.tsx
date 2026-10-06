@@ -1,4 +1,4 @@
-import { solution } from "@/lib/content";
+import { contenu } from "@/lib/contenu";
 import { cn } from "@/lib/utils";
 
 /**
@@ -22,8 +22,13 @@ import { cn } from "@/lib/utils";
  * Fonctionnel, sans l'effet, jamais cassé.
  */
 
-function Carte({ index }: { index: number }) {
-  const offre = solution.offers[index];
+function Carte({
+  index,
+  offre,
+}: {
+  index: number;
+  offre: { icon: React.ElementType; title: string; body: string };
+}) {
   const Icon = offre.icon;
   const plein = index === 3;
 
@@ -61,7 +66,8 @@ function Carte({ index }: { index: number }) {
   );
 }
 
-export function SolutionCarousel() {
+export async function SolutionCarousel() {
+  const { solution } = await contenu();
   return (
     <div className="offres-cadre relative mt-10 sm:hidden">
       <div className="offres-bloc">
@@ -75,7 +81,7 @@ export function SolutionCarousel() {
 
         <div className="offres-piste mt-6">
           {solution.offers.map((offre, i) => (
-            <Carte key={offre.title} index={i} />
+            <Carte key={offre.title} index={i} offre={offre} />
           ))}
         </div>
 

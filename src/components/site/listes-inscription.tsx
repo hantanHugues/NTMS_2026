@@ -6,7 +6,8 @@ import { Combobox } from "@base-ui/react/combobox";
 import { Drawer } from "@base-ui/react/drawer";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 
-import { PAYS, paysParCode, type Pays } from "@/lib/inscription-regles";
+import { paysDe, type Pays } from "@/lib/inscription-regles";
+import { useContenu } from "@/components/site/langue";
 import { cn } from "@/lib/utils";
 
 /**
@@ -290,7 +291,11 @@ export function ChoixPays({
   etiquette: string;
 }) {
   const monte = useMonte();
-  const courant = paysParCode(valeur);
+  const { langue } = useContenu();
+  const PAYS = React.useMemo(() => paysDe(langue), [langue]);
+  // Le pays courant se cherche dans la liste de la langue affichée,
+  // sinon son nom resterait français dans la version anglaise.
+  const courant = PAYS.find((p) => p.code === valeur);
   const [ouvert, setOuvert] = React.useState(false);
   const [requete, setRequete] = React.useState("");
 
@@ -377,7 +382,7 @@ export function ChoixPays({
         ) : (
           <Combobox.Root
             items={PAYS}
-            value={paysParCode(valeur) ?? null}
+            value={courant ?? null}
             onValueChange={(p) => {
               if (p) onChange((p as Pays).code);
             }}

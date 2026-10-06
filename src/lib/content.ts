@@ -79,6 +79,16 @@ export const navItems = [
 export const hero = {
   amorce: "AIESEC in Benin, vingt ans à",
   chute: "Cette année, on élève le niveau.",
+  bouton: "Réserver ma place",
+  contact: "Contactez-nous",
+  /** Les unites du compte a rebours, au plus court. */
+  unites: {
+    jours: "j",
+    heures: "h",
+    minutes: "min",
+    secondes: "s",
+    libelle: "Temps restant avant l'ouverture",
+  },
 };
 
 export const rotatingVerbs = [
@@ -490,6 +500,13 @@ export const contact = {
  * ici. C'est ce document-là qu'on fait accepter, mentions légales
  * comprises (il porte l'identification de l'éditeur).
  */
+export const pied = {
+  presentation: "Vingt ans d'AIESEC in Benin, et cinq jours pour élever nos standards.",
+  navigation: "Navigation",
+  edition: "L'édition",
+  places: "places",
+};
+
 export const legal = {
   label: "CGU et politique de confidentialité",
   url: "https://docs.google.com/document/d/e/2PACX-1vTcsG7n-UwpY3Isj276rO8qLYK4cETA7T0Tke2V0m8yN1-wGsUF3Mh4GWeNDo9uYpSUSK3TByhPVYuI/pub",
@@ -581,7 +598,87 @@ export const inscription = {
       "J'ai lu et j'accepte les conditions générales d'utilisation et la politique de confidentialité d'AIESEC in Benin.",
     lien: "conditions générales d'utilisation et la politique de confidentialité",
   },
+  /** Les libelles du formulaire lui-meme : champs, boutons, attente. */
+  formulaire: {
+    prenom: "Prénom",
+    nom: "Nom",
+    email: "Adresse e-mail",
+    emailExemple: "prenom.nom@exemple.bj",
+    whatsapp: "Numéro WhatsApp",
+    whatsappAide:
+      "C'est ce numéro qui sera ajouté au groupe de l'édition.",
+    formatAttendu: "Format attendu",
+    sexe: "Sexe",
+    sexeAide: "Utilisé uniquement pour l'attribution des chambres.",
+    profil: "Tu es…",
+    role: "Ton rôle",
+    roleIndication: "Choisis ton rôle",
+    lc: "Ton comité local",
+    lcIndication: "Choisis ton comité",
+    poste: "Ton poste",
+    pays: "Ton pays",
+    source: "Comment as-tu entendu parler du NTMS ?",
+    allergieQuestion: "Es-tu allergique à un aliment particulier ?",
+    allergieQuoi: "À quoi ?",
+    restauration: "Attentes en matière de restauration",
+    facultatif: "Facultatif",
+    etapeSur: "Étape {n} sur {m}",
+    continuer: "Continuer",
+    retour: "Retour",
+    etapePrecedente: "Étape précédente",
+    accueil: "Accueil",
+    revenirAccueil: "Revenir à l'accueil",
+    envoiEnCours: "Envoi…",
+    copier: "Copier",
+    copie: "Copié",
+    ouCopier: "Ou copie ce lien :",
+    lienParMail: "Le lien du groupe t'est envoyé par mail.",
+    attente: [
+      "On enregistre ton inscription…",
+      "On prépare ton mail de confirmation…",
+      "Encore quelques secondes…",
+    ],
+    neFermePas: "Ne ferme pas cette page : ton inscription part en ce moment.",
+    secours:
+      "Réessaie dans un instant. Si ça recommence, écris-nous : on t'inscrit à la main, ta place n'est pas perdue.",
+    secoursMail: "Écrire par mail",
+    secoursObjet: "NTMS 2026 — problème d'inscription",
+    secoursCorps:
+      "Bonjour,\n\nJe n'arrive pas à finaliser mon inscription au NTMS 2026 depuis le site.",
+    erreurReseau: "Le service ne répond pas. Réessaie dans un instant.",
+    erreurEnvoi: "Envoi impossible. Réessaie.",
+  },
   boutonFinal: "Valider mon inscription",
+  /**
+   * Les libelles d'affichage des valeurs stockees. En francais, la
+   * valeur EST le libelle ; l'anglais traduit sans toucher a ce qui
+   * part dans le classeur.
+   */
+  libelles: {} as Record<string, string>,
+  /** Les refus du formulaire, repris mot pour mot par le serveur. */
+  erreurs: {
+    nom: "Ton nom et ton prénom, s'il te plaît.",
+    email: "Cette adresse e-mail n'est pas valide. Exemple : prenom.nom@gmail.com",
+    pays: "Choisis le pays de ton numéro.",
+    numero: "Ce numéro ne correspond pas au format",
+    numeroBenin: "béninois",
+    numeroPays: "de ce pays",
+    numeroExemple: "Exemple",
+    sexe: "Indique ton sexe : il sert à attribuer les chambres.",
+    profil: "Dis-nous qui tu es.",
+    role: "Choisis ton rôle.",
+    lc: "Choisis ton comité local.",
+    poste: "Indique ton poste.",
+    paysLibre: "Indique ton pays.",
+    source: "Dis-nous comment tu as entendu parler du NTMS.",
+    chambre: "Choisis un type de chambre.",
+    allergie: "Réponds à la question sur les allergies.",
+    allergieDetail: "Précise à quoi tu es allergique.",
+    consentementGroupe:
+      "L'ajout au groupe WhatsApp est nécessaire pour suivre l'édition.",
+    consentementPolitique:
+      "Il faut accepter les CGU et la politique de confidentialité pour t'inscrire.",
+  },
   // Affiche a la place du formulaire une fois la date passee.
   closesTitre: "Les inscriptions sont closes.",
   closesTexte:

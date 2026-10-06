@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Countdown } from "@/components/site/countdown";
 import { RotatingVerb } from "@/components/site/rotating-verb";
 import { ShaderBackdrop } from "@/components/site/shader-backdrop";
-import { boutonPhase, event, hero, rotatingVerbs } from "@/lib/content";
+import { contenu } from "@/lib/contenu";
 import type { Phase } from "@/lib/inscription-regles";
 
 /**
@@ -26,7 +26,8 @@ import type { Phase } from "@/lib/inscription-regles";
  * `clamp` retombe sur les memes valeurs qu'avant des 640 px : la vue
  * sur ordinateur est inchangee, au pixel pres.
  */
-export function Hero({ phase = "inscription" }: { phase?: Phase }) {
+export async function Hero({ phase = "inscription" }: { phase?: Phase }) {
+  const { boutonPhase, event, hero, rotatingVerbs } = await contenu();
   const etape = phase;
   const bouton = boutonPhase[phase];
   return (
@@ -65,7 +66,11 @@ export function Hero({ phase = "inscription" }: { phase?: Phase }) {
           </span>
         </h1>
 
-        <Countdown target={event.startsAt} className="mt-8 sm:mt-12" />
+        <Countdown
+          target={event.startsAt}
+          unites={hero.unites}
+          className="mt-8 sm:mt-12"
+        />
 
         <div className="mt-7 flex w-full flex-col justify-center gap-3 sm:mt-9 sm:w-auto sm:flex-row">
           <Button
@@ -74,7 +79,7 @@ export function Hero({ phase = "inscription" }: { phase?: Phase }) {
             className="h-13 rounded-full px-9 text-base"
             render={<a href={bouton.href} />}
           >
-            {etape === "paiement" ? bouton.label : "Réserver ma place"}
+            {etape === "paiement" ? bouton.label : hero.bouton}
           </Button>
           <Button
             nativeButton={false}
@@ -83,7 +88,7 @@ export function Hero({ phase = "inscription" }: { phase?: Phase }) {
             className="h-13 rounded-full border-white/20 bg-white/5 px-9 text-base"
             render={<a href="#contact" />}
           >
-            Contactez-nous
+            {hero.contact}
           </Button>
         </div>
       </div>

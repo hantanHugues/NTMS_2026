@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { contact, event, paiement } from "@/lib/content";
+import { contenu } from "@/lib/contenu";
 import { enregistrerPaiement } from "@/lib/classeur";
 import { notFound } from "next/navigation";
 
@@ -19,10 +19,13 @@ import {
   type StatutPaiement,
 } from "@/lib/paiement";
 
-export const metadata: Metadata = {
-  title: `Paiement — ${event.name}`,
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { event } = await contenu();
+  return {
+    title: `${event.name} — paiement`,
+    robots: { index: false, follow: false },
+  };
+}
 
 /** Jamais de cache : l'état d'un paiement change de minute en minute. */
 export const dynamic = "force-dynamic";
@@ -57,6 +60,7 @@ export default async function PageRetourPaiement({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   if (!billetterieEnService()) notFound();
+  const { contact, event, paiement } = await contenu();
 
   const params = await searchParams;
   const lire = (cle: string) => {

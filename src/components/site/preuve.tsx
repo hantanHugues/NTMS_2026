@@ -8,7 +8,7 @@ import {
   GalleryCol,
   GalleryContainer,
 } from "@/components/ui/animated-gallery";
-import { preuve } from "@/lib/content";
+import { contenu } from "@/lib/contenu";
 
 /**
  * La preuve .
@@ -69,15 +69,21 @@ const SETTLED = 0.72;
 /*
   Les douze photos, redistribuees en DEUX colonnes de six pour le
   telephone. Les trois colonnes de quatre sont calees sur la largeur
-  d'un ecran d'ordinateur.
+  d'un ecran d'ordinateur. Le calcul se fait dans le composant : les
+  legendes changent avec la langue, donc la liste aussi.
 */
-const TOUTES = preuve.columns.flat();
-const COLONNES_TELEPHONE = [TOUTES.slice(0, 6), TOUTES.slice(6)];
+type Photo = { src: string; alt: string };
+
+function colonnesTelephone(colonnes: Photo[][]) {
+  const toutes = colonnes.flat();
+  return [toutes.slice(0, 6), toutes.slice(6)];
+}
 
 /** Fin du redressement : au-dela, les colonnes sont droites. */
 const REDRESSE = SETTLED * 0.58;
 
-export function Preuve() {
+export async function Preuve() {
+  const { preuve } = await contenu();
   return (
     <section
       id="preuve"
@@ -206,7 +212,7 @@ export function Preuve() {
       <div className="galerie-cadre relative z-10 sm:hidden">
         <div className="galerie-bloc">
           <div className="galerie-grille">
-            {COLONNES_TELEPHONE.map((colonne, i) => (
+            {colonnesTelephone(preuve.columns).map((colonne, i) => (
               <div
                 key={i}
                 className={

@@ -5,9 +5,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { SectionHeading } from "@/components/site/section-heading";
-import { faq } from "@/lib/content";
+import { contenu } from "@/lib/contenu";
 
-export function FaqSection() {
+export async function FaqSection() {
+  const { faq } = await contenu();
   return (
     <section id="faq" className="scroll-mt-24 bg-background py-28 sm:py-40">
       <div className="mx-auto max-w-3xl px-6">

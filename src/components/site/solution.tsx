@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Reveal } from "@/components/site/reveal";
 import { SolutionCarousel } from "@/components/site/solution-carousel";
-import { event, solution } from "@/lib/content";
+import { contenu } from "@/lib/contenu";
 import { cn } from "@/lib/utils";
 
 /**
@@ -18,8 +18,13 @@ import { cn } from "@/lib/utils";
  * les cartes se chevauchaient.
  */
 
-function Offer({ index }: { index: number }) {
-  const offer = solution.offers[index];
+function Offer({
+  index,
+  offer,
+}: {
+  index: number;
+  offer: { icon: React.ElementType; title: string; body: string };
+}) {
   const align = index % 2 === 0 ? "left" : "right";
   const Icon = offer.icon;
   const filled = index === 3;
@@ -61,7 +66,8 @@ function Offer({ index }: { index: number }) {
   );
 }
 
-export function Solution() {
+export async function Solution() {
+  const { event, solution } = await contenu();
   return (
     <section
       id="solution"
@@ -111,7 +117,7 @@ export function Solution() {
             aller d'un bord a l'autre de l'ecran. */}
         <div className="flex flex-col gap-5 max-sm:hidden">
           {solution.offers.map((offer, i) => (
-            <Offer key={offer.title} index={i} />
+            <Offer key={offer.title} index={i} offer={offer} />
           ))}
         </div>
       </div>

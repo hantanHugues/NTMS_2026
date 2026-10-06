@@ -5,7 +5,7 @@ import { CreditCard, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { emailValide } from "@/lib/inscription-regles";
-import { paiement } from "@/lib/content";
+import { useContenu } from "@/components/site/langue";
 import { cn } from "@/lib/utils";
 
 /**
@@ -25,6 +25,7 @@ const CHAMP =
   "w-full rounded-xl border border-border bg-background px-4 py-3 text-base outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary max-sm:min-h-13";
 
 export function FormulairePaiement({ montant }: { montant: number }) {
+  const { paiement } = useContenu();
   const [nom, setNom] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [numero, setNumero] = React.useState("");

@@ -4,7 +4,7 @@ import * as React from "react";
 import { ArrowUpRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { contact, event } from "@/lib/content";
+import { useContenu } from "@/components/site/langue";
 
 /**
  * Le bouton qui ouvre un message déjà adressé et déjà intitulé.
@@ -25,17 +25,19 @@ import { contact, event } from "@/lib/content";
  * média est écoutée, un pivotement d'appareil est donc pris en compte.
  */
 
-const GMAIL =
-  "https://mail.google.com/mail/?view=cm&fs=1" +
-  `&to=${encodeURIComponent(event.email)}` +
-  `&su=${encodeURIComponent(contact.mailSubject)}`;
-
-const MAILTO = `mailto:${event.email}?subject=${encodeURIComponent(
-  contact.mailSubject
-)}`;
-
 export function ContactButton() {
+  const { contact, event } = useContenu();
   const [surTelephone, setSurTelephone] = React.useState(false);
+
+  // L'objet du message est traduit : les adresses se construisent donc
+  // ici, et non une fois pour toutes au chargement du module.
+  const GMAIL =
+    "https://mail.google.com/mail/?view=cm&fs=1" +
+    `&to=${encodeURIComponent(event.email)}` +
+    `&su=${encodeURIComponent(contact.mailSubject)}`;
+  const MAILTO = `mailto:${event.email}?subject=${encodeURIComponent(
+    contact.mailSubject
+  )}`;
 
   React.useEffect(() => {
     const media = window.matchMedia("(max-width: 639px)");
