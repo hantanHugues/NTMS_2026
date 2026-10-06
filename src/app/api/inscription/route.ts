@@ -37,6 +37,32 @@ function refus(message: string, status = 400) {
 type Reponse = { ok?: boolean; message?: string; reference?: string | null };
 
 /**
+ * La réponse du script n'a pas pu être LUE.
+ *
+ * Distincte d'une panne ordinaire, parce qu'elle ne dit rien de ce que
+ * le script a fait : il a peut-être écrit la ligne avant que la lecture
+ * échoue. C'est ce cas, et lui seul, qui autorise une reprise.
+ */
+class ReponsePerdue extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ReponsePerdue";
+  }
+}
+
+/** Le texte d'une page HTML de Google, débarrassé de ses balises. */
+function lisible(texte: string) {
+  return texte
+    .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 600);
+}
+
+const attendre = (ms: number) => new Promise((suite) => setTimeout(suite, ms));
+
+/**
  * Appelle une application web Apps Script et lit sa réponse.
  *
  * Apps Script répond en DEUX temps : le POST exécute le script et
@@ -47,6 +73,10 @@ type Reponse = { ok?: boolean; message?: string; reference?: string | null };
  * repartait avec les en-têtes du POST et Google répondait 404 : le
  * script avait bien écrit la ligne, mais le site ne recevait jamais la
  * confirmation et affichait un échec.
+ *
+ * Ce GET d'écho échoue parfois de lui-même, sur une page « Page Not
+ * Found » de Drive, alors que le script a travaillé. Il est donc tenté
+ * DEUX fois : il ne relance pas le script, le rejouer ne coûte rien.
  */
 async function appelerScript(
   url: string,
@@ -63,28 +93,59 @@ async function appelerScript(
     signal,
   });
 
-  let reponse = premier;
-  if (premier.status >= 300 && premier.status < 400) {
-    const suite = premier.headers.get("location");
-    if (!suite) throw new Error("Redirection d'Apps Script sans adresse.");
-    reponse = await fetch(suite, { method: "GET", signal });
+  // Réponse directe, sans redirection : on la lit telle quelle.
+  if (premier.status < 300 || premier.status >= 400) {
+    const texte = await premier.text();
+    try {
+      return JSON.parse(texte) as Reponse;
+    } catch {
+      throw new ReponsePerdue(
+        `Réponse non JSON d'Apps Script (HTTP ${premier.status}) : ${lisible(texte)}`
+      );
+    }
   }
 
-  const texte = await reponse.text();
+  const suite = premier.headers.get("location");
+  if (!suite) throw new ReponsePerdue("Redirection d'Apps Script sans adresse.");
+
+  let dernier = "";
+  for (let essai = 0; essai < 2; essai++) {
+    if (essai) await attendre(1200);
+    const reponse = await fetch(suite, { method: "GET", signal });
+    const texte = await reponse.text();
+    try {
+      return JSON.parse(texte) as Reponse;
+    } catch {
+      // Page HTML de Google : mauvais déploiement, page de connexion, ou
+      // panne passagère. On garde le texte lisible, pas le HTML : c'est là
+      // que Google écrit la cause.
+      dernier = `HTTP ${reponse.status} : ${lisible(texte)}`;
+    }
+  }
+  throw new ReponsePerdue(`Réponse non JSON d'Apps Script (${dernier})`);
+}
+
+/**
+ * Le même appel, avec une reprise quand la réponse s'est perdue.
+ *
+ * Le script reconnaît un identifiant d'envoi déjà vu et renvoie la
+ * référence existante SANS réécrire la ligne ni renvoyer de mail : la
+ * reprise ne crée donc pas de doublon, et coûte quelques secondes là
+ * où le premier appel en prend des dizaines.
+ *
+ * Sans identifiant d'envoi, pas de reprise : rien ne distinguerait
+ * alors une seconde tentative d'une seconde inscription.
+ */
+async function appelerAvecReprise(
+  url: string,
+  corps: Record<string, string>
+): Promise<Reponse> {
   try {
-    return JSON.parse(texte) as Reponse;
-  } catch {
-    // Page HTML de Google : mauvais déploiement, page de connexion, ou
-    // panne passagère. On garde le texte lisible, pas le HTML : c'est là
-    // que Google écrit la cause.
-    const lisible = texte
-      .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, " ")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-    throw new Error(
-      `Réponse non JSON d'Apps Script (HTTP ${reponse.status}) : ${lisible.slice(0, 600)}`
-    );
+    return await appelerScript(url, corps);
+  } catch (err) {
+    if (!(err instanceof ReponsePerdue) || !corps.id_envoi) throw err;
+    console.error("Réponse perdue, reprise de l'appel :", err.message);
+    return await appelerScript(url, corps);
   }
 }
 
@@ -161,7 +222,7 @@ export async function POST(request: Request) {
   };
 
   try {
-    const resultat = await appelerScript(url, { ...donnees, _secret: secret });
+    const resultat = await appelerAvecReprise(url, { ...donnees, _secret: secret });
     if (!resultat.ok) {
       console.error("Refus d'Apps Script :", resultat.message);
       return refus("L'inscription n'a pas pu être enregistrée. Réessaie.", 502);
