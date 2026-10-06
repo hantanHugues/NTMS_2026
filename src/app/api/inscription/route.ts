@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { contenu } from "@/lib/contenu";
-
 import {
   VIDE,
   elaguer,
@@ -91,23 +89,21 @@ async function appelerScript(
 }
 
 export async function POST(request: Request) {
-  // Les refus parlent la langue du visiteur, comme le formulaire.
-  const msg = (await contenu()).inscription.erreurs;
   const url = process.env.INSCRIPTION_WEBAPP_URL;
   const secret = process.env.INSCRIPTION_SECRET;
   if (!url || !secret) {
     console.error((!url ? "INSCRIPTION_WEBAPP_URL" : "INSCRIPTION_SECRET") + " absent.");
-    return refus(msg.service, 503);
+    return refus("Le service d'inscription est indisponible. Écris-nous.", 503);
   }
 
   let brut: unknown;
   try {
     brut = await request.json();
   } catch {
-    return refus(msg.illisible);
+    return refus("Requête illisible.");
   }
   if (!brut || typeof brut !== "object" || Array.isArray(brut)) {
-    return refus(msg.illisible);
+    return refus("Requête illisible.");
   }
   const entree = brut as Record<string, unknown>;
 
@@ -121,7 +117,7 @@ export async function POST(request: Request) {
   // Les inscriptions closes : le formulaire ne s'affiche plus, mais
   // rien n'empêche d'appeler cette adresse directement.
   if (!inscriptionsOuvertes()) {
-    return refus(msg.closes);
+    return refus("Les inscriptions sont closes.");
   }
 
   // On ne lit QUE les champs attendus, nettoyés et bornés.
@@ -136,7 +132,7 @@ export async function POST(request: Request) {
 
   // Mêmes règles que le formulaire, étape par étape.
   for (const etape of [0, 1, 2]) {
-    const erreur = problemeEtape(d, etape, msg);
+    const erreur = problemeEtape(d, etape);
     if (erreur) return refus(erreur);
   }
 
@@ -168,7 +164,7 @@ export async function POST(request: Request) {
     const resultat = await appelerScript(url, { ...donnees, _secret: secret });
     if (!resultat.ok) {
       console.error("Refus d'Apps Script :", resultat.message);
-      return refus(msg.enregistrement, 502);
+      return refus("L'inscription n'a pas pu être enregistrée. Réessaie.", 502);
     }
 
     const reference = resultat.reference ?? "";
@@ -198,6 +194,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, reference });
   } catch (err) {
     console.error("Appel Apps Script impossible :", err);
-    return refus(msg.indisponible, 504);
+    return refus("Le service est momentanément indisponible. Réessaie.", 504);
   }
 }
