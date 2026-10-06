@@ -2,7 +2,7 @@ import * as React from "react";
 import Image from "next/image";
 
 import FloatingDotsCta from "@/components/ui/floating-dots-cta";
-import { cta, ctaClos, ctaPaiement, event } from "@/lib/content";
+import { contenu } from "@/lib/contenu";
 import type { Phase } from "@/lib/inscription-regles";
 
 /**
@@ -32,9 +32,10 @@ import type { Phase } from "@/lib/inscription-regles";
  * porte exactement le meme lettrage et appartient a l'organisation,
  * donc il dit la meme chose sans le probleme.
  */
-export function RegistrationCta({ phase = "inscription" }: { phase?: Phase }) {
+export async function RegistrationCta({ phase = "inscription" }: { phase?: Phase }) {
+  const { cta, ctaClos, ctaPaiement, event } = await contenu();
   // Même carte, textes de la phase en cours.
-  const contenu =
+  const textes =
     phase === "paiement" ? ctaPaiement : phase === "clos" ? ctaClos : cta;
   return (
     <section
@@ -91,20 +92,20 @@ export function RegistrationCta({ phase = "inscription" }: { phase?: Phase }) {
             </div>
 
             <h2 className="font-heading mt-6 text-[clamp(1.75rem,8.5vw,2.25rem)] leading-[1] font-extrabold tracking-tight text-balance sm:mt-7 sm:text-5xl">
-              {contenu.title}{" "}
+              {textes.title}{" "}
               <span className="text-accent-text">{cta.titleAccent}</span>
             </h2>
 
             <p className="mt-5 text-lg leading-relaxed text-pretty text-muted-foreground max-sm:mt-4 max-sm:text-base">
-              {contenu.lead}
+              {textes.lead}
             </p>
 
             {/* Bouton a points flottants : le seul du site a porter cet
                 effet, et il tombe sur le seul clic qui compte. */}
             <FloatingDotsCta
               className="mt-8 w-fit max-sm:mt-7 max-sm:w-full"
-              href={contenu.href}
-              label={contenu.button}
+              href={textes.href}
+              label={textes.button}
             />
 
             <p className="mt-5 text-sm text-muted-foreground max-sm:mt-4 max-sm:text-center">
@@ -113,7 +114,7 @@ export function RegistrationCta({ phase = "inscription" }: { phase?: Phase }) {
           </div>
 
           <ol className="flex flex-col gap-6 rounded-3xl bg-card/60 p-7 backdrop-blur-md max-sm:gap-5 max-sm:rounded-none max-sm:border-t max-sm:border-white/12 max-sm:bg-transparent max-sm:p-0 max-sm:pt-8 max-sm:backdrop-blur-none sm:p-8">
-            {contenu.steps.map((step, i) => {
+            {textes.steps.map((step, i) => {
               const Icon = step.icon;
               return (
                 <li key={step.title} className="flex gap-4">

@@ -1,4 +1,4 @@
-import { bandeau } from "@/lib/content";
+import { contenu } from "@/lib/contenu";
 
 /**
  * Le bandeau.
@@ -55,7 +55,8 @@ function Row({
   );
 }
 
-export function PhotoStrip() {
+export async function PhotoStrip() {
+  const { bandeau } = await contenu();
   return (
     <section
       id="bandeau"

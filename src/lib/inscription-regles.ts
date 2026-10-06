@@ -75,15 +75,47 @@ export function emailValide(email: string) {
   return EMAIL.test(email) && !email.includes("..");
 }
 
-const nomsPays = new Intl.DisplayNames(["fr"], { type: "region" });
-
 export type Pays = { code: CountryCode; nom: string; indicatif: string };
 
-/** Tous les pays, triés par nom français, le Bénin en tête. */
+/**
+ * Tous les pays, dans la langue demandée, le Bénin en tête.
+ *
+ * Les noms viennent de la table du système : « Allemagne » en
+ * français, « Germany » en anglais. Le tri suit la même langue, sans
+ * quoi la liste anglaise resterait rangée à la française.
+ *
+ * Les listes sont construites une fois puis gardées : parcourir les
+ * 245 pays à chaque rendu du formulaire ne sert à rien.
+ */
+const listes = new Map<string, Pays[]>();
+
+export function paysDe(langue: string = "fr"): Pays[] {
+  const connue = listes.get(langue);
+  if (connue) return connue;
+
+  const noms = new Intl.DisplayNames([langue], { type: "region" });
+  const liste = getCountries()
+    .map((code) => ({
+      code,
+      nom: noms.of(code) ?? code,
+      indicatif: getCountryCallingCode(code),
+    }))
+    .sort((a, b) =>
+      a.code === "BJ"
+        ? -1
+        : b.code === "BJ"
+          ? 1
+          : a.nom.localeCompare(b.nom, langue)
+    );
+  listes.set(langue, liste);
+  return liste;
+}
+
+/** La liste française, pour le serveur et par défaut. */
 export const PAYS: Pays[] = getCountries()
   .map((code) => ({
     code,
-    nom: nomsPays.of(code) ?? code,
+    nom: new Intl.DisplayNames(["fr"], { type: "region" }).of(code) ?? code,
     indicatif: getCountryCallingCode(code),
   }))
   .sort((a, b) =>
@@ -156,47 +188,56 @@ export function phase(maintenant = Date.now()): Phase {
   return "clos";
 }
 
-/** Le premier problème de l'étape, ou null. Messages destinés à l'inscrit. */
-export function problemeEtape(d: Donnees, etape: number): string | null {
+/**
+ * Le premier problème de l'étape, ou null.
+ *
+ * Les messages viennent du dictionnaire : le site existe en deux
+ * langues, et un refus doit parler celle du lecteur. Par défaut, le
+ * français — c'est ce que fait tout appel qui ne précise rien.
+ */
+export type MessagesInscription = typeof inscription.erreurs;
+
+export function problemeEtape(
+  d: Donnees,
+  etape: number,
+  messages: MessagesInscription = inscription.erreurs
+): string | null {
   if (etape === 0) {
-    if (!d.prenom.trim() || !d.nom.trim())
-      return "Ton nom et ton prénom, s'il te plaît.";
-    if (!emailValide(d.email.trim()))
-      return "Cette adresse e-mail n'est pas valide. Exemple : prenom.nom@gmail.com";
-    if (!paysParCode(d.pays_tel)) return "Choisis le pays de ton numéro.";
+    if (!d.prenom.trim() || !d.nom.trim()) return messages.nom;
+    if (!emailValide(d.email.trim())) return messages.email;
+    if (!paysParCode(d.pays_tel)) return messages.pays;
     if (!numeroInternational(d.pays_tel, d.telephone)) {
       const pays = paysParCode(d.pays_tel)!;
       const ex = exempleNumero(d.pays_tel);
-      return `Ce numéro ne correspond pas au format ${pays.nom === "Bénin" ? "béninois" : "de ce pays (" + pays.nom + ")"}${ex ? ". Exemple : " + ex : ""}.`;
+      const quel =
+        pays.nom === "Bénin"
+          ? messages.numeroBenin
+          : `${messages.numeroPays} (${pays.nom})`;
+      return `${messages.numero} ${quel}${ex ? `. ${messages.numeroExemple} : ${ex}` : ""}.`;
     }
-    if (!dans(inscription.sexes, d.sexe))
-      return "Indique ton sexe : il sert à attribuer les chambres.";
+    if (!dans(inscription.sexes, d.sexe)) return messages.sexe;
   }
 
   if (etape === 1) {
-    if (!dans(inscription.profils, d.profil)) return "Dis-nous qui tu es.";
+    if (!dans(inscription.profils, d.profil)) return messages.profil;
     if (d.profil === PROFIL_BENIN) {
-      if (!dans(valeurs(inscription.roles), d.role)) return "Choisis ton rôle.";
-      if (!dans(inscription.comites, d.lc)) return "Choisis ton comité local.";
+      if (!dans(valeurs(inscription.roles), d.role)) return messages.role;
+      if (!dans(inscription.comites, d.lc)) return messages.lc;
     }
     if (d.profil === PROFIL_ETRANGER) {
-      if (!d.role.trim()) return "Indique ton poste.";
-      if (!d.pays.trim()) return "Indique ton pays.";
+      if (!d.role.trim()) return messages.poste;
+      if (!d.pays.trim()) return messages.paysLibre;
     }
-    if (d.profil === PROFIL_EXTERNE && !d.source.trim())
-      return "Dis-nous comment tu as entendu parler du NTMS.";
+    if (d.profil === PROFIL_EXTERNE && !d.source.trim()) return messages.source;
   }
 
   if (etape === 2) {
-    if (!dans(inscription.chambres, d.chambre)) return "Choisis un type de chambre.";
-    if (!dans(inscription.ouiNon, d.allergie))
-      return "Réponds à la question sur les allergies.";
+    if (!dans(inscription.chambres, d.chambre)) return messages.chambre;
+    if (!dans(inscription.ouiNon, d.allergie)) return messages.allergie;
     if (d.allergie === "Oui" && !d.allergie_detail.trim())
-      return "Précise à quoi tu es allergique.";
-    if (d.consentement_groupe !== "oui")
-      return "L'ajout au groupe WhatsApp est nécessaire pour suivre l'édition.";
-    if (d.consentement_politique !== "oui")
-      return "Il faut accepter les CGU et la politique de confidentialité pour t'inscrire.";
+      return messages.allergieDetail;
+    if (d.consentement_groupe !== "oui") return messages.consentementGroupe;
+    if (d.consentement_politique !== "oui") return messages.consentementPolitique;
   }
   return null;
 }

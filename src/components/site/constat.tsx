@@ -1,5 +1,5 @@
 import { Reveal } from "@/components/site/reveal";
-import { constat } from "@/lib/content";
+import { contenu } from "@/lib/contenu";
 import { cn } from "@/lib/utils";
 
 /**
@@ -46,7 +46,8 @@ const BANDES = [
   },
 ];
 
-export function Constat() {
+export async function Constat() {
+  const { constat } = await contenu();
   return (
     <section
       id="constat"

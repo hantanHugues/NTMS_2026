@@ -14,9 +14,9 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { ChoixPays, ListeDeroulante } from "@/components/site/listes-inscription";
+import { useContenu } from "@/components/site/langue";
 import { emailValide, numeroInternational } from "@/lib/inscription-regles";
 import { FORMATS, MOYENS, MOYEN_AUTRE, POIDS_MAX } from "@/lib/paiement";
-import { paiement } from "@/lib/content";
 import { cn } from "@/lib/utils";
 
 /**
@@ -205,6 +205,7 @@ function EcranEnvoi() {
 }
 
 export function FormulairePaiement({ montant }: { montant: number }) {
+  const { paiement } = useContenu();
   const [nom, setNom] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [paysTel, setPaysTel] = React.useState("BJ");

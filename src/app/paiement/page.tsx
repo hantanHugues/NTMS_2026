@@ -4,16 +4,20 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { FormulairePaiement } from "@/components/site/formulaire-paiement";
-import { event, paiement } from "@/lib/content";
+import { SelecteurLangue } from "@/components/site/langue";
+import { contenu } from "@/lib/contenu";
 import { notFound } from "next/navigation";
 
 import { paiementsOuverts } from "@/lib/inscription-regles";
 import { billetterieEnService, montantInscription } from "@/lib/paiement";
 
-export const metadata: Metadata = {
-  title: `${paiement.titre} — ${event.name}`,
-  description: paiement.chapo,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { event, inscription, paiement } = await contenu();
+  return {
+    title: `${paiement.titre} — ${event.name}`,
+    description: paiement.chapo,
+  };
+}
 
 /** Lue à chaque visite : la date de clôture doit s'appliquer tout de suite. */
 export const dynamic = "force-dynamic";
@@ -25,8 +29,9 @@ export const dynamic = "force-dynamic";
  * seul lien sortant. Le montant est lu ICI, côté serveur, et seulement
  * affiché plus bas.
  */
-export default function PagePaiement() {
+export default async function PagePaiement() {
   if (!billetterieEnService()) notFound();
+  const { event, inscription, paiement } = await contenu();
   const ouverts = paiementsOuverts();
 
   // Le montant manquant est une erreur de réglage, pas une erreur du
@@ -55,13 +60,16 @@ export default function PagePaiement() {
               {event.organisation}
             </span>
           </Link>
+          <div className="flex items-center gap-2">
+          <SelecteurLangue />
           <Link
             href="/"
             className="-mr-2 flex items-center gap-2 px-2 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
-            Retour
+            {inscription.formulaire.retour}
           </Link>
+          </div>
         </div>
       </header>
 

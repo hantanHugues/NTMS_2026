@@ -1,10 +1,11 @@
-import { skillTags } from "@/lib/content";
+import { contenu } from "@/lib/contenu";
 
 /**
  * Bandeau défilant des compétences. La liste est rendue deux fois et
  * l'animation translate de -50 %, donc la boucle est invisible.
  */
-export function SkillMarquee() {
+export async function SkillMarquee() {
+  const { skillTags } = await contenu();
   return (
     <div className="relative flex overflow-hidden border-b border-border bg-background py-5">
       <div className="flex w-max animate-marquee items-center">

@@ -1,8 +1,9 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SectionHeading } from "@/components/site/section-heading";
-import { programme } from "@/lib/content";
+import { contenu } from "@/lib/contenu";
 
-export function ProgrammeSection() {
+export async function ProgrammeSection() {
+  const { programme } = await contenu();
   return (
     <section
       id="programme"

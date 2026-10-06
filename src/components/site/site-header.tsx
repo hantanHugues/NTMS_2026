@@ -12,10 +12,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { boutonPhase, event, navItems } from "@/lib/content";
+import { SelecteurLangue, useContenu } from "@/components/site/langue";
 import type { Phase } from "@/lib/inscription-regles";
 
 export function SiteHeader({ phase = "inscription" }: { phase?: Phase }) {
+  const { boutonPhase, event, navItems } = useContenu();
   const bouton = boutonPhase[phase];
   const ref = React.useRef<HTMLElement>(null);
 
@@ -113,6 +114,7 @@ export function SiteHeader({ phase = "inscription" }: { phase?: Phase }) {
         </nav>
 
         <div className="flex items-center gap-2">
+          <SelecteurLangue className="max-sm:h-9 max-sm:px-2.5" />
           <Button
             nativeButton={false}
             className="hidden h-10 rounded-full px-5 md:inline-flex"

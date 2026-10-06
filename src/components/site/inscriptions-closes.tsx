@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { contact, event, instagram, inscription, paiement } from "@/lib/content";
+import { contenu } from "@/lib/contenu";
 import { paiementsOuverts } from "@/lib/inscription-regles";
 
 /**
@@ -26,7 +26,8 @@ import { paiementsOuverts } from "@/lib/inscription-regles";
  * Même habillage que l'écran de fin d'inscription : carte sur
  * ordinateur, écran entier avec sa barre sur téléphone.
  */
-export function InscriptionsCloses() {
+export async function InscriptionsCloses() {
+  const { contact, event, instagram, inscription, paiement } = await contenu();
   // Entre les deux dates, il reste quelque chose à faire : régler sa
   // place. C'est alors l'action principale, et les contacts passent
   // derrière.

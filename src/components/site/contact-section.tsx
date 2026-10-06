@@ -2,7 +2,7 @@ import { Mail, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContactButton } from "@/components/site/contact-button";
 import { Reveal } from "@/components/site/reveal";
-import { contact, event } from "@/lib/content";
+import { contenu } from "@/lib/contenu";
 
 /**
  * Contact.
@@ -32,7 +32,8 @@ import { contact, event } from "@/lib/content";
  * par Gmail.
  */
 
-export function ContactSection() {
+export async function ContactSection() {
+  const { contact, event } = await contenu();
   return (
     <section
       id="contact"

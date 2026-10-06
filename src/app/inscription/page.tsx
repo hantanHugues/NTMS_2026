@@ -5,7 +5,8 @@ import { ArrowLeft } from "lucide-react";
 
 import { FormulaireInscription } from "@/components/site/formulaire-inscription";
 import { InscriptionsCloses } from "@/components/site/inscriptions-closes";
-import { event, inscription } from "@/lib/content";
+import { SelecteurLangue } from "@/components/site/langue";
+import { contenu } from "@/lib/contenu";
 import { inscriptionsOuvertes } from "@/lib/inscription-regles";
 
 /**
@@ -15,10 +16,13 @@ import { inscriptionsOuvertes } from "@/lib/inscription-regles";
  */
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: `${inscription.titre} — ${event.organisation}`,
-  description: inscription.chapo,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { event, inscription } = await contenu();
+  return {
+    title: `${inscription.titre} — ${event.organisation}`,
+    description: inscription.chapo,
+  };
+}
 
 /**
  * La page d'inscription.
@@ -31,7 +35,8 @@ export const metadata: Metadata = {
  * page, ni carte. Le formulaire occupe l'écran entier et porte sa
  * propre barre (retour, avancement), comme un écran d'application.
  */
-export default function PageInscription() {
+export default async function PageInscription() {
+  const { event, inscription } = await contenu();
   const ouvertes = inscriptionsOuvertes();
   return (
     <div className="flex min-h-svh flex-col bg-background">
@@ -50,13 +55,16 @@ export default function PageInscription() {
               {event.organisation}
             </span>
           </Link>
+          <div className="flex items-center gap-2">
+          <SelecteurLangue />
           <Link
             href="/"
             className="-mr-2 flex items-center gap-2 px-2 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
-            Retour
+            {inscription.formulaire.retour}
           </Link>
+          </div>
         </div>
       </header>
 

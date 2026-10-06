@@ -1,7 +1,7 @@
 import { Reveal } from "@/components/site/reveal";
 import { Play } from "lucide-react";
 
-import { instagram } from "@/lib/content";
+import { contenu } from "@/lib/contenu";
 import { getInstagramPosts, type InstagramPost } from "@/lib/instagram";
 import { InstagramTile } from "@/components/site/instagram-tile";
 
@@ -60,11 +60,14 @@ function InstagramGlyph({ className }: { className?: string }) {
 }
 
 function Colonne({
+  compte,
   posts,
   reverse,
   duree,
   className,
 }: {
+  /** Le compte affiché sous chaque vignette. */
+  compte: { handle: string; url: string; avatar: string };
   posts: InstagramPost[];
   reverse: boolean;
   duree: string;
@@ -89,7 +92,7 @@ function Colonne({
                 href={post.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`${instagram.handle} sur Instagram`}
+                aria-label={`${compte.handle} — Instagram`}
                 className="relative block aspect-square w-full overflow-hidden"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -119,20 +122,20 @@ function Colonne({
                 a decoupe : le compte reste identifie, mais dans notre
                 typographie et nos couleurs. */}
             <a
-              href={instagram.url}
+              href={compte.url}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2.5 px-3 py-2.5"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={instagram.avatar}
+                src={compte.avatar}
                 alt=""
                 loading="lazy"
                 className="size-7 shrink-0 rounded-full object-cover ring-1 ring-border"
               />
               <span className="truncate text-xs font-medium">
-                {instagram.handle}
+                {compte.handle}
               </span>
               <InstagramGlyph className="ml-auto size-4 shrink-0 text-muted-foreground transition-colors duration-300 group-hover:text-accent-text" />
             </a>
@@ -144,10 +147,16 @@ function Colonne({
 }
 
 export async function InstagramSection() {
+  const { instagram } = await contenu();
   const posts = await getInstagramPosts(6);
 
-  // Trois colonnes de deux, celle du milieu à contresens.
-  const colonnes = [posts.slice(0, 2), posts.slice(2, 4), posts.slice(4, 6)];
+  // Trois colonnes, celle du milieu à contresens. La répartition se
+  // fait en quinconce plutôt que par tranches : avec trois
+  // publications, chaque colonne en reçoit une au lieu d'en laisser
+  // une vide.
+  const colonnes = [0, 1, 2].map((rang) =>
+    posts.filter((_, i) => i % 3 === rang)
+  );
 
   return (
     <section
@@ -202,6 +211,7 @@ export async function InstagramSection() {
           {colonnes.map((colonne, i) => (
             <Colonne
               key={i}
+              compte={instagram}
               posts={colonne}
               reverse={i % 2 === 1}
               duree={`${34 + i * 6}s`}

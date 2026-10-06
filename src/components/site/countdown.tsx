@@ -3,19 +3,25 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-const UNITS = [
-  { label: "j", ms: 86_400_000 },
-  { label: "h", ms: 3_600_000 },
-  { label: "min", ms: 60_000 },
-  { label: "s", ms: 1_000 },
-] as const;
+/** Les durées ; leur nom vient du dictionnaire, il se traduit. */
+const UNITS = [86_400_000, 3_600_000, 60_000, 1_000] as const;
 
-function split(remaining: number) {
+export type UnitesCompte = {
+  jours: string;
+  heures: string;
+  minutes: string;
+  secondes: string;
+  /** Ce qu'annonce un lecteur d'écran à la place des chiffres. */
+  libelle: string;
+};
+
+function split(remaining: number, unites: UnitesCompte) {
+  const noms = [unites.jours, unites.heures, unites.minutes, unites.secondes];
   let rest = Math.max(remaining, 0);
-  return UNITS.map((unit) => {
-    const value = Math.floor(rest / unit.ms);
-    rest -= value * unit.ms;
-    return { label: unit.label, value };
+  return UNITS.map((ms, i) => {
+    const value = Math.floor(rest / ms);
+    rest -= value * ms;
+    return { label: noms[i], value };
   });
 }
 
@@ -33,9 +39,11 @@ function split(remaining: number) {
  */
 export function Countdown({
   target,
+  unites,
   className,
 }: {
   target: string;
+  unites: UnitesCompte;
   className?: string;
 }) {
   const targetMs = React.useMemo(() => new Date(target).getTime(), [target]);
@@ -48,12 +56,12 @@ export function Countdown({
     return () => window.clearInterval(id);
   }, [targetMs]);
 
-  const parts = split(remaining ?? 0);
+  const parts = split(remaining ?? 0, unites);
 
   return (
     <p
       className={cn("flex items-baseline justify-center gap-5", className)}
-      aria-label="Temps restant avant l'ouverture"
+      aria-label={unites.libelle}
     >
       {parts.map((part) => (
         <span key={part.label} className="flex items-baseline gap-1">

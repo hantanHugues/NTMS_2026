@@ -1,7 +1,8 @@
 import { Mail } from "lucide-react";
-import { event, legal, navItems } from "@/lib/content";
+import { contenu } from "@/lib/contenu";
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const { event, legal, navItems, pied } = await contenu();
   return (
     <footer className="dark relative isolate overflow-hidden bg-background text-foreground">
       {/* AIESEC en filigrane. Petit et pose bas : le nom de
@@ -21,8 +22,7 @@ export function SiteFooter() {
               {event.name}
             </span>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              {event.baseline} — {event.organisation}. Vingt ans d&apos;AIESEC in Benin,
-              et cinq jours pour élever nos standards.
+              {event.baseline} — {event.organisation}. {pied.presentation}
             </p>
             <a
               href={`mailto:${event.email}`}
@@ -35,7 +35,7 @@ export function SiteFooter() {
 
           <div className="flex flex-col gap-10 sm:flex-row sm:gap-20">
             <div className="flex flex-col gap-4">
-              <span className="kicker opacity-70">Navigation</span>
+              <span className="kicker opacity-70">{pied.navigation}</span>
               <nav className="flex flex-col gap-3">
                 {navItems.map((item) => (
                   <a
@@ -50,11 +50,13 @@ export function SiteFooter() {
             </div>
 
             <div className="flex flex-col gap-4">
-              <span className="kicker opacity-70">L&apos;édition</span>
+              <span className="kicker opacity-70">{pied.edition}</span>
               <div className="flex flex-col gap-3 text-sm text-muted-foreground">
                 <span>{event.dates}</span>
                 <span>{event.city}</span>
-                <span>{event.seats} places</span>
+                <span>
+                  {event.seats} {pied.places}
+                </span>
               </div>
             </div>
           </div>

@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 
+import { InscriptionsCloses } from "@/components/site/inscriptions-closes";
+
 import { EcransEssai } from "./ecrans";
 
 /**
@@ -18,5 +20,8 @@ import { EcransEssai } from "./ecrans";
  */
 export default function PageLabo() {
   if (process.env.NODE_ENV !== "development") notFound();
-  return <EcransEssai />;
+  // L'écran de clôture est un composant SERVEUR — il lit la langue.
+  // Un composant client ne peut pas l'importer : on le rend ici et on
+  // le passe déjà construit.
+  return <EcransEssai closes={<InscriptionsCloses />} />;
 }
