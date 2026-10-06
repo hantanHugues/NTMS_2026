@@ -3,7 +3,6 @@
 import * as React from "react";
 import Image from "next/image";
 import {
-  CalendarDays,
   Check,
   FileCheck2,
   Info,
@@ -86,6 +85,73 @@ function encoder(blob: Blob): Promise<string> {
     lecteur.onerror = () => rejeter(new Error("Fichier illisible."));
     lecteur.readAsDataURL(blob);
   });
+}
+
+/**
+ * La date, en trois listes.
+ *
+ * Le champ `type="date"` natif impose son « jj/mm/aaaa » et son
+ * calendrier bleu, que rien ne permet d'habiller : ni la police, ni
+ * les couleurs, ni les arrondis du site. Trois listes maison disent la
+ * même chose, dans notre langue et notre habillage, et donnent une
+ * date impossible à saisir de travers.
+ */
+const MOIS = [
+  "janvier", "février", "mars", "avril", "mai", "juin",
+  "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+];
+
+function ChoixDate({
+  valeur,
+  onChange,
+  etiquette,
+}: {
+  /** Format ISO, « 2026-10-02 », ou chaîne vide. */
+  valeur: string;
+  onChange: (v: string) => void;
+  etiquette: string;
+}) {
+  const [annee, mois, jour] = valeur ? valeur.split("-") : ["", "", ""];
+  const maintenant = new Date();
+
+  // Deux années suffisent : on déclare un paiement récent.
+  const annees = [String(maintenant.getFullYear()), String(maintenant.getFullYear() - 1)];
+  // Le nombre de jours dépend du mois choisi, et de l'année bissextile.
+  const nbJours =
+    annee && mois ? new Date(Number(annee), Number(mois), 0).getDate() : 31;
+
+  function poser(j: string, m: string, a: string) {
+    onChange(j && m && a ? `${a}-${m}-${j}` : "");
+  }
+
+  return (
+    <div className="grid grid-cols-[1fr_1.4fr_1fr] gap-2">
+      <ListeDeroulante
+        etiquette={etiquette}
+        indication="Jour"
+        options={Array.from({ length: nbJours }, (_, i) => String(i + 1).padStart(2, "0"))}
+        valeur={jour || ""}
+        onChange={(j) => poser(j, mois, annee)}
+      />
+      <ListeDeroulante
+        etiquette={etiquette}
+        indication="Mois"
+        options={MOIS.map((nom, i) => ({
+          valeur: String(i + 1).padStart(2, "0"),
+          libelle: nom,
+        }))}
+        valeur={mois || ""}
+        onChange={(m) => poser(jour, m, annee)}
+      />
+      <ListeDeroulante
+        etiquette={etiquette}
+        indication="Année"
+        options={annees}
+        valeur={annee || ""}
+        onChange={(a) => poser(jour, mois, a)}
+      />
+    </div>
+  );
 }
 
 const poidsLisible = (o: number) =>
@@ -190,6 +256,8 @@ export function FormulairePaiement({ montant }: { montant: number }) {
     if (!montantPaye.replace(/\D/g, ""))
       return setErreur("Indique le montant que tu as payé.");
     if (!date) return setErreur("Indique la date du paiement.");
+    if (date > aujourdhui)
+      return setErreur("Cette date est dans le futur : vérifie le jour du paiement.");
     if (!fichier) return setErreur("Joins une preuve de ton paiement.");
 
     setErreur(null);
@@ -370,29 +438,16 @@ export function FormulairePaiement({ montant }: { montant: number }) {
             />
           </label>
 
-          {/* La date : le champ natif porte sa propre icône, grise et
-              minuscule. On la rend invisible mais cliquable sur toute
-              la zone de droite, et on pose la nôtre par-dessus. */}
-          <label className="relative block">
-            <Libelle obligatoire>{paiement.libelleDate}</Libelle>
-            <input
-              className={cn(
-                CHAMP,
-                "pr-12 [&::-webkit-calendar-picker-indicator]:absolute",
-                "[&::-webkit-calendar-picker-indicator]:inset-y-0 [&::-webkit-calendar-picker-indicator]:right-0",
-                "[&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-12",
-                "[&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
-              )}
-              type="date"
-              value={date}
-              max={aujourdhui}
-              onChange={(e) => setDate(e.target.value)}
+          <div>
+            <Libelle obligatoire id="q-date-paiement">
+              {paiement.libelleDate}
+            </Libelle>
+            <ChoixDate
+              etiquette="q-date-paiement"
+              valeur={date}
+              onChange={setDate}
             />
-            <CalendarDays
-              aria-hidden
-              className="pointer-events-none absolute right-4 bottom-3.5 size-5 text-primary max-sm:bottom-4"
-            />
-          </label>
+          </div>
         </div>
 
         <div>
