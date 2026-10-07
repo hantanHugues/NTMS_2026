@@ -276,6 +276,7 @@
     ctx.fillStyle = C.nuit;
     ctx.fillRect(190, 248, 380, 380);
     if (photo) photoCouvrante(ctx, photo, 190, 248, 380, 380, cadrage);
+    else silhouette(ctx, 190, 248, 380, 380);
     ctx.restore();
 
     if (mode === "tampon") dessinerTampon(ctx, 572, 556);
@@ -427,6 +428,32 @@
       t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
+  }
+
+/**
+ * LA SILHOUETTE D'ATTENTE.
+ *
+ * Tant qu'aucune photo n'est choisie, le cadre montre un buste, comme
+ * un profil vide sur WhatsApp ou Facebook : un rectangle sombre ne dit
+ * rien, celui-ci montre OU va la photo. Le fond ne change pas — c'est
+ * le meme nuit que derriere une photo detouree.
+ */
+  function silhouette(ctx, x, y, l, h) {
+    const cx = x + l / 2;
+    ctx.save();
+    ctx.fillStyle = "rgba(255, 235, 209, 0.22)";
+
+    // La tete.
+    const rTete = l * 0.155;
+    ctx.beginPath();
+    ctx.arc(cx, y + h * 0.355, rTete, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Les epaules : un demi-disque large, coupe par le bas du cadre.
+    ctx.beginPath();
+    ctx.arc(cx, y + h * 1.02, l * 0.325, Math.PI, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 
   /**
