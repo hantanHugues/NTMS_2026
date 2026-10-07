@@ -485,9 +485,12 @@ export const affiche = {
   placeholderAffiliation: "LC Cotonou",
   aideRole:
     "Leave both fields empty if you are not an AIESECer: the badge reads perfectly well without that line.",
+  libellePhoto: "Photo",
   boutonPhoto: "Choose your photo",
+  manquePour: "Still missing:",
   aidePhoto: "A well-lit portrait, face in the middle, works best.",
   zoom: "Zoom",
+  aideAxeBloque: "zoom in to move",
   horizontal: "Left / right",
   vertical: "Up / down",
   boutonTelecharger: "Download the poster",
@@ -501,5 +504,6 @@ export const affiche = {
   erreurPreparation: "The poster could not be prepared. Reload the page.",
   erreurPhoto: "This image could not be read. Try a JPG or PNG photo.",
   erreurImage: "The image could not be produced. Try again.",
+  depuisAccueil: "Create your “J'y serai” poster",
   depuisInscription: "Create your “J'y serai” poster",
 };

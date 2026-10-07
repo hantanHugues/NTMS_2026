@@ -710,9 +710,12 @@ export const affiche = {
   placeholderAffiliation: "LC Cotonou",
   aideRole:
     "Laisse ces deux champs vides si tu n'es pas AIESECer : le badge se passe très bien de cette ligne.",
+  libellePhoto: "Photo",
   boutonPhoto: "Choisir ta photo",
+  manquePour: "Il manque encore :",
   aidePhoto: "Un portrait bien éclairé, le visage au centre, rend le mieux.",
   zoom: "Zoom",
+  aideAxeBloque: "zoome pour déplacer",
   horizontal: "Gauche / droite",
   vertical: "Haut / bas",
   boutonTelecharger: "Télécharger l'affiche",
@@ -727,6 +730,8 @@ export const affiche = {
     "L'affiche n'a pas pu être préparée. Recharge la page.",
   erreurPhoto: "Cette image n'a pas pu être lue. Essaie une photo JPG ou PNG.",
   erreurImage: "L'image n'a pas pu être produite. Réessaie.",
+  // Depuis l'accueil, sous le bouton d'inscription.
+  depuisAccueil: "Crée ton affiche « J'y serai »",
   // Depuis l'ecran de fin d'inscription.
   depuisInscription: "Crée ton affiche « J'y serai »",
 };

@@ -4,6 +4,7 @@ import * as React from "react";
 import { Download, ShieldCheck, Share2, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { useContenu } from "@/components/site/langue";
 import AfficheNTMS from "@/lib/affiche-ntms";
 import { cn } from "@/lib/utils";
@@ -57,10 +58,59 @@ function peutPartager(): boolean {
 const CHAMP =
   "w-full rounded-xl border border-border bg-background px-4 py-3 text-base outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary max-sm:min-h-13";
 
+/**
+ * Un réglage du cadrage : son nom à gauche, sa valeur à droite, la
+ * glissière dessous. La valeur affichée évite de bouger à l'aveugle.
+ */
+function Reglage({
+  libelle,
+  valeur,
+  min,
+  max,
+  step,
+  onChange,
+  inerte = false,
+  aideInerte,
+}: {
+  libelle: string;
+  valeur: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (v: number) => void;
+  /** L'axe n'a aucun jeu : bouger le curseur ne changerait rien. */
+  inerte?: boolean;
+  aideInerte?: string;
+}) {
+  return (
+    <div className={cn("flex flex-col gap-0.5", inerte && "opacity-55")}>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-sm font-medium">{libelle}</span>
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {inerte
+            ? aideInerte
+            : step < 1
+              ? valeur.toFixed(2) + " ×"
+              : Math.round(valeur) + " %"}
+        </span>
+      </div>
+      <Slider
+        value={valeur}
+        min={min}
+        max={max}
+        step={step}
+        disabled={inerte}
+        onValueChange={(v) => onChange(typeof v === "number" ? v : v[0])}
+      />
+    </div>
+  );
+}
+
 export function GenerateurAffiche() {
   const { affiche } = useContenu();
   const canvas = React.useRef<HTMLCanvasElement>(null);
   const champFichier = React.useRef<HTMLInputElement>(null);
+  const apercu = React.useRef<HTMLDivElement>(null);
 
   const [prenom, setPrenom] = React.useState("");
   const [nom, setNom] = React.useState("");
@@ -126,6 +176,19 @@ export function GenerateurAffiche() {
   }, [affiche.erreurPreparation]);
 
 
+  // Le cadre photo du badge, en unites du badge. La photo y entre en
+  // « cover » : l'axe le plus juste n'a aucun jeu.
+  const CADRE = 380;
+  const jeu = React.useMemo(() => {
+    if (!photo) return { horizontal: false, vertical: false };
+    const echelle =
+      Math.max(CADRE / photo.width, CADRE / photo.height) * Math.max(1, zoom);
+    return {
+      horizontal: photo.width * echelle - CADRE > 1,
+      vertical: photo.height * echelle - CADRE > 1,
+    };
+  }, [photo, zoom]);
+
   const donnees = React.useMemo(
     () => ({
       prenom,
@@ -154,13 +217,16 @@ export function GenerateurAffiche() {
       setCx(50);
       setCy(22);
       setErreur(null);
+      apercu.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch {
       setErreur(affiche.erreurPhoto);
     }
   }
 
   function nomFichier() {
-    const base = `jy-serai-ntms2026-${prenom}-${nom}`;
+    // Nom puis prénom : les fichiers se classent par famille, aussi
+    // bien dans le téléphone que dans le dossier du comité.
+    const base = `jy-serai-ntms2026-${nom}-${prenom}`;
     return (
       base
         .normalize("NFD")
@@ -198,11 +264,19 @@ export function GenerateurAffiche() {
   }
 
   const pret = Boolean(ressources);
+  // Ce qu'il faut pour que l'affiche veuille dire quelque chose. Le
+  // role et l'affiliation restent facultatifs : tout le monde n'est
+  // pas AIESECer.
+  const manques: string[] = [];
+  if (!prenom.trim()) manques.push(affiche.libellePrenom);
+  if (!nom.trim()) manques.push(affiche.libelleNom);
+  if (!photo) manques.push(affiche.libellePhoto);
+  const complet = pret && manques.length === 0;
 
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)] lg:items-start">
       {/* L'aperçu d'abord sur téléphone : c'est ce qu'on vient voir. */}
-      <div className="lg:order-2 lg:sticky lg:top-24">
+      <div ref={apercu} className="scroll-mt-24 lg:order-2 lg:sticky lg:top-24">
         <canvas
           ref={canvas}
           width={1080}
@@ -214,6 +288,39 @@ export function GenerateurAffiche() {
         <p className="mt-3 text-center text-xs text-muted-foreground">
           {pret ? affiche.format : affiche.chargement}
         </p>
+
+        {photo ? (
+          <div className="mx-auto mt-5 flex max-w-sm flex-col gap-1 rounded-2xl border border-border bg-card/50 p-5">
+            <Reglage
+              libelle={affiche.zoom}
+              valeur={zoom}
+              min={1}
+              max={3}
+              step={0.01}
+              onChange={setZoom}
+            />
+            <Reglage
+              libelle={affiche.horizontal}
+              valeur={cx}
+              min={0}
+              max={100}
+              step={1}
+              onChange={setCx}
+              inerte={!jeu.horizontal}
+              aideInerte={affiche.aideAxeBloque}
+            />
+            <Reglage
+              libelle={affiche.vertical}
+              valeur={cy}
+              min={0}
+              max={100}
+              step={1}
+              onChange={setCy}
+              inerte={!jeu.vertical}
+              aideInerte={affiche.aideAxeBloque}
+            />
+          </div>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-7 lg:order-1">
@@ -296,47 +403,6 @@ export function GenerateurAffiche() {
           </span>
         </div>
 
-        {photo ? (
-          <div className="flex flex-col gap-4">
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">{affiche.zoom}</span>
-              <input
-                type="range"
-                min={1}
-                max={3}
-                step={0.01}
-                value={zoom}
-                onChange={(e) => setZoom(+e.target.value)}
-                className="accent-primary"
-              />
-            </label>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-2">
-                <span className="text-sm font-medium">{affiche.horizontal}</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={cx}
-                  onChange={(e) => setCx(+e.target.value)}
-                  className="accent-primary"
-                />
-              </label>
-              <label className="flex flex-col gap-2">
-                <span className="text-sm font-medium">{affiche.vertical}</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={cy}
-                  onChange={(e) => setCy(+e.target.value)}
-                  className="accent-primary"
-                />
-              </label>
-            </div>
-          </div>
-        ) : null}
-
         {erreur ? (
           <p
             role="alert"
@@ -346,10 +412,16 @@ export function GenerateurAffiche() {
           </p>
         ) : null}
 
+        {pret && manques.length ? (
+          <p className="text-sm text-muted-foreground">
+            {affiche.manquePour} {manques.join(", ").toLowerCase()}.
+          </p>
+        ) : null}
+
         <div className="flex flex-wrap gap-3">
           <Button
             size="lg"
-            disabled={!pret}
+            disabled={!complet}
             onClick={telecharger}
             className="h-13 rounded-full px-7 text-base has-data-[icon=inline-start]:pl-6 max-sm:h-14 max-sm:w-full"
           >
@@ -360,7 +432,7 @@ export function GenerateurAffiche() {
             <Button
               size="lg"
               variant="outline"
-              disabled={!pret}
+              disabled={!complet}
               onClick={partager}
               className="h-13 rounded-full px-7 text-base has-data-[icon=inline-start]:pl-6 max-sm:h-14 max-sm:w-full"
             >
