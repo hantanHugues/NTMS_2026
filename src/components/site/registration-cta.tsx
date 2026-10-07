@@ -1,5 +1,7 @@
 import * as React from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { BadgeCheck } from "lucide-react";
 
 import FloatingDotsCta from "@/components/ui/floating-dots-cta";
 import { contenu } from "@/lib/contenu";
@@ -33,7 +35,7 @@ import type { Phase } from "@/lib/inscription-regles";
  * donc il dit la meme chose sans le probleme.
  */
 export async function RegistrationCta({ phase = "inscription" }: { phase?: Phase }) {
-  const { cta, ctaClos, ctaPaiement, event } = await contenu();
+  const { affiche, cta, ctaClos, ctaPaiement, event } = await contenu();
   // Même carte, textes de la phase en cours.
   const textes =
     phase === "paiement" ? ctaPaiement : phase === "clos" ? ctaClos : cta;
@@ -107,6 +109,19 @@ export async function RegistrationCta({ phase = "inscription" }: { phase?: Phase
               href={textes.href}
               label={textes.button}
             />
+
+            {/* L'affiche « J'y serai » : second rang, derriere le seul
+                clic qui compte. Elle sert surtout a qui est deja
+                inscrit, mais elle vaut aussi pour qui hesite. */}
+            <Link
+              href="/affiche"
+              /* Souligne EN PERMANENCE : sur telephone il n'y a pas de
+                 survol, et sans trait rien ne dit que c'est cliquable. */
+              className="mt-5 flex w-fit items-center gap-2 text-sm font-medium text-accent-text underline decoration-accent-text/45 decoration-2 underline-offset-4 transition-colors hover:decoration-accent-text max-sm:mt-4 max-sm:w-full max-sm:justify-center"
+            >
+              <BadgeCheck className="size-4" />
+              {affiche.depuisAccueil}
+            </Link>
 
             <p className="mt-5 text-sm text-muted-foreground max-sm:mt-4 max-sm:text-center">
               {event.city} — {event.dates}
