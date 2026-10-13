@@ -527,8 +527,6 @@ export const paiement = {
     "Tu as réglé ta place ? Dis-le-nous ici avec une preuve. Le comité vérifie, puis t'envoie ton reçu par mail.",
   libelleNom: "Nom et prénom",
   // Paiement par tranches : packs, identification, reste à payer.
-  aideIdentification:
-    "À chaque paiement, utilise toujours la même combinaison e-mail + numéro. C'est elle qui retrouve tes paiements et ton pack : une autre combinaison sera refusée.",
   boutonContinuer: "Continuer",
   verification: "Vérification…",
   modifier: "Modifier mon e-mail ou mon numéro",
@@ -597,7 +595,7 @@ export const paiement = {
   lienWhatsApp: process.env.NEXT_PUBLIC_LIEN_WHATSAPP_PAIEMENT ?? "",
   // Ce que la personne doit comprendre AVANT de remplir.
   rappel:
-    "Le site n'encaisse pas de paiement : tu paies par ton moyen habituel, puis tu le déclares ici.",
+    "Tu paies par ton moyen habituel, puis tu le déclares ici. Utilise toujours la même combinaison e-mail + numéro : une autre sera refusée.",
   /** Les refus de la declaration, partages par le site et le serveur. */
   erreurs: {
     clos: "Les paiements sont clos.",
