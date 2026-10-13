@@ -640,8 +640,8 @@ function onEdit(e) {
  *
  *   {{facture}}   le bloc des trois chiffres : paiement actuel, total
  *                 paye, puis « Reste a payer » — ou « Pack solde » quand
- *                 ce paiement solde le pack. Le bouton du mail (Texte
- *                 CTA / Lien CTA) est retire dans ce dernier cas.
+ *                 ce paiement solde le pack. Dans ce dernier cas le
+ *                 bouton est celui de la colonne D (groupe WhatsApp).
  *   {{paiement_actuel}} {{total_paye}} {{reste}}   les chiffres seuls,
  *                 toujours remplis, pour un texte ecrit a la main.
  */
@@ -971,7 +971,9 @@ function normaliser(libelle) {
  * eux, celui qui contient « manuel » est le mail manuel, les autres
  * l'automatique. Un nom mal ecrit a deja coute une serie de mails.
  */
-function lireConfig(modele) {
+function lireConfig(modele, colonne) {
+  // Colonne lue : B (1) par defaut ; C (2) et D (3) servent au recu.
+  var col = colonne || 1;
   var vise = (modele || MODELES.auto).nom;
   var feuille = null;
   var feuilles = SpreadsheetApp.getActiveSpreadsheet().getSheets();
@@ -998,10 +1000,10 @@ function lireConfig(modele) {
   for (var i = 0; i < valeurs.length; i++) {
     var cle = normaliser(valeurs[i][0]);
     if (!cle) continue;
-    var texte = valeurs[i].length > 1 ? String(valeurs[i][1]).trim() : "";
+    var texte = valeurs[i].length > col ? String(valeurs[i][col]).trim() : "";
     var lien = "";
     try {
-      var riche = riches[i][1];
+      var riche = riches[i][col];
       lien = (riche && riche.getLinkUrl()) || "";
       if (!lien && riche) {
         // Lien pose sur une partie du texte seulement.
@@ -1430,7 +1432,7 @@ function onOpen() {
     .addSeparator()
     .addItem("Envoyer le mail automatique à ceux qui ne l'ont pas reçu", "envoyerLesMailsEnAttente")
     .addSeparator()
-    .addItem("Envoyer les reçus aux paiements validés", "envoyerLesRecus")
+    .addItem("Envoyer les mails de paiement (validés et refusés)", "envoyerLesRecus")
     .addSeparator()
     .addItem("M'envoyer un aperçu du mail automatique", "testerLeMail")
     .addItem("M'envoyer un aperçu du mail manuel", "testerLeMailManuel")
@@ -1445,7 +1447,7 @@ function onOpen() {
  *   payement       l'en-tete des paiements (avec pack, montant_du, tranche)
  *   packs          nom / prix, avec trois packs a modifier
  *   participants   une ligne par personne : total valide, reste a payer
- *   config recu    Objet, Corps, Nom expediteur, avec les variables
+ *   config recu    3 colonnes : valide, non valide, solde
  *
  * Sans danger a relancer : un onglet qui existe deja n'est jamais
  * ecrase, seuls les en-tetes vides sont completes.
@@ -1483,18 +1485,32 @@ function initialiserLesOnglets() {
   });
   if (!aUnRecu) {
     var f = classeur.insertSheet("config recu");
-    f.appendRow(["Objet", "Paiement validé — {{reference}} · NTMS 2026"]);
-    f.appendRow(["Titre", "Merci {{nom}}, ton paiement est validé"]);
+    f.appendRow(["champ", "paiement validé", "paiement non validé", "pack soldé"]);
+    f.appendRow([
+      "Objet",
+      "Paiement validé — {{reference}} · NTMS 2026",
+      "Paiement non validé — {{reference}} · NTMS 2026",
+      "Pack soldé — {{reference}} · NTMS 2026",
+    ]);
+    f.appendRow([
+      "Titre",
+      "Merci {{nom}}, ton paiement est validé",
+      "{{nom}}, ton paiement n'a pas pu être validé",
+      "Merci {{nom}}, ton pack est soldé",
+    ]);
     f.appendRow([
       "Corps",
-      "Bonjour {{nom}},\n\nNous avons bien reçu et validé ton paiement " +
-        "({{reference}}, {{pack}}).\n\n{{facture}}\n\n" +
-        "Conserve ce mail : il vaut preuve de ton paiement.\n\n" +
-        "À très vite à Lokossa,\nL'équipe NTMS 2026",
+      "Bonjour {{nom}},\n\nNous avons bien reçu et validé ton paiement ({{reference}}, {{pack}}).\n\n{{facture}}\n\nConserve ce mail : il vaut preuve de ton paiement.\n\nÀ très vite à Lokossa,\nL'équipe NTMS 2026",
+      "Bonjour {{nom}},\n\nNous n'avons pas pu valider ton paiement ({{reference}}, {{pack}}).\n\n{{facture}}\n\nTu peux déclarer ton paiement de nouveau sur le site, avec une preuve lisible, ou nous écrire.\n\nL'équipe NTMS 2026",
+      "Bonjour {{nom}},\n\nTon paiement ({{reference}}) est validé et ton pack {{pack}} est soldé.\n\n{{facture}}\n\nConserve ce mail : il vaut preuve de ton paiement.\n\nÀ très vite à Lokossa,\nL'équipe NTMS 2026",
     ]);
+    f.appendRow(["Texte CTA", "Payer ma prochaine tranche", "Déclarer mon paiement", "Rejoindre le groupe WhatsApp"]);
+    f.appendRow(["Lien CTA", "", "", ""]);
     f.appendRow(["Nom expéditeur", "AIESEC in Benin"]);
-    f.setColumnWidth(1, 160);
     f.setColumnWidth(2, 520);
+    f.setColumnWidth(3, 520);
+    f.setColumnWidth(4, 520);
+    f.setColumnWidth(1, 160);
   }
 
   var apres = classeur.getSheets().map(function (f) { return f.getName(); });
@@ -1535,6 +1551,33 @@ function envoyerLesMailsEnAttente() {
 }
 
 /**
+ * LES TROIS MAILS DU RECU, dans l'onglet « config recu » :
+ *
+ *   colonne B   paiement valide, il reste un solde
+ *   colonne C   paiement NON valide (statut « refuse »)
+ *   colonne D   pack SOLDE par ce paiement
+ *
+ * Meme libelles en colonne A (Objet, Titre, Corps, Texte CTA, Lien CTA).
+ * Nom expediteur, CC, BCC, Images et Pieces jointes se lisent en B pour
+ * les trois. Colonne D : Objet, Titre et Corps reprennent ceux de B
+ * s'ils sont vides ; le BOUTON ne vient que de D (Texte CTA + Lien CTA,
+ * le groupe WhatsApp), jamais de B. Colonne C vide : aucun mail de
+ * refus ne part.
+ */
+var CHAMPS_CONTENU = ["objet", "titre", "corps", "textecta", "liencta"];
+
+function confRecuColonne(base, colonne, heriteDeB) {
+  var col = lireConfig(MODELES.recu, colonne);
+  var r = {};
+  for (var cle in base) r[cle] = base[cle];
+  CHAMPS_CONTENU.forEach(function (c) {
+    if (col[c]) r[c] = col[c];
+    else if (!heriteDeB) r[c] = "";
+  });
+  return r;
+}
+
+/**
  * LES RECUS DE PAIEMENT.
  *
  * Le site ne decide de rien : il depose des declarations en
@@ -1548,7 +1591,7 @@ function envoyerLesMailsEnAttente() {
  * {{nom}}, {{reference}} (celle du paiement), {{moyen}}, {{pack}},
  * {{tranche}}, {{montant_du}}, et la FACTURE : {{paiement_actuel}},
  * {{total_paye}}, {{reste}}, ou le bloc {{facture}}. Voir « LA FACTURE ».
- * Au paiement qui solde le pack, le bouton CTA n'est pas affiche.
+ * Au paiement qui solde le pack, le bouton est celui de la colonne D.
  */
 function envoyerLesRecus() {
   var ui = SpreadsheetApp.getUi();
@@ -1557,6 +1600,16 @@ function envoyerLesRecus() {
     ui.alert("L'onglet « config recu » est incomplet : remplis Objet et Corps.");
     return;
   }
+  // Colonne D : pack solde. Son bouton est CELUI DE D (le groupe
+  // WhatsApp) ; jamais celui de B, « payer la prochaine tranche »
+  // n'a plus de sens. Rien en D = pas de bouton.
+  var confSolde = confRecuColonne(conf, 3, true);
+  var colonneD = lireConfig(MODELES.recu, 3);
+  confSolde.textecta = colonneD.textecta || "";
+  confSolde.liencta = colonneD.liencta || "";
+  // Colonne C : paiement non valide. Vide = on ne previent personne.
+  var confRefus = confRecuColonne(conf, 2, false);
+  var refusActif = !!(confRefus.objet && confRefus.corps);
 
   var feuille = feuillePaiements();
   var valeurs = feuille.getDataRange().getValues();
@@ -1567,19 +1620,20 @@ function envoyerLesRecus() {
 
   var aEnvoyer = 0;
   for (var i = 1; i < valeurs.length; i++) {
-    if (String(valeurs[i][i0.statut]).trim().toLowerCase() !== STATUT_VALIDE) continue;
+    var etat = String(valeurs[i][i0.statut]).trim().toLowerCase();
+    if (etat !== STATUT_VALIDE && !(etat === "refuse" && refusActif)) continue;
     if (String(valeurs[i][i0.recu_envoye]).trim().toLowerCase() === "oui") continue;
     if (!valeurs[i][i0.email]) continue;
     aEnvoyer++;
   }
   if (!aEnvoyer) {
-    ui.alert("Aucun paiement valide en attente de recu.");
+    ui.alert("Aucun paiement valide ou refuse en attente de mail.");
     return;
   }
   if (
     ui.alert(
-      "Recus de paiement",
-      "Envoyer le recu a " + aEnvoyer + " paiement(s) valide(s) ?",
+      "Mails de paiement",
+      "Envoyer " + aEnvoyer + " mail(s) (paiements valides ou refuses) ?",
       ui.ButtonSet.OK_CANCEL
     ) !== ui.Button.OK
   ) {
@@ -1598,7 +1652,9 @@ function envoyerLesRecus() {
   var quota = false;
   try {
     for (var j = 1; j < valeurs.length; j++) {
-      if (String(valeurs[j][i0.statut]).trim().toLowerCase() !== STATUT_VALIDE) continue;
+      var statutLigne = String(valeurs[j][i0.statut]).trim().toLowerCase();
+      var refuse = statutLigne === "refuse";
+      if (statutLigne !== STATUT_VALIDE && !(refuse && refusActif)) continue;
       if (String(valeurs[j][i0.recu_envoye]).trim().toLowerCase() === "oui") continue;
       var destinataire = String(valeurs[j][i0.email]).trim();
       if (!destinataire) continue;
@@ -1606,13 +1662,16 @@ function envoyerLesRecus() {
       // Les chiffres de la facture : voir « LA FACTURE ». Le mail ne
       // calcule rien, il recoit ces variables toutes faites.
       var variables = variablesRecu(valeurs[j], i0, indexFacture);
-      // Pack solde : plus de « prochaine tranche », donc pas de bouton.
+      // Quel des trois mails : refuse (C), solde (D) ou valide (B).
       var confLigne = conf;
-      if (variables.soldee) {
-        confLigne = {};
-        for (var cle in conf) confLigne[cle] = conf[cle];
-        confLigne.textecta = "";
-        confLigne.liencta = "";
+      if (refuse) {
+        confLigne = confRefus;
+        variables.facture =
+          "Paiement non retenu : " + variables.paiement_actuel + " FCFA\n" +
+          "Total payé : " + variables.total_paye + " FCFA\n" +
+          "Reste à payer : " + variables.reste + " FCFA";
+      } else if (variables.soldee) {
+        confLigne = confSolde;
       }
 
       if (quota || MailApp.getRemainingDailyQuota() < 1) {
@@ -1622,7 +1681,7 @@ function envoyerLesRecus() {
       try {
         MailApp.sendEmail({
           to: destinataire,
-          subject: remplirTexte(conf.objet, variables),
+          subject: remplirTexte(confLigne.objet, variables),
           body: construireTexte(confLigne, variables),
           htmlBody: construireHtml(confLigne, variables),
           name: conf.nomexpediteur || "AIESEC in Benin",
