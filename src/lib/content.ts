@@ -39,12 +39,13 @@ export const event = {
     process.env.NEXT_PUBLIC_FIN_INSCRIPTIONS ??
     process.env.NEXT_PUBLIC_DATE_NTMS ??
     "2026-11-18T09:00:00+01:00",
-  // Fin des PAIEMENTS, la seconde date. Entre les deux, le formulaire
-  // est clos mais on peut encore regler sa place ; apres, plus rien.
-  // Par defaut la meme date que la cloture des inscriptions.
+  // Fin des PAIEMENTS : une date a part, INDEPENDANTE des inscriptions.
+  // La page /paiement est ouverte des maintenant, que le formulaire
+  // d'inscription soit ouvert ou clos, et ferme a cette date. Sans
+  // NEXT_PUBLIC_FIN_PAIEMENTS, elle ferme au debut de l'edition — jamais
+  // a la date des inscriptions.
   finPaiements:
     process.env.NEXT_PUBLIC_FIN_PAIEMENTS ??
-    process.env.NEXT_PUBLIC_FIN_INSCRIPTIONS ??
     process.env.NEXT_PUBLIC_DATE_NTMS ??
     "2026-11-18T09:00:00+01:00",
   // LIEU OFFICIEL, communique par l'utilisateur. Comme le theme, c'est
@@ -525,6 +526,28 @@ export const paiement = {
   chapo:
     "Tu as réglé ta place ? Dis-le-nous ici avec une preuve. Le comité vérifie, puis t'envoie ton reçu par mail.",
   libelleNom: "Nom et prénom",
+  // Paiement par tranches : packs, identification, reste à payer.
+  aideIdentification:
+    "Utilise toujours le même e-mail et le même numéro à chaque tranche : ils servent à retrouver tes paiements.",
+  boutonContinuer: "Continuer",
+  verification: "Vérification…",
+  modifier: "Modifier mon e-mail ou mon numéro",
+  retrouve: "Content de te revoir,",
+  tranche: "tranche n°",
+  premierPaiement:
+    "Premier paiement : renseigne ton nom et choisis ton pack. Pour les tranches suivantes, il suffira de ton e-mail et de ton numéro.",
+  packSolde: "Ton pack est soldé : il n'y a plus rien à payer. Merci !",
+  packCouvert: "Tes paiements en attente de validation couvrent déjà ton pack. Tu recevras ta facture dès qu'ils sont validés.",
+  packsTitre: "Nos packs",
+  libellePack: "Ton pack",
+  indicationPack: "Choisis ton pack",
+  recapPack: "Pack",
+  recapDu: "Montant du pack",
+  recapValide: "Déjà validé",
+  recapAttente: "En attente de validation",
+  recapReste: "Reste à payer",
+  recapApres: "Après ce paiement",
+  recapSolde: "Pack soldé",
   libelleEmail: "Adresse e-mail",
   libelleNumero: "Numéro de téléphone",
   libelleMoyen: "Comment as-tu payé ?",
@@ -541,9 +564,6 @@ export const paiement = {
   placeholderMoyenAutre: "Western Union, dépôt en agence…",
   placeholderRemarque: "Facultatif",
   boutonPreuve: "Choisir une image ou un PDF",
-  // Reglage manquant cote site, pas erreur du visiteur.
-  montantManquant:
-    "La billetterie n'est pas encore réglée : le montant n'a pas été renseigné. Écris-nous à",
   retirerPreuve: "Retirer la preuve",
   // Les trois listes de la date, et les mois au complet.
   dateJour: "Jour",
@@ -570,7 +590,7 @@ export const paiement = {
   // Une fois la declaration deposee.
   succesTitre: "Ta déclaration est enregistrée.",
   succesTexte:
-    "Le comité vérifie ta preuve, puis t'envoie ton reçu par mail. Rien d'autre à faire de ton côté.",
+    "Le comité vérifie ta preuve, puis valide ton inscription : tu recevras ta facture par mail. Rien d'autre à faire de ton côté.",
   // Le groupe des personnes qui ont paye, different de celui des
   // inscrits. Tant que le lien n'est pas renseigne, rien ne s'affiche.
   succesBouton: "Rejoindre le groupe des participants",
@@ -584,6 +604,9 @@ export const paiement = {
     illisible: "Requête illisible.",
     preuveIllisible: "Ce fichier n'a pas pu être lu. Choisis-en un autre.",
     nom: "Ton nom, s'il te plaît.",
+    pack: "Choisis ton pack.",
+    identification:
+      "Ces informations ne correspondent pas à un paiement déjà enregistré. Utilise le même e-mail et le même numéro qu'au premier paiement, ou écris-nous à",
     email: "Cette adresse e-mail n'est pas valide.",
     numero: "Ce numéro de téléphone n'est pas valide.",
     moyen: "Choisis le moyen que tu as utilisé.",

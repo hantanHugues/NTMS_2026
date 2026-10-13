@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { enregistrerPaiement } from "@/lib/classeur";
 import { emailValide, paiementsOuverts } from "@/lib/inscription-regles";
-import { FORMATS, POIDS_MAX, billetterieEnService } from "@/lib/paiement";
+import { FORMATS, POIDS_MAX } from "@/lib/paiement";
 
 /**
  * Reçoit une déclaration de paiement et la dépose dans le classeur.
@@ -24,9 +24,6 @@ function refus(message: string, code = 400) {
 }
 
 export async function POST(request: Request) {
-  if (!billetterieEnService()) {
-    return NextResponse.json({ ok: false, message: "Introuvable." }, { status: 404 });
-  }
   if (!paiementsOuverts()) {
     return refus("Les paiements sont clos.", 403);
   }
@@ -49,6 +46,7 @@ export async function POST(request: Request) {
   const moyen = lire("moyen");
   const montant = lire("montant_declare");
   const date = lire("date_paiement");
+  const pack = lire("pack");
   const remarque = lire("remarque", MAX_REMARQUE);
 
   if (nom.length < 2) return refus("Ton nom, s'il te plaît.");
@@ -85,6 +83,7 @@ export async function POST(request: Request) {
       nom,
       email,
       numero,
+      pack,
       moyen,
       montant_declare: montant,
       date_paiement: date,

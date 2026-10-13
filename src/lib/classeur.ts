@@ -67,3 +67,50 @@ export async function enregistrerPaiement(champs: Record<string, string>) {
   if (!url || !secret) throw new Error("Classeur non configuré.");
   return appelerScript(url, { ...champs, type: "paiement", _secret: secret });
 }
+
+export type Pack = { nom: string; prix: number };
+
+/** Ce que le classeur sait d'une personne avant qu'elle paie. */
+export type Situation = {
+  packs: Pack[];
+  connu: boolean;
+  /** E-mail ou numéro déjà connu, mais pas les deux ensemble. */
+  blocage: boolean;
+  nom: string;
+  pack: string;
+  montant_du: number;
+  valide: number;
+  attente: number;
+  reste: number;
+  tranche: number;
+};
+
+export async function situationPaiement(
+  email: string,
+  numero: string
+): Promise<Situation> {
+  const url = process.env.INSCRIPTION_WEBAPP_URL;
+  const secret = process.env.INSCRIPTION_SECRET;
+  if (!url || !secret) throw new Error("Classeur non configuré.");
+  const r = (await appelerScript(url, {
+    type: "situation",
+    email,
+    numero,
+    _secret: secret,
+  })) as unknown as Partial<Situation> & { ok?: boolean; message?: string };
+  if (!r.ok || !Array.isArray(r.packs)) {
+    throw new Error(r.message || "Situation illisible.");
+  }
+  return {
+    packs: r.packs,
+    connu: !!r.connu,
+    blocage: !!r.blocage,
+    nom: r.nom ?? "",
+    pack: r.pack ?? "",
+    montant_du: Number(r.montant_du) || 0,
+    valide: Number(r.valide) || 0,
+    attente: Number(r.attente) || 0,
+    reste: Number(r.reste) || 0,
+    tranche: Number(r.tranche) || 1,
+  };
+}
