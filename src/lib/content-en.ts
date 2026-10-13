@@ -345,7 +345,7 @@ export const paiement = {
     nom: "Your name, please.",
     pack: "Choose your pack.",
     identification:
-      "This information does not match a payment already on record. Use the same email and number as for your first payment, or write to us at",
+      "This information does not match a payment already on record. Use the same email and number as for your first payment, or contact the committee.",
     email: "This email address is not valid.",
     numero: "This phone number is not valid.",
     moyen: "Choose the method you used.",

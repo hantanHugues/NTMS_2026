@@ -606,7 +606,7 @@ export const paiement = {
     nom: "Ton nom, s'il te plaît.",
     pack: "Choisis ton pack.",
     identification:
-      "Ces informations ne correspondent pas à un paiement déjà enregistré. Utilise le même e-mail et le même numéro qu'au premier paiement, ou écris-nous à",
+      "Ces informations ne correspondent pas à un paiement déjà enregistré. Utilise le même e-mail et le même numéro qu'au premier paiement, ou contacte le comité.",
     email: "Cette adresse e-mail n'est pas valide.",
     numero: "Ce numéro de téléphone n'est pas valide.",
     moyen: "Choisis le moyen que tu as utilisé.",

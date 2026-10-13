@@ -7,6 +7,7 @@ import {
   Check,
   FileCheck2,
   Info,
+  Mail,
   MessageCircle,
   Paperclip,
   Send,
@@ -16,7 +17,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChoixPays, ListeDeroulante } from "@/components/site/listes-inscription";
 import { useContenu } from "@/components/site/langue";
-import { event } from "@/lib/content";
 import type { Situation } from "@/lib/classeur";
 import {
   emailValide,
@@ -329,7 +329,7 @@ export function FormulairePaiement({
   /** L'heure du serveur à l'envoi de la page, en millisecondes. */
   maintenant: number;
 }) {
-  const { paiement } = useContenu();
+  const { paiement, contact, event } = useContenu();
   const msg = paiement.erreurs;
   const [nom, setNom] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -343,6 +343,8 @@ export function FormulairePaiement({
   const [situation, setSituation] = React.useState<Situation | null>(null);
   const [pack, setPack] = React.useState("");
   const [verif, setVerif] = React.useState(false);
+  // E-mail et numéro ne se correspondent pas : on montre le comité.
+  const [aide, setAide] = React.useState(false);
   // Les packs et leurs prix, affichés dès l'arrivée : on sait ce que
   // coûte la place avant même de s'identifier.
   const [packsVisibles, setPacksVisibles] = React.useState<
@@ -443,6 +445,7 @@ export function FormulairePaiement({
     if (!international) return setErreur(msg.numero);
 
     setErreur(null);
+    setAide(false);
     setVerif(true);
     try {
       const reponse = await fetch("/api/paiement/situation", {
@@ -456,7 +459,8 @@ export function FormulairePaiement({
       };
       if (!s.ok || !s.packs) throw new Error(s.message || msg.indisponible);
       if (s.blocage) {
-        return setErreur(`${msg.identification} ${event.email}.`);
+        setAide(true);
+        return setErreur(msg.identification);
       }
       const complet = s as Situation;
       setSituation(complet);
@@ -656,6 +660,7 @@ export function FormulairePaiement({
               setSituation(null);
               setPack("");
               setErreur(null);
+              setAide(false);
             }}
             className="-my-2 flex min-h-11 w-fit items-center text-left text-sm font-medium text-primary underline underline-offset-4"
           >
@@ -889,6 +894,43 @@ export function FormulairePaiement({
         >
           {erreur}
         </p>
+      ) : null}
+
+      {/* Les mêmes contacts que l'écran de clôture : le WhatsApp et
+          l'e-mail du comité. */}
+      {aide ? (
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+          <Button
+            nativeButton={false}
+            variant="outline"
+            className="h-13 w-full rounded-full text-base has-data-[icon=inline-start]:pl-6 max-sm:h-14 sm:flex-1"
+            render={
+              <a
+                href={contact.whatsappLien}
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+            }
+          >
+            <MessageCircle data-icon="inline-start" />
+            {contact.whatsappLabel}
+          </Button>
+          <Button
+            nativeButton={false}
+            variant="outline"
+            className="h-13 w-full rounded-full text-base has-data-[icon=inline-start]:pl-6 max-sm:h-14 sm:flex-1"
+            render={
+              <a
+                href={`mailto:${event.email}?subject=${encodeURIComponent(
+                  contact.mailSubject
+                )}`}
+              />
+            }
+          >
+            <Mail data-icon="inline-start" />
+            {contact.buttonLabel}
+          </Button>
+        </div>
       ) : null}
 
       {couverte ? null : (
