@@ -278,7 +278,7 @@ export const paiement = {
     "The website does not take payments: you pay the way you usually do, then you declare it here.",
   libelleNom: "Full name",
   aideIdentification:
-    "Always use the same email and phone number for every instalment: they are how we find your payments.",
+    "For every payment, always use the same email + number combination. It is how we find your payments and your pack: any other combination will be refused.",
   boutonContinuer: "Continue",
   verification: "Checking…",
   modifier: "Change my email or number",
@@ -345,7 +345,7 @@ export const paiement = {
     nom: "Your name, please.",
     pack: "Choose your pack.",
     identification:
-      "This information does not match a payment already on record. Use the same email and number as for your first payment, or contact the committee.",
+      "This email or number is already linked to another payment. For every payment, always use the same email + number combination. Check them, or contact the committee if you think this is a mistake.",
     email: "This email address is not valid.",
     numero: "This phone number is not valid.",
     moyen: "Choose the method you used.",

@@ -596,7 +596,8 @@ export function FormulairePaiement({
       ) : null}
 
       <div className="mt-6 flex flex-col gap-6">
-        <p className="text-sm leading-relaxed text-muted-foreground">
+        <p className="flex items-start gap-2.5 rounded-2xl bg-accent px-4 py-3 text-sm leading-relaxed font-medium text-pretty text-accent-foreground max-sm:px-3.5">
+          <Info className="mt-0.5 size-4 shrink-0" />
           {paiement.aideIdentification}
         </p>
 

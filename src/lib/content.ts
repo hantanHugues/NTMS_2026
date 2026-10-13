@@ -528,7 +528,7 @@ export const paiement = {
   libelleNom: "Nom et prénom",
   // Paiement par tranches : packs, identification, reste à payer.
   aideIdentification:
-    "Utilise toujours le même e-mail et le même numéro à chaque tranche : ils servent à retrouver tes paiements.",
+    "À chaque paiement, utilise toujours la même combinaison e-mail + numéro. C'est elle qui retrouve tes paiements et ton pack : une autre combinaison sera refusée.",
   boutonContinuer: "Continuer",
   verification: "Vérification…",
   modifier: "Modifier mon e-mail ou mon numéro",
@@ -606,7 +606,7 @@ export const paiement = {
     nom: "Ton nom, s'il te plaît.",
     pack: "Choisis ton pack.",
     identification:
-      "Ces informations ne correspondent pas à un paiement déjà enregistré. Utilise le même e-mail et le même numéro qu'au premier paiement, ou contacte le comité.",
+      "Cet e-mail ou ce numéro est déjà associé à un autre paiement. À chaque paiement, utilise toujours la même combinaison e-mail + numéro. Vérifie-les, ou contacte le comité si tu penses qu'il y a une erreur.",
     email: "Cette adresse e-mail n'est pas valide.",
     numero: "Ce numéro de téléphone n'est pas valide.",
     moyen: "Choisis le moyen que tu as utilisé.",
