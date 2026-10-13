@@ -275,10 +275,8 @@ export const paiement = {
   chapo:
     "Have you paid for your seat? Tell us here with a proof. The committee checks it, then sends you your receipt by email.",
   rappel:
-    "The website does not take payments: you pay the way you usually do, then you declare it here.",
+    "Pay the way you usually do, then declare it here. Always use the same email + number combination: any other will be refused.",
   libelleNom: "Full name",
-  aideIdentification:
-    "For every payment, always use the same email + number combination. It is how we find your payments and your pack: any other combination will be refused.",
   boutonContinuer: "Continue",
   verification: "Checking…",
   modifier: "Change my email or number",
