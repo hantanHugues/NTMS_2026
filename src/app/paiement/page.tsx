@@ -6,18 +6,18 @@ import { ArrowLeft } from "lucide-react";
 import { FormulairePaiement } from "@/components/site/formulaire-paiement";
 import { SelecteurLangue } from "@/components/site/langue";
 import { contenu } from "@/lib/contenu";
-import { notFound } from "next/navigation";
-
 import { paiementsOuverts } from "@/lib/inscription-regles";
-import { billetterieEnService, montantInscription } from "@/lib/paiement";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { event, inscription, paiement } = await contenu();
+  const { event, paiement } = await contenu();
   return {
     title: `${paiement.titre} — ${event.name}`,
     description: paiement.chapo,
   };
 }
+
+/** L'heure du serveur, transmise au formulaire pour calculer « aujourd'hui ». */
+const heureServeur = () => Date.now();
 
 /** Lue à chaque visite : la date de clôture doit s'appliquer tout de suite. */
 export const dynamic = "force-dynamic";
@@ -26,22 +26,11 @@ export const dynamic = "force-dynamic";
  * La page de paiement.
  *
  * Même dépouillement que l'inscription : une seule route possible, un
- * seul lien sortant. Le montant est lu ICI, côté serveur, et seulement
- * affiché plus bas.
+ * seul lien sortant. Les packs viennent du classeur, via le formulaire.
  */
 export default async function PagePaiement() {
-  if (!billetterieEnService()) notFound();
   const { event, inscription, paiement } = await contenu();
   const ouverts = paiementsOuverts();
-
-  // Le montant manquant est une erreur de réglage, pas une erreur du
-  // visiteur : on le dit clairement plutôt que de planter la page.
-  let montant: number | null = null;
-  try {
-    montant = montantInscription();
-  } catch {
-    montant = null;
-  }
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
@@ -83,20 +72,12 @@ export default async function PagePaiement() {
           </p>
         </div>
 
-        {ouverts && montant !== null ? (
+        {ouverts ? (
           <div className="mt-10 max-sm:mt-6">
-            <FormulairePaiement montant={montant} />
+            <FormulairePaiement maintenant={heureServeur()} />
           </div>
         ) : null}
 
-        {ouverts && montant === null ? (
-          <p
-            role="alert"
-            className="mt-10 rounded-xl bg-accent px-4 py-3 text-sm text-accent-foreground max-sm:mx-5"
-          >
-            {paiement.montantManquant} {event.email}.
-          </p>
-        ) : null}
       </main>
     </div>
   );

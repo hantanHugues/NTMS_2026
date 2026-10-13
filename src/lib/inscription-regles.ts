@@ -143,6 +143,40 @@ export function numeroInternational(code: string, numero: string) {
   return tel.formatInternational();
 }
 
+/**
+ * Le pays et le reste du numéro quand la personne tape l'indicatif
+ * elle-même : « 00229 01 97 12 34 56 » ou « +229 01 97… ».
+ *
+ * « 00 » est le préfixe international du Bénin et de la plupart des
+ * pays francophones ; on le lit comme « + ». Renvoie null tant qu'on
+ * ne reconnaît pas un indicatif, pour laisser le pays choisi à la main.
+ * Quand plusieurs pays partagent l'indicatif (1, 7, 44…), on ne
+ * devine pas : seul un numéro complet et valide tranche.
+ */
+export function paysDepuisNumero(brut: string) {
+  const net = brut.trim().replace(/[\s().-]/g, "");
+  const chiffres = net.startsWith("+")
+    ? net.slice(1)
+    : net.startsWith("00")
+      ? net.slice(2)
+      : null;
+  if (chiffres === null || !/^\d+$/.test(chiffres)) return null;
+
+  for (let n = 1; n <= 3; n++) {
+    const indicatif = chiffres.slice(0, n);
+    const pays = PAYS.filter((p) => p.indicatif === indicatif);
+    if (!pays.length) continue;
+    let code = pays.length === 1 ? pays[0].code : null;
+    if (!code) {
+      const tel = parsePhoneNumberFromString("+" + chiffres);
+      if (tel?.country && tel.isValid()) code = tel.country;
+    }
+    if (!code) return null;
+    return { pays: code as string, national: chiffres.slice(n) };
+  }
+  return null;
+}
+
 const valeurs = (liste: readonly { valeur: string }[]) => liste.map((r) => r.valeur);
 const dans = (liste: readonly string[], v: string) => liste.includes(v);
 
@@ -159,10 +193,21 @@ export function inscriptionsOuvertes(maintenant = Date.now()) {
 }
 
 /**
+ * Les boutons vers /paiement (en-tête, hero, appel à l'action, écran de
+ * clôture) ne s'affichent que si NEXT_PUBLIC_BOUTON_PAIEMENT=oui.
+ *
+ * Sans lui, la page /paiement existe et fonctionne, mais on n'y arrive
+ * que par son adresse. Aucun bouton ne s'allume tout seul à la
+ * clôture des inscriptions.
+ */
+export const BOUTON_PAIEMENT = process.env.NEXT_PUBLIC_BOUTON_PAIEMENT === "oui";
+
+/**
  * Vrai tant qu'on peut payer sa place.
  *
- * Seconde date, indépendante de la première : le formulaire peut être
- * clos alors que la billetterie reste ouverte quelques jours.
+ * Seconde date, indépendante de la première : la page de paiement
+ * s'ouvre sans attendre la clôture des inscriptions, et reste ouverte
+ * après elle jusqu'à sa propre date.
  */
 export function paiementsOuverts(maintenant = Date.now()) {
   const fin = Date.parse(event.finPaiements);
@@ -184,7 +229,7 @@ export type Phase = "inscription" | "paiement" | "clos";
 
 export function phase(maintenant = Date.now()): Phase {
   if (inscriptionsOuvertes(maintenant)) return "inscription";
-  if (paiementsOuverts(maintenant)) return "paiement";
+  if (BOUTON_PAIEMENT && paiementsOuverts(maintenant)) return "paiement";
   return "clos";
 }
 

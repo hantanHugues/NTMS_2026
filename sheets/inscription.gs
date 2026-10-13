@@ -194,6 +194,23 @@ var COLONNES_PAIEMENT = [
   "recu_envoye",
   "recu_envoye_le",
   "erreur_recu",
+  // Ajoutees APRES les autres : un onglet existant garde ses colonnes.
+  "pack",
+  "montant_du",
+  "tranche",
+];
+
+/**
+ * LES PACKS. Un onglet « packs » (nom, prix), cree avec ces trois lignes
+ * s'il n'existe pas. Le comite change les noms et les prix dans
+ * l'onglet : le site les lit a chaque visite, rien a redeployer.
+ * Le prix du pack est recopie sur la premiere ligne de la personne :
+ * un changement de tarif ne touche pas les inscrits existants.
+ */
+var PACKS_PAR_DEFAUT = [
+  ["Pack 1", 5000],
+  ["Pack 2", 10000],
+  ["Pack 3", 15000],
 ];
 
 /** Etat d'une declaration au depot : rien n'est verifie encore. */
@@ -243,6 +260,10 @@ function doPost(e) {
   // onglet, avec ses propres regles.
   if (String(donnees.type || "") === "paiement") {
     return enregistrerPaiement(donnees);
+  }
+  // Avant de payer : qui est cette personne, que lui reste-t-il a payer ?
+  if (String(donnees.type || "") === "situation") {
+    return situationPaiement(donnees);
   }
 
   var manquant = champManquant(donnees);
@@ -399,6 +420,13 @@ function feuillePaiements() {
     feuille.getRange(1, 1, 1, COLONNES_PAIEMENT.length).setValues([COLONNES_PAIEMENT]);
     feuille.setFrozenRows(1);
   }
+  // Onglet plus ancien que les colonnes pack / montant_du / tranche :
+  // on pose seulement les en-tetes vides, sans rien deplacer.
+  for (var k = 0; k < COLONNES_PAIEMENT.length; k++) {
+    if (entete[k] === "" || entete[k] === undefined) {
+      feuille.getRange(1, k + 1).setValue(COLONNES_PAIEMENT[k]);
+    }
+  }
   return feuille;
 }
 
@@ -460,12 +488,345 @@ function prochaineReferencePaiement() {
   return "PAY-" + ("0000" + n).slice(-4);
 }
 
+/** Les chiffres seuls : « +229 01 97 12 34 56 » -> « 2290197123456 ». */
+function chiffres(v) {
+  return String(v === null || v === undefined ? "" : v).replace(/\D/g, "");
+}
+
+/** Un montant ecrit « 10 000 » ou « 10000 FCFA » -> 10000. */
+function enMontant(v) {
+  var n = parseInt(chiffres(v), 10);
+  return isNaN(n) ? 0 : n;
+}
+
+/**
+ * Les packs proposes, lus dans l'onglet « packs » (tout onglet dont le
+ * nom contient « pack »). Sans onglet, on le cree avec les valeurs par
+ * defaut.
+ */
+function lirePacks() {
+  var classeur = SpreadsheetApp.getActiveSpreadsheet();
+  var feuilles = classeur.getSheets();
+  var feuille = null;
+  for (var i = 0; i < feuilles.length && !feuille; i++) {
+    if (normaliser(feuilles[i].getName()).indexOf("pack") !== -1) feuille = feuilles[i];
+  }
+  if (!feuille) {
+    feuille = classeur.insertSheet("packs");
+    feuille.appendRow(["nom", "prix"]);
+    PACKS_PAR_DEFAUT.forEach(function (l) { feuille.appendRow(l); });
+    feuille.setFrozenRows(1);
+  }
+  var valeurs = feuille.getDataRange().getValues();
+  var packs = [];
+  for (var r = 1; r < valeurs.length; r++) {
+    var nom = String(valeurs[r][0]).trim();
+    var prix = enMontant(valeurs[r][1]);
+    if (nom && prix > 0) packs.push({ nom: nom, prix: prix });
+  }
+  return packs;
+}
+
+/**
+ * L'ONGLET « participants » : UNE LIGNE PAR PERSONNE.
+ *
+ * Calcule par le script a partir de l'onglet des paiements, jamais saisi
+ * a la main : nom, pack, montant du, total valide, reste a payer,
+ * nombre de tranches et statut. Il est refait a chaque declaration, a
+ * chaque modification de la colonne « statut » et depuis le menu NTMS.
+ * Une personne = un e-mail + un numero.
+ */
+var COLONNES_PARTICIPANTS = [
+  "nom", "email", "numero", "pack", "montant_du", "total_valide",
+  "en_attente", "reste_a_payer", "tranches", "statut", "dernier_paiement",
+];
+
+function feuilleParticipants() {
+  var classeur = SpreadsheetApp.getActiveSpreadsheet();
+  var feuilles = classeur.getSheets();
+  for (var i = 0; i < feuilles.length; i++) {
+    if (normaliser(feuilles[i].getName()).indexOf("particip") !== -1) return feuilles[i];
+  }
+  return classeur.insertSheet("participants");
+}
+
+function recalculerParticipants() {
+  var paiements = feuillePaiements().getDataRange().getValues();
+  var i0 = indexColonnesPaiement();
+  var groupes = {};
+  var ordre = [];
+
+  for (var i = 1; i < paiements.length; i++) {
+    var email = String(paiements[i][i0.email]).trim().toLowerCase();
+    if (!email) continue;
+    var cle = email + "|" + chiffres(paiements[i][i0.numero]);
+    var g = groupes[cle];
+    if (!g) {
+      g = groupes[cle] = {
+        nom: String(paiements[i][i0.nom]),
+        email: email,
+        numero: String(paiements[i][i0.numero]),
+        pack: "", du: 0, valide: 0, attente: 0, tranches: 0, dernier: null,
+      };
+      ordre.push(cle);
+    }
+    var statut = String(paiements[i][i0.statut]).trim().toLowerCase();
+    if (statut === "refuse") continue;
+
+    var pack = String(paiements[i][i0.pack] || "").trim();
+    if (!g.pack && pack) {
+      g.pack = pack;
+      g.du = enMontant(paiements[i][i0.montant_du]);
+    }
+    var montant = enMontant(paiements[i][i0.montant_declare]);
+    if (statut === STATUT_VALIDE) g.valide += montant;
+    else g.attente += montant;
+    g.tranches++;
+    var date = paiements[i][i0.horodatage];
+    if (date instanceof Date && (!g.dernier || date > g.dernier)) g.dernier = date;
+  }
+
+  var lignes = ordre.map(function (cle) {
+    var g = groupes[cle];
+    var etat = g.du > 0 && g.valide >= g.du ? "Soldé"
+      : g.valide > 0 ? "En cours"
+      : "En attente de validation";
+    return [
+      g.nom, g.email, g.numero, g.pack, g.du || "", g.valide, g.attente,
+      g.du > 0 ? g.du - g.valide : "", g.tranches, etat, g.dernier || "",
+    ];
+  });
+
+  var feuille = feuilleParticipants();
+  feuille.clearContents();
+  feuille.getRange(1, 1, 1, COLONNES_PARTICIPANTS.length).setValues([COLONNES_PARTICIPANTS]);
+  if (lignes.length) {
+    feuille.getRange(2, 1, lignes.length, COLONNES_PARTICIPANTS.length).setValues(lignes);
+  }
+  feuille.setFrozenRows(1);
+  feuille.getRange(1, 1).setNote(
+    "Onglet calculé par le script à partir des paiements : ne pas le modifier à la main. " +
+    "Menu NTMS → Recalculer les participants."
+  );
+}
+
+/** Une modification de la colonne « statut » met les totaux a jour. */
+function onEdit(e) {
+  try {
+    if (!e || !e.range) return;
+    var feuille = e.range.getSheet();
+    var nom = normaliser(feuille.getName());
+    if (nom.indexOf("paie") === -1 && nom.indexOf("paye") === -1) return;
+    recalculerParticipants();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+/**
+ * LA FACTURE — INDEPENDANTE DU MAIL.
+ *
+ * Trois chiffres, et rien d'autre :
+ *
+ *   paiement_actuel   ce paiement-ci
+ *   total_paye        tout ce que la personne a paye, valide
+ *   reste             ce qu'il lui reste a payer
+ *
+ * Ils sont lus dans l'onglet des paiements (le paiement actuel) ET dans
+ * l'onglet « participants » (le total et le reste, calcules sur tous
+ * les paiements valides). Le mail ne calcule RIEN : il recoit ces
+ * variables toutes faites, et le comite en ecrit le texte comme il
+ * veut dans « config recu ».
+ *
+ *   {{facture}}   le bloc des trois chiffres : paiement actuel, total
+ *                 paye, puis « Reste a payer » — ou « Pack solde » quand
+ *                 ce paiement solde le pack. Le bouton du mail (Texte
+ *                 CTA / Lien CTA) est retire dans ce dernier cas.
+ *   {{paiement_actuel}} {{total_paye}} {{reste}}   les chiffres seuls,
+ *                 toujours remplis, pour un texte ecrit a la main.
+ */
+
+/** 10000 -> « 10 000 ». */
+function montantLisible(n) {
+  return String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
+/**
+ * L'onglet « participants » en memoire : une lecture pour tout l'envoi,
+ * indexee par e-mail + numero comme partout ailleurs.
+ */
+function indexParticipants() {
+  var valeurs = feuilleParticipants().getDataRange().getValues();
+  var p0 = {};
+  COLONNES_PARTICIPANTS.forEach(function (cle, i) { p0[cle] = i; });
+  var index = {};
+  for (var i = 1; i < valeurs.length; i++) {
+    var email = String(valeurs[i][p0.email]).replace(/^'/, "").trim().toLowerCase();
+    if (!email) continue;
+    index[email + "|" + chiffres(valeurs[i][p0.numero])] = {
+      pack: String(valeurs[i][p0.pack] || ""),
+      montant_du: enMontant(valeurs[i][p0.montant_du]),
+      total_valide: enMontant(valeurs[i][p0.total_valide]),
+    };
+  }
+  return index;
+}
+
+/**
+ * Les chiffres de la facture pour UNE ligne de l'onglet des paiements.
+ * `index` vient de indexParticipants().
+ */
+function calculerFacture(ligne, i0, index) {
+  var email = String(ligne[i0.email]).replace(/^'/, "").trim().toLowerCase();
+  var part = index[email + "|" + chiffres(ligne[i0.numero])] || null;
+
+  var actuel = enMontant(ligne[i0.montant_declare]);
+  var du = (part && part.montant_du) || enMontant(ligne[i0.montant_du]);
+  var total = part ? part.total_valide : actuel;
+  return {
+    paiement_actuel: actuel,
+    total_paye: total,
+    montant_du: du,
+    reste: du > 0 ? Math.max(du - total, 0) : 0,
+    pack: (part && part.pack) || String(ligne[i0.pack] || ""),
+  };
+}
+
+/** Toutes les variables du mail de recu pour une ligne validee. */
+function variablesRecu(ligne, i0, index) {
+  var f = calculerFacture(ligne, i0, index);
+  var soldee = f.montant_du > 0 && f.reste === 0;
+  // Toujours un bloc : reste a payer tant qu'il y a un solde, « Pack
+  // solde » au dernier paiement. La personne a TOUJOURS sa facture.
+  var bloc =
+    "Paiement actuel : " + montantLisible(f.paiement_actuel) + " FCFA\n" +
+    "Total payé : " + montantLisible(f.total_paye) + " FCFA\n" +
+    (soldee ? "Pack soldé ✓" : "Reste à payer : " + montantLisible(f.reste) + " FCFA");
+  return {
+    nom: String(ligne[i0.nom]),
+    prenom: String(ligne[i0.nom]),
+    reference: String(ligne[i0.reference_paiement]),
+    moyen: String(ligne[i0.moyen]),
+    pack: f.pack,
+    tranche: String(ligne[i0.tranche] || ""),
+    montant: montantLisible(f.paiement_actuel),
+    montant_du: montantLisible(f.montant_du),
+    paiement_actuel: montantLisible(f.paiement_actuel),
+    total_paye: montantLisible(f.total_paye),
+    total_valide: montantLisible(f.total_paye),
+    reste: montantLisible(f.reste),
+    facture: bloc,
+    // « oui » quand ce paiement solde le pack : sert a retirer le
+    // bouton « prochaine tranche », pas a remplir le mail.
+    soldee: soldee ? "oui" : "",
+  };
+}
+
+/**
+ * Qui est cette personne, d'apres les paiements deja deposes ?
+ *
+ * Reconnue = l'e-mail ET le numero correspondent a une meme ligne.
+ * Un seul des deux connu = « blocage » : on ne rattache rien et on ne
+ * cree pas de doublon, le comite tranche. Les paiements refuses ne
+ * comptent ni dans le total, ni dans les tranches.
+ */
+function trouverPersonne(valeurs, i0, email, numero) {
+  var mail = String(email || "").trim().toLowerCase();
+  var tel = chiffres(numero);
+  var meme = { connu: false, blocage: false };
+  var emailVu = false;
+  var numeroVu = false;
+  var premiere = null;
+  var valide = 0;
+  var attente = 0;
+  var tranches = 0;
+
+  for (var i = 1; i < valeurs.length; i++) {
+    // Le « ' » de tete (marqueur de texte) n'est jamais dans la valeur
+    // lue, mais on ne compte pas dessus.
+    var e = String(valeurs[i][i0.email]).replace(/^'/, "").trim().toLowerCase();
+    var n = chiffres(valeurs[i][i0.numero]);
+    var memeMail = !!mail && e === mail;
+    var memeNum = !!tel && n === tel;
+    if (memeMail) emailVu = true;
+    if (memeNum) numeroVu = true;
+    if (!(memeMail && memeNum)) continue;
+
+    var statut = String(valeurs[i][i0.statut]).trim().toLowerCase();
+    if (statut === "refuse") continue;
+    if (!premiere) premiere = valeurs[i];
+    tranches++;
+    var montant = enMontant(valeurs[i][i0.montant_declare]);
+    if (statut === STATUT_VALIDE) valide += montant;
+    else attente += montant;
+  }
+
+  if (!premiere) {
+    // Personne n'a les deux : si l'un des deux existe ailleurs, on bloque.
+    meme.blocage = emailVu || numeroVu;
+    return meme;
+  }
+  var du = enMontant(premiere[i0.montant_du]);
+  return {
+    connu: true,
+    blocage: false,
+    nom: String(premiere[i0.nom]),
+    pack: String(premiere[i0.pack] || "").trim(),
+    montant_du: du,
+    valide: valide,
+    attente: attente,
+    reste: du > 0 ? du - valide : 0,
+    tranche: tranches + 1,
+  };
+}
+
+function indexColonnesPaiement() {
+  var i0 = {};
+  COLONNES_PAIEMENT.forEach(function (cle, i) { i0[cle] = i; });
+  return i0;
+}
+
+/**
+ * Repond a l'ecran d'identification : les packs, et ce que l'on sait de
+ * la personne. Ne renvoie QUE nom, pack et montants — jamais la preuve
+ * ni le numero d'une autre personne.
+ */
+function situationPaiement(donnees) {
+  try {
+    var packs = lirePacks();
+    var feuille = feuillePaiements();
+    var valeurs = feuille.getDataRange().getValues();
+    var s = trouverPersonne(valeurs, indexColonnesPaiement(), donnees.email, donnees.numero);
+    return ContentService.createTextOutput(
+      JSON.stringify({
+        ok: true,
+        packs: packs,
+        connu: !!s.connu,
+        blocage: !!s.blocage,
+        nom: s.nom || "",
+        pack: s.pack || "",
+        montant_du: s.montant_du || 0,
+        valide: s.valide || 0,
+        attente: s.attente || 0,
+        reste: s.reste || 0,
+        tranche: s.tranche || 1,
+      })
+    ).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    console.error(err);
+    return reponse(false, "Erreur interne : " + (err && err.message ? err.message : err));
+  }
+}
+
 /**
  * Enregistre une declaration de paiement.
  *
  * Elle arrive en « a_verifier » : le site ne decide de rien, il ne
  * fait que transmettre ce que la personne declare, preuve comprise.
  * C'est le comite qui tranche ensuite dans la colonne « statut ».
+ *
+ * Identite, pack et montant du ne viennent PAS du navigateur quand la
+ * personne est deja connue : on reprend ce que le classeur sait d'elle.
  */
 function enregistrerPaiement(donnees) {
   var verrou = LockService.getScriptLock();
@@ -477,6 +838,43 @@ function enregistrerPaiement(donnees) {
 
   try {
     var feuille = feuillePaiements();
+    var i0 = indexColonnesPaiement();
+    var valeurs = feuille.getDataRange().getValues();
+    var s = trouverPersonne(valeurs, i0, donnees.email, donnees.numero);
+    if (s.blocage) {
+      return reponse(false, "Ces informations ne correspondent pas a un paiement deja enregistre.");
+    }
+
+    // Pack deja solde, ou couvert par des paiements en attente de
+    // validation : on n'ajoute pas une ligne de plus. Si la finance
+    // refuse un paiement en attente, la personne pourra de nouveau payer.
+    if (s.connu && s.pack && s.montant_du > 0 &&
+        s.valide + s.attente >= s.montant_du) {
+      return reponse(false, "Pack deja solde ou couvert par des paiements en attente de validation.");
+    }
+
+    var nom = nettoyer(donnees.nom);
+    var pack = "";
+    var du = 0;
+    var tranche = 1;
+    if (s.connu && s.pack) {
+      nom = s.nom;
+      pack = s.pack;
+      du = s.montant_du;
+      tranche = s.tranche;
+    } else {
+      var voulu = nettoyer(donnees.pack);
+      var packs = lirePacks();
+      for (var p = 0; p < packs.length; p++) {
+        if (packs[p].nom === voulu) {
+          pack = packs[p].nom;
+          du = packs[p].prix;
+        }
+      }
+      if (!pack) return reponse(false, "Choisis un pack.");
+      if (s.connu) tranche = s.tranche;
+    }
+
     var reference = prochaineReferencePaiement();
     var preuve = rangerPreuve(donnees, reference);
 
@@ -485,11 +883,20 @@ function enregistrerPaiement(donnees) {
       if (cle === "reference_paiement") return reference;
       if (cle === "statut") return STATUT_DEPOT;
       if (cle === "preuve") return preuve;
+      if (cle === "nom") return nom;
+      if (cle === "pack") return pack;
+      if (cle === "montant_du") return du;
+      if (cle === "tranche") return tranche;
       // Colonnes tenues par le comite ou par le menu.
       if (cle === "recu_envoye" || cle === "recu_envoye_le" || cle === "erreur_recu") return "";
       return enTexte(donnees[cle]);
     });
     feuille.appendRow(ligne);
+    try {
+      recalculerParticipants();
+    } catch (err) {
+      console.error(err);
+    }
     return reponse(true, "Declaration enregistree.", reference);
   } catch (err) {
     console.error(err);
@@ -1015,6 +1422,9 @@ function envoyerMail(feuille, numeroLigne, donnees, reference, conf, modele) {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu("NTMS")
+    .addItem("Initialiser les onglets (packs, paiements, reçu)", "initialiserLesOnglets")
+    .addItem("Recalculer les participants", "recalculerEtDire")
+    .addSeparator()
     .addItem("Envoyer le mail manuel à tous les inscrits", "envoyerManuelTous")
     .addItem("Envoyer le mail manuel à ceux qui ne l'ont pas reçu", "envoyerManuelNonRecus")
     .addSeparator()
@@ -1026,6 +1436,84 @@ function onOpen() {
     .addItem("M'envoyer un aperçu du mail manuel", "testerLeMailManuel")
     .addItem("M'envoyer un aperçu du reçu", "testerLeRecu")
     .addToUi();
+}
+
+/**
+ * CREE TOUS LES ONGLETS DONT LE SITE A BESOIN, avec leurs lignes.
+ *
+ *   inscriptions   l'en-tete des inscrits
+ *   payement       l'en-tete des paiements (avec pack, montant_du, tranche)
+ *   packs          nom / prix, avec trois packs a modifier
+ *   participants   une ligne par personne : total valide, reste a payer
+ *   config recu    Objet, Corps, Nom expediteur, avec les variables
+ *
+ * Sans danger a relancer : un onglet qui existe deja n'est jamais
+ * ecrase, seuls les en-tetes vides sont completes.
+ */
+function initialiserLesOnglets() {
+  var fait = [];
+  var classeur = SpreadsheetApp.getActiveSpreadsheet();
+  var avant = classeur.getSheets().map(function (f) { return f.getName(); });
+
+  try {
+    var conf = {};
+    try { conf = lireConfig(); } catch (e) { conf = {}; }
+    feuilleDonnees(conf.nomfeuillebd);
+  } catch (err) {
+    fait.push("inscriptions : " + (err && err.message ? err.message : err));
+  }
+
+  var paiements = feuillePaiements();
+  // « statut » en liste deroulante : « validé » avec un accent n'etait
+  // pas reconnu et laissait le paiement en attente sans rien dire.
+  paiements.getRange(2, COLONNES_PAIEMENT.indexOf("statut") + 1, paiements.getMaxRows() - 1, 1)
+    .setDataValidation(
+      SpreadsheetApp.newDataValidation()
+        .requireValueInList([STATUT_DEPOT, STATUT_VALIDE, "refuse"], true)
+        .setAllowInvalid(false)
+        .build()
+    );
+  lirePacks();
+  recalculerParticipants();
+
+  var aUnRecu = false;
+  classeur.getSheets().forEach(function (f) {
+    var nom = normaliser(f.getName());
+    if (nom.indexOf("config") !== -1 && nom.indexOf("recu") !== -1) aUnRecu = true;
+  });
+  if (!aUnRecu) {
+    var f = classeur.insertSheet("config recu");
+    f.appendRow(["Objet", "Paiement validé — {{reference}} · NTMS 2026"]);
+    f.appendRow(["Titre", "Merci {{nom}}, ton paiement est validé"]);
+    f.appendRow([
+      "Corps",
+      "Bonjour {{nom}},\n\nNous avons bien reçu et validé ton paiement " +
+        "({{reference}}, {{pack}}).\n\n{{facture}}\n\n" +
+        "Conserve ce mail : il vaut preuve de ton paiement.\n\n" +
+        "À très vite à Lokossa,\nL'équipe NTMS 2026",
+    ]);
+    f.appendRow(["Nom expéditeur", "AIESEC in Benin"]);
+    f.setColumnWidth(1, 160);
+    f.setColumnWidth(2, 520);
+  }
+
+  var apres = classeur.getSheets().map(function (f) { return f.getName(); });
+  var crees = apres.filter(function (n) { return avant.indexOf(n) === -1; });
+  var message =
+    (crees.length
+      ? "Onglets créés : " + crees.join(", ") + "."
+      : "Tous les onglets existaient déjà : rien n'a été écrasé.") +
+    (fait.length ? "\n\nÀ vérifier : " + fait.join(" | ") : "");
+  try {
+    SpreadsheetApp.getUi().alert("Initialisation", message, SpreadsheetApp.getUi().ButtonSet.OK);
+  } catch (e) {
+    Logger.log(message);
+  }
+}
+
+function recalculerEtDire() {
+  recalculerParticipants();
+  SpreadsheetApp.getUi().alert("Participants", "L'onglet « participants » est à jour.", SpreadsheetApp.getUi().ButtonSet.OK);
 }
 
 function envoyerManuelTous() {
@@ -1057,7 +1545,10 @@ function envoyerLesMailsEnAttente() {
  *
  * Le contenu du recu se regle dans l'onglet « config recu », avec les
  * memes libelles que les autres mails. Variables disponibles :
- * {{nom}}, {{reference}} (celle du paiement), {{montant}}, {{moyen}}.
+ * {{nom}}, {{reference}} (celle du paiement), {{moyen}}, {{pack}},
+ * {{tranche}}, {{montant_du}}, et la FACTURE : {{paiement_actuel}},
+ * {{total_paye}}, {{reste}}, ou le bloc {{facture}}. Voir « LA FACTURE ».
+ * Au paiement qui solde le pack, le bouton CTA n'est pas affiche.
  */
 function envoyerLesRecus() {
   var ui = SpreadsheetApp.getUi();
@@ -1095,6 +1586,11 @@ function envoyerLesRecus() {
     return;
   }
 
+  // Totaux a jour AVANT de lire : la validation vient peut-etre d'etre
+  // cochee et l'onglet « participants » n'a pas encore bouge.
+  recalculerParticipants();
+  var indexFacture = indexParticipants();
+
   var verrou = LockService.getScriptLock();
   verrou.waitLock(30000);
   var envoyes = 0;
@@ -1107,13 +1603,17 @@ function envoyerLesRecus() {
       var destinataire = String(valeurs[j][i0.email]).trim();
       if (!destinataire) continue;
 
-      var variables = {
-        nom: String(valeurs[j][i0.nom]),
-        prenom: String(valeurs[j][i0.nom]),
-        reference: String(valeurs[j][i0.reference_paiement]),
-        montant: String(valeurs[j][i0.montant_declare]),
-        moyen: String(valeurs[j][i0.moyen]),
-      };
+      // Les chiffres de la facture : voir « LA FACTURE ». Le mail ne
+      // calcule rien, il recoit ces variables toutes faites.
+      var variables = variablesRecu(valeurs[j], i0, indexFacture);
+      // Pack solde : plus de « prochaine tranche », donc pas de bouton.
+      var confLigne = conf;
+      if (variables.soldee) {
+        confLigne = {};
+        for (var cle in conf) confLigne[cle] = conf[cle];
+        confLigne.textecta = "";
+        confLigne.liencta = "";
+      }
 
       if (quota || MailApp.getRemainingDailyQuota() < 1) {
         quota = true;
@@ -1123,8 +1623,8 @@ function envoyerLesRecus() {
         MailApp.sendEmail({
           to: destinataire,
           subject: remplirTexte(conf.objet, variables),
-          body: construireTexte(conf, variables),
-          htmlBody: construireHtml(conf, variables),
+          body: construireTexte(confLigne, variables),
+          htmlBody: construireHtml(confLigne, variables),
           name: conf.nomexpediteur || "AIESEC in Benin",
         });
         feuille.getRange(j + 1, i0.recu_envoye + 1).setValue("oui");
@@ -1243,6 +1743,9 @@ function testerLeMail(modele) {
     prenom: "Test", nom: "Utilisateur", lc: "Cotonou", role: "TM",
     reference: modele === MODELES.recu ? "PAY-TEST" : "NTMS-TEST",
     montant: "15000", moyen: "MTN MoMo",
+    pack: "Pack 3", tranche: "2", montant_du: "15 000",
+    paiement_actuel: "5 000", total_paye: "10 000", total_valide: "10 000", reste: "5 000",
+    facture: "Paiement actuel : 5 000 FCFA\nTotal payé : 10 000 FCFA\nReste à payer : 5 000 FCFA",
   };
   var compte = Session.getEffectiveUser().getEmail();
   var soucis = [];

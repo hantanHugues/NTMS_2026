@@ -3,6 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import {
+  CalendarDays,
   Check,
   FileCheck2,
   Info,
@@ -15,8 +16,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChoixPays, ListeDeroulante } from "@/components/site/listes-inscription";
 import { useContenu } from "@/components/site/langue";
-import { emailValide, numeroInternational } from "@/lib/inscription-regles";
-import { FORMATS, MOYENS, MOYEN_AUTRE, POIDS_MAX } from "@/lib/paiement";
+import { event } from "@/lib/content";
+import type { Situation } from "@/lib/classeur";
+import {
+  emailValide,
+  numeroInternational,
+  paysDepuisNumero,
+} from "@/lib/inscription-regles";
+import {
+  FORMATS,
+  MOYENS,
+  MOYEN_AUTRE,
+  POIDS_MAX,
+  fuseauPour,
+  jourDans,
+} from "@/lib/paiement";
 import { cn } from "@/lib/utils";
 
 /**
@@ -88,64 +102,174 @@ function encoder(blob: Blob, erreur: string): Promise<string> {
 }
 
 /**
- * La date, en trois listes.
+ * La date, en calendrier.
  *
- * Le champ `type="date"` natif impose son « jj/mm/aaaa » et son
- * calendrier bleu, que rien ne permet d'habiller : ni la police, ni
- * les couleurs, ni les arrondis du site. Trois listes maison disent la
- * même chose, dans notre langue et notre habillage, et donnent une
- * date impossible à saisir de travers.
+ * Deux mois seulement — octobre et novembre 2026, ceux de la
+ * billetterie — et une année qui ne change pas. Le champ
+ * `type="date"` natif propose toutes les années et impose son
+ * habillage ; ici la personne voit le mois, touche un jour, c'est
+ * tout. Les jours à venir sont grisés : on déclare un paiement fait.
+ *
+ * Le calendrier n'est PAS affiché en permanence : un champ montre la
+ * date choisie, et le toucher ouvre le calendrier juste dessous. Il se
+ * referme au choix d'un jour, à Échap, ou au clic à côté.
  */
+const ANNEE_CALENDRIER = 2026;
+const MOIS_CALENDRIER = [9, 10]; // octobre, novembre (0 = janvier)
+
 function ChoixDate({
   valeur,
   onChange,
   etiquette,
+  aujourdhui,
 }: {
   /** Format ISO, « 2026-10-02 », ou chaîne vide. */
   valeur: string;
   onChange: (v: string) => void;
   etiquette: string;
+  /** Le jour qu'il est pour la personne, format ISO. */
+  aujourdhui: string;
 }) {
-  const { paiement } = useContenu();
-  const [annee, mois, jour] = valeur ? valeur.split("-") : ["", "", ""];
-  const maintenant = new Date();
+  const { paiement, langue } = useContenu();
+  const [ouvert, setOuvert] = React.useState(false);
+  const racine = React.useRef<HTMLDivElement>(null);
 
-  // Deux années suffisent : on déclare un paiement récent.
-  const annees = [String(maintenant.getFullYear()), String(maintenant.getFullYear() - 1)];
-  // Le nombre de jours dépend du mois choisi, et de l'année bissextile.
-  const nbJours =
-    annee && mois ? new Date(Number(annee), Number(mois), 0).getDate() : 31;
+  React.useEffect(() => {
+    if (!ouvert) return;
+    const dehors = (e: PointerEvent) => {
+      if (!racine.current?.contains(e.target as Node)) setOuvert(false);
+    };
+    const echap = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOuvert(false);
+    };
+    document.addEventListener("pointerdown", dehors);
+    document.addEventListener("keydown", echap);
+    return () => {
+      document.removeEventListener("pointerdown", dehors);
+      document.removeEventListener("keydown", echap);
+    };
+  }, [ouvert]);
 
-  function poser(j: string, m: string, a: string) {
-    onChange(j && m && a ? `${a}-${m}-${j}` : "");
-  }
+  const moisDeValeur = valeur ? Number(valeur.split("-")[1]) - 1 : -1;
+  const [mois, setMois] = React.useState(() =>
+    MOIS_CALENDRIER.includes(moisDeValeur)
+      ? moisDeValeur
+      : Number(aujourdhui.slice(5, 7)) - 1 >= 10
+        ? 10
+        : 9
+  );
+
+  // Semaine du lundi au dimanche ; le 5 janvier 2026 est un lundi.
+  const jours = Array.from({ length: 7 }, (_, i) =>
+    new Intl.DateTimeFormat(langue, { weekday: "short" }).format(
+      new Date(2026, 0, 5 + i)
+    )
+  );
+  const decalage = (new Date(ANNEE_CALENDRIER, mois, 1).getDay() + 6) % 7;
+  const nbJours = new Date(ANNEE_CALENDRIER, mois + 1, 0).getDate();
+  const cases: (number | null)[] = [
+    ...Array<null>(decalage).fill(null),
+    ...Array.from({ length: nbJours }, (_, i) => i + 1),
+  ];
+  const iso = (j: number) =>
+    `${ANNEE_CALENDRIER}-${String(mois + 1).padStart(2, "0")}-${String(j).padStart(2, "0")}`;
+
+  const premier = mois === MOIS_CALENDRIER[0];
+  const dernier = mois === MOIS_CALENDRIER[MOIS_CALENDRIER.length - 1];
+  const navigation =
+    "flex size-11 items-center justify-center rounded-full border border-border text-lg transition-colors enabled:hover:border-primary disabled:opacity-30";
+
+  const [, moisChoisi, jourChoisi] = valeur ? valeur.split("-") : ["", "", ""];
+  const lisible = valeur
+    ? `${Number(jourChoisi)} ${paiement.mois[Number(moisChoisi) - 1]} ${ANNEE_CALENDRIER}`
+    : "";
 
   return (
-    <div className="grid grid-cols-[1fr_1.4fr_1fr] gap-2">
-      <ListeDeroulante
-        etiquette={etiquette}
-        indication={paiement.dateJour}
-        options={Array.from({ length: nbJours }, (_, i) => String(i + 1).padStart(2, "0"))}
-        valeur={jour || ""}
-        onChange={(j) => poser(j, mois, annee)}
-      />
-      <ListeDeroulante
-        etiquette={etiquette}
-        indication={paiement.dateMois}
-        options={paiement.mois.map((nom, i) => ({
-          valeur: String(i + 1).padStart(2, "0"),
-          libelle: nom,
-        }))}
-        valeur={mois || ""}
-        onChange={(m) => poser(jour, m, annee)}
-      />
-      <ListeDeroulante
-        etiquette={etiquette}
-        indication={paiement.dateAnnee}
-        options={annees}
-        valeur={annee || ""}
-        onChange={(a) => poser(jour, mois, a)}
-      />
+    <div ref={racine} className="relative">
+      <button
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded={ouvert}
+        aria-labelledby={etiquette}
+        onClick={() => setOuvert((o) => !o)}
+        className={cn(CHAMP, "flex items-center justify-between text-left")}
+      >
+        <span className={cn(!lisible && "text-muted-foreground/60")}>
+          {lisible || (langue === "fr" ? "Choisir une date" : "Pick a date")}
+        </span>
+        <CalendarDays className="size-5 text-muted-foreground" />
+      </button>
+
+      {ouvert ? (
+    <div
+      role="dialog"
+      aria-labelledby={etiquette}
+      className="absolute inset-x-0 z-30 mt-2 rounded-xl border border-border bg-background p-3 shadow-xl sm:p-4"
+    >
+      <div className="mb-3 flex items-center justify-between">
+        <button
+          type="button"
+          className={navigation}
+          disabled={premier}
+          onClick={() => setMois(MOIS_CALENDRIER[0])}
+          aria-label={paiement.mois[MOIS_CALENDRIER[0]]}
+        >
+          ‹
+        </button>
+        <p className="font-medium capitalize" aria-live="polite">
+          {paiement.mois[mois]} {ANNEE_CALENDRIER}
+        </p>
+        <button
+          type="button"
+          className={navigation}
+          disabled={dernier}
+          onClick={() => setMois(MOIS_CALENDRIER[MOIS_CALENDRIER.length - 1])}
+          aria-label={paiement.mois[MOIS_CALENDRIER[MOIS_CALENDRIER.length - 1]]}
+        >
+          ›
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1 text-center">
+        {jours.map((j) => (
+          <span
+            key={j}
+            className="pb-1 text-xs capitalize text-muted-foreground"
+          >
+            {j.slice(0, 2)}
+          </span>
+        ))}
+        {cases.map((j, i) => {
+          if (j === null) return <span key={`vide-${i}`} />;
+          const date = iso(j);
+          const choisi = date === valeur;
+          const futur = date > aujourdhui;
+          return (
+            <button
+              key={date}
+              type="button"
+              disabled={futur}
+              aria-pressed={choisi}
+              onClick={() => {
+                onChange(date);
+                setOuvert(false);
+              }}
+              className={cn(
+                "flex aspect-square min-h-10 items-center justify-center rounded-lg text-sm transition-colors",
+                choisi
+                  ? "bg-primary font-semibold text-primary-foreground"
+                  : "enabled:hover:bg-accent",
+                futur && "cursor-not-allowed opacity-30",
+                date === aujourdhui && !choisi && "border border-primary/60"
+              )}
+            >
+              {j}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+      ) : null}
     </div>
   );
 }
@@ -199,7 +323,12 @@ function EcranEnvoi() {
   );
 }
 
-export function FormulairePaiement({ montant }: { montant: number }) {
+export function FormulairePaiement({
+  maintenant,
+}: {
+  /** L'heure du serveur à l'envoi de la page, en millisecondes. */
+  maintenant: number;
+}) {
   const { paiement } = useContenu();
   const msg = paiement.erreurs;
   const [nom, setNom] = React.useState("");
@@ -208,7 +337,35 @@ export function FormulairePaiement({ montant }: { montant: number }) {
   const [numero, setNumero] = React.useState("");
   const [moyen, setMoyen] = React.useState("");
   const [moyenAutre, setMoyenAutre] = React.useState("");
-  const [montantPaye, setMontantPaye] = React.useState(String(montant));
+  const [montantPaye, setMontantPaye] = React.useState("");
+  // Ce que le classeur sait de la personne, une fois e-mail et numéro
+  // donnés. Tant qu'il est null, seule l'identification s'affiche.
+  const [situation, setSituation] = React.useState<Situation | null>(null);
+  const [pack, setPack] = React.useState("");
+  const [verif, setVerif] = React.useState(false);
+  // Les packs et leurs prix, affichés dès l'arrivée : on sait ce que
+  // coûte la place avant même de s'identifier.
+  const [packsVisibles, setPacksVisibles] = React.useState<
+    { nom: string; prix: number }[]
+  >([]);
+  React.useEffect(() => {
+    let vivant = true;
+    fetch("/api/paiement/situation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    })
+      .then((r) => r.json())
+      .then((r: { ok?: boolean; packs?: { nom: string; prix: number }[] }) => {
+        if (vivant && r.ok && Array.isArray(r.packs)) setPacksVisibles(r.packs);
+      })
+      .catch(() => {
+        // Confort seulement : l'identification donne les mêmes packs.
+      });
+    return () => {
+      vivant = false;
+    };
+  }, []);
   const [date, setDate] = React.useState("");
   const [remarque, setRemarque] = React.useState("");
 
@@ -219,9 +376,47 @@ export function FormulairePaiement({ montant }: { montant: number }) {
   const [envoye, setEnvoye] = React.useState(false);
 
   const champFichier = React.useRef<HTMLInputElement>(null);
-  const montantLisible = new Intl.NumberFormat(paiement.locale).format(montant);
+  const fmt = (n: number) => new Intl.NumberFormat(paiement.locale).format(n);
+  const identifie = situation !== null;
+  // Déjà reconnue ET déjà dotée d'un pack : elle ne ressaisit rien.
+  const reconnue = !!situation?.connu && !!situation.pack;
+  const packChoisi = situation?.packs.find((p) => p.nom === pack);
+  const bilan = reconnue
+    ? {
+        nom: situation!.pack,
+        du: situation!.montant_du,
+        valide: situation!.valide,
+        attente: situation!.attente,
+      }
+    : packChoisi
+      ? { nom: packChoisi.nom, du: packChoisi.prix, valide: 0, attente: 0 }
+      : null;
+  // Tout le pack est déjà payé, ou couvert par des paiements encore
+  // en attente de validation : rien de plus à déclarer.
+  const couverte =
+    reconnue &&
+    situation!.montant_du > 0 &&
+    situation!.valide + situation!.attente >= situation!.montant_du;
+  const soldee = couverte && situation!.valide >= situation!.montant_du;
+  const resteAvant = bilan ? Math.max(bilan.du - bilan.valide, 0) : 0;
+  const montantNum = Number(montantPaye.replace(/\D/g, "")) || 0;
+  const resteApres = bilan
+    ? Math.max(resteAvant - bilan.attente - montantNum, 0)
+    : 0;
   // Un paiement ne peut pas avoir eu lieu demain.
-  const aujourdhui = new Date().toISOString().slice(0, 10);
+  // L'heure vient du serveur ; on ne garde de l'appareil que le temps
+  // écoulé depuis l'ouverture de la page, pour que le jour change à
+  // minuit même si la page reste ouverte.
+  const [horloge, setHorloge] = React.useState(maintenant);
+  React.useEffect(() => {
+    const ecart = maintenant - Date.now();
+    const minuteur = window.setInterval(
+      () => setHorloge(Date.now() + ecart),
+      30_000
+    );
+    return () => window.clearInterval(minuteur);
+  }, [maintenant]);
+  const aujourdhui = jourDans(horloge, fuseauPour(paysTel));
 
   async function choisirFichier(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -241,8 +436,49 @@ export function FormulairePaiement({ montant }: { montant: number }) {
     }
   }
 
+  /** Demande au classeur qui est cette personne, puis ouvre la suite. */
+  async function verifier() {
+    if (!emailValide(email.trim())) return setErreur(msg.email);
+    const international = numeroInternational(paysTel, numero);
+    if (!international) return setErreur(msg.numero);
+
+    setErreur(null);
+    setVerif(true);
+    try {
+      const reponse = await fetch("/api/paiement/situation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), numero: international }),
+      });
+      const s = (await reponse.json()) as Partial<Situation> & {
+        ok?: boolean;
+        message?: string;
+      };
+      if (!s.ok || !s.packs) throw new Error(s.message || msg.indisponible);
+      if (s.blocage) {
+        return setErreur(`${msg.identification} ${event.email}.`);
+      }
+      const complet = s as Situation;
+      setSituation(complet);
+      setPack("");
+      if (complet.connu) setNom(complet.nom);
+      // Tranche suivante : on propose le reste à payer.
+      setMontantPaye(
+        complet.connu && complet.pack && complet.reste > 0
+          ? String(complet.reste)
+          : ""
+      );
+    } catch (err) {
+      setErreur(err instanceof Error ? err.message : msg.indisponible);
+    } finally {
+      setVerif(false);
+    }
+  }
+
   async function envoyer() {
-    if (nom.trim().length < 2) return setErreur(msg.nom);
+    if (!situation) return verifier();
+    if (!reconnue && nom.trim().length < 2) return setErreur(msg.nom);
+    if (!reconnue && !pack) return setErreur(msg.pack);
     if (!emailValide(email.trim()))
       return setErreur(msg.email);
     const international = numeroInternational(paysTel, numero);
@@ -270,9 +506,10 @@ export function FormulairePaiement({ montant }: { montant: number }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nom,
+          nom: reconnue ? situation.nom : nom,
           email,
           numero: international,
+          pack: reconnue ? situation.pack : pack,
           moyen: moyen === MOYEN_AUTRE ? moyenAutre : moyen,
           montant_declare: montantPaye,
           date_paiement: date,
@@ -335,39 +572,43 @@ export function FormulairePaiement({ montant }: { montant: number }) {
         {paiement.rappel}
       </p>
 
-      <div className="mt-6 flex items-baseline justify-between gap-4 border-b border-border pb-5">
-        <span className="text-sm text-muted-foreground">Montant attendu</span>
-        <span className="font-heading text-2xl font-extrabold tracking-tight">
-          {montantLisible} FCFA
-        </span>
-      </div>
+      {packsVisibles.length ? (
+        <div className="mt-6 rounded-2xl border border-border p-4 max-sm:p-3.5">
+          <p className="text-sm font-medium">{paiement.packsTitre}</p>
+          <ul className="mt-3 grid gap-2">
+            {packsVisibles.map((p) => (
+              <li
+                key={p.nom}
+                className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5"
+              >
+                <span className="text-sm text-muted-foreground">{p.nom}</span>
+                <span className="font-heading ml-auto text-right text-lg font-extrabold tracking-tight">
+                  {fmt(p.prix)} FCFA
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="mt-6 flex flex-col gap-6">
-        <div className="grid gap-6 sm:grid-cols-2">
-          <label>
-            <Libelle obligatoire>{paiement.libelleNom}</Libelle>
-            <input
-              className={CHAMP}
-              value={nom}
-              onChange={(e) => setNom(e.target.value)}
-              autoComplete="name"
-              maxLength={100}
-            />
-          </label>
-          <label>
-            <Libelle obligatoire>{paiement.libelleEmail}</Libelle>
-            <input
-              className={CHAMP}
-              type="email"
-              inputMode="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              maxLength={120}
-              placeholder={paiement.placeholderEmail}
-            />
-          </label>
-        </div>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          {paiement.aideIdentification}
+        </p>
+
+        <label>
+          <Libelle obligatoire>{paiement.libelleEmail}</Libelle>
+          <input
+            className={CHAMP}
+            type="email"
+            value={email}
+            disabled={identifie}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            maxLength={120}
+            placeholder={paiement.placeholderEmail}
+          />
+        </label>
 
         {/* Même composition que l'inscription : l'indicatif à gauche,
             le numéro à droite, et la validation par pays. */}
@@ -379,14 +620,26 @@ export function FormulairePaiement({ montant }: { montant: number }) {
             <ChoixPays
               etiquette="q-tel-paiement"
               valeur={paysTel}
-              onChange={setPaysTel}
+              onChange={(v) => {
+                if (!identifie) setPaysTel(v);
+              }}
             />
             <input
               className={CHAMP}
+              disabled={identifie}
               type="tel"
               inputMode="tel"
               value={numero}
-              onChange={(e) => setNumero(e.target.value.replace(/[^\d\s().-]/g, ""))}
+              onChange={(e) => {
+                const brut = e.target.value.replace(/[^\d\s().+-]/g, "");
+                // « 00229… » ou « +229… » : le pays suit l'indicatif tapé,
+                // donc le fuseau et les dates possibles aussi.
+                const lu = paysDepuisNumero(brut);
+                if (lu) {
+                  setPaysTel(lu.pays);
+                  setNumero(lu.national);
+                } else setNumero(brut.replace(/\+/g, ""));
+              }}
               autoComplete="tel-national"
               maxLength={20}
               aria-labelledby="q-tel-paiement"
@@ -395,6 +648,114 @@ export function FormulairePaiement({ montant }: { montant: number }) {
           </div>
         </div>
 
+
+        {identifie ? (
+          <button
+            type="button"
+            onClick={() => {
+              setSituation(null);
+              setPack("");
+              setErreur(null);
+            }}
+            className="-my-2 flex min-h-11 w-fit items-center text-left text-sm font-medium text-primary underline underline-offset-4"
+          >
+            {paiement.modifier}
+          </button>
+        ) : null}
+
+        {identifie ? (
+          <>
+            {reconnue ? (
+              <p className="rounded-2xl bg-accent/60 px-4 py-3 text-sm leading-relaxed text-pretty text-accent-foreground max-sm:px-3.5">
+                {paiement.retrouve} <strong>{situation!.nom}</strong>
+                {" · "}
+                {paiement.tranche} {situation!.tranche}
+              </p>
+            ) : (
+              <>
+                <p className="rounded-2xl bg-accent/60 px-4 py-3 text-sm leading-relaxed text-pretty text-accent-foreground max-sm:px-3.5">
+                  {paiement.premierPaiement}
+                </p>
+                <label>
+                  <Libelle obligatoire>{paiement.libelleNom}</Libelle>
+                  <input
+                    className={CHAMP}
+                    value={nom}
+                    onChange={(e) => setNom(e.target.value)}
+                    autoComplete="name"
+                    maxLength={100}
+                  />
+                </label>
+                <div>
+                  <Libelle obligatoire id="q-pack">
+                    {paiement.libellePack}
+                  </Libelle>
+                  <ListeDeroulante
+                    etiquette="q-pack"
+                    options={situation!.packs.map((p) => ({
+                      valeur: p.nom,
+                      libelle: `${p.nom} — ${fmt(p.prix)} FCFA`,
+                    }))}
+                    valeur={pack}
+                    onChange={(v) => {
+                      setPack(v);
+                      const prix = situation!.packs.find((p) => p.nom === v)?.prix;
+                      if (prix) setMontantPaye(String(prix));
+                    }}
+                    indication={paiement.indicationPack}
+                  />
+                </div>
+              </>
+            )}
+
+            {bilan ? (
+              <dl className="grid gap-2.5 rounded-2xl border border-border p-4 text-sm max-sm:p-3.5">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+                  <dt className="text-muted-foreground">{paiement.recapPack}</dt>
+                  <dd className="ml-auto text-right font-medium">{bilan.nom}</dd>
+                </div>
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+                  <dt className="text-muted-foreground">{paiement.recapDu}</dt>
+                  <dd className="ml-auto text-right font-medium">{fmt(bilan.du)} FCFA</dd>
+                </div>
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+                  <dt className="text-muted-foreground">{paiement.recapValide}</dt>
+                  <dd className="ml-auto text-right font-medium">{fmt(bilan.valide)} FCFA</dd>
+                </div>
+                {bilan.attente > 0 ? (
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+                    <dt className="text-muted-foreground">{paiement.recapAttente}</dt>
+                    <dd className="ml-auto text-right font-medium">{fmt(bilan.attente)} FCFA</dd>
+                  </div>
+                ) : null}
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 border-t border-border pt-2.5">
+                  <dt className="font-medium">{paiement.recapReste}</dt>
+                  <dd className="font-heading ml-auto text-right text-xl font-extrabold">
+                    {fmt(resteAvant)} FCFA
+                  </dd>
+                </div>
+                {montantNum > 0 ? (
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+                    <dt className="text-muted-foreground">{paiement.recapApres}</dt>
+                    <dd className="ml-auto text-right font-medium">
+                      {resteApres > 0
+                        ? `${fmt(resteApres)} FCFA`
+                        : paiement.recapSolde}
+                    </dd>
+                  </div>
+                ) : null}
+              </dl>
+            ) : null}
+
+            {couverte ? (
+              <p
+                role="status"
+                className="rounded-2xl bg-accent px-4 py-3 text-sm leading-relaxed text-accent-foreground"
+              >
+                {soldee ? paiement.packSolde : paiement.packCouvert}
+              </p>
+            ) : (
+              <>
         <div>
           <Libelle obligatoire id="q-moyen">
             {paiement.libelleMoyen}
@@ -441,10 +802,17 @@ export function FormulairePaiement({ montant }: { montant: number }) {
               etiquette="q-date-paiement"
               valeur={date}
               onChange={setDate}
+              aujourdhui={aujourdhui}
             />
           </div>
         </div>
+              </>
+            )}
+          </>
+        ) : null}
 
+        {identifie && !couverte ? (
+          <>
         <div>
           <Libelle obligatoire>{paiement.libellePreuve}</Libelle>
           <input
@@ -510,6 +878,8 @@ export function FormulairePaiement({ montant }: { montant: number }) {
             {paiement.aideRemarque}
           </span>
         </label>
+          </>
+        ) : null}
       </div>
 
       {erreur ? (
@@ -521,14 +891,22 @@ export function FormulairePaiement({ montant }: { montant: number }) {
         </p>
       ) : null}
 
+      {couverte ? null : (
       <Button
         className="mt-8 h-13 w-full rounded-full text-base has-data-[icon=inline-start]:pl-6 max-sm:h-14"
-        disabled={envoi}
-        onClick={envoyer}
+        disabled={envoi || verif}
+        onClick={identifie ? envoyer : verifier}
       >
         <Send data-icon="inline-start" />
-        {envoi ? paiement.enCours : paiement.bouton}
+        {identifie
+          ? envoi
+            ? paiement.enCours
+            : paiement.bouton
+          : verif
+            ? paiement.verification
+            : paiement.boutonContinuer}
       </Button>
+      )}
     </div>
   );
 }
