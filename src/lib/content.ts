@@ -514,7 +514,7 @@ export const paiement = {
     "delegate-2": ["5 jours obligatoires", "Chambre à 3", "T-shirt non spécialisé", "Restauration"],
     "delegate-3": ["5 jours obligatoires", "Chambre seule", "T-shirt spécialisé", "Restauration"],
     "delegate-4": ["5 jours obligatoires", "Chambre seule", "T-shirt non spécialisé", "Restauration"],
-    "delegate-standard": ["Hébergement à 6 ou plus", "Gala", "Restauration 5 jours", "T-shirt non inclus"],
+    "delegate-standard": ["Hébergement à 6 ou plus", "Gala", "Restauration 5 jours"],
   } as Record<string, string[]>,
   libelleProfil: "Tu es…",
   profilAlumni: "Alumni",
