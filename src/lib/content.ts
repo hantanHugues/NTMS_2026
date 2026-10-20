@@ -305,6 +305,25 @@ export const bandeau = {
 };
 
 /**
+ * LA SECTION « PACKS » : les prix, avant l'appel a l'action. Les prix
+ * eux-memes viennent de l'onglet « packs » du classeur ; le contenu de
+ * chaque pack est dans `paiement.details`.
+ */
+export const pricing = {
+  titre: "Choisis ton",
+  titreAccent: "pack.",
+  lead: "Alumni ou Delegate, chacun a ses packs. Touche un pack pour voir ce qu'il comprend.",
+  delegate: "Delegate",
+  alumni: "Alumni",
+  question: "Tu es…",
+  lesPacks: "Les packs",
+  compris: "Ce qui est compris",
+  devise: "FCFA",
+  bouton: "Je paie ma place",
+  note: "Tu choisis ton pack au moment de payer.",
+};
+
+/**
  * LA SECTION D'APPEL A L'ACTION.
  *
  * Deux gestes, dans l'ordre — s'inscrire, puis payer — chacun avec son
@@ -314,28 +333,15 @@ export const bandeau = {
 export const cta = {
   title: "Ta place au",
   titleAccent: "NTMS 2026",
-  lead: "Deux gestes, dans l'ordre : tu t'inscris, puis tu règles ta place, en une fois ou par tranches.",
+  lead: "Deux gestes, dans l'ordre : tu t'inscris, puis tu règles ta place.",
   inscription: {
     nom: "Inscription",
-    prix: "Gratuit",
     jusqu: "Ouvert jusqu'au",
     description: "Réserve ta place en quelques minutes.",
     points: [
       "Un formulaire de quelques minutes",
       "Ta confirmation par mail",
       "Le lien du groupe WhatsApp",
-    ],
-  },
-  paiement: {
-    nom: "Paiement",
-    prix: "Par tranches",
-    jusqu: "Ouvert jusqu'au",
-    description: "Choisis ton pack et règle-le à ton rythme.",
-    points: [
-      "Mobile Money ou espèces",
-      "En une ou plusieurs tranches",
-      "Ta preuve envoyée en ligne",
-      "Une facture par mail à chaque paiement",
     ],
   },
   places: "places",
@@ -487,19 +493,34 @@ export const paiement = {
   chapo:
     "Tu as réglé ta place ? Dis-le-nous ici avec une preuve. Le comité vérifie, puis t'envoie ton reçu par mail.",
   libelleNom: "Nom et prénom",
-  // Paiement par tranches : packs, identification, reste à payer.
+  // Paiement : packs, identification, reste à payer.
   boutonContinuer: "Continuer",
   verification: "Vérification…",
   modifier: "Modifier mon e-mail ou mon numéro",
   retrouve: "Content de te revoir,",
-  tranche: "tranche n°",
   premierPaiement:
-    "Premier paiement : renseigne ton nom et choisis ton pack. Pour les tranches suivantes, il suffira de ton e-mail et de ton numéro.",
+    "Nouveau ici ? Renseigne ton nom et choisis ton pack.",
   packSolde: "Ton pack est soldé : il n'y a plus rien à payer. Merci !",
   packCouvert: "Tes paiements en attente de validation couvrent déjà ton pack. Tu recevras ta facture dès qu'ils sont validés.",
-  packsTitre: "Nos packs",
+  // Le contenu de chaque pack, tel qu'un invite doit le voir. Cle :
+  // « categorie-numero » (voir `clePack`). Les prix sont dans l'onglet
+  // « packs » du classeur ; ici, seulement ce qu'ils comprennent.
+  details: {
+    "alumni-1": ["Gala", "1 nuit", "T-shirt spécialisé"],
+    "alumni-2": ["Gala", "1 nuit", "T-shirt non spécialisé"],
+    "alumni-3": ["Gala", "3 jours", "T-shirt spécialisé"],
+    "alumni-4": ["Gala", "3 jours", "T-shirt non spécialisé"],
+    "delegate-1": ["5 jours obligatoires", "Chambre à 3", "T-shirt spécialisé", "Restauration"],
+    "delegate-2": ["5 jours obligatoires", "Chambre à 3", "T-shirt non spécialisé", "Restauration"],
+    "delegate-3": ["5 jours obligatoires", "Chambre seule", "T-shirt spécialisé", "Restauration"],
+    "delegate-4": ["5 jours obligatoires", "Chambre seule", "T-shirt non spécialisé", "Restauration"],
+    "delegate-standard": ["Hébergement à 6 ou plus", "Gala", "Restauration 5 jours", "T-shirt non inclus"],
+  } as Record<string, string[]>,
+  libelleProfil: "Tu es…",
+  profilAlumni: "Alumni",
+  profilDelegate: "Delegate",
+  aucunPack: "Aucun pack n'est proposé pour l'instant. Écris-nous.",
   libellePack: "Ton pack",
-  indicationPack: "Choisis ton pack",
   recapPack: "Pack",
   recapDu: "Montant du pack",
   recapValide: "Déjà validé",
@@ -556,7 +577,7 @@ export const paiement = {
   lienWhatsApp: process.env.NEXT_PUBLIC_LIEN_WHATSAPP_PAIEMENT ?? "",
   // Ce que la personne doit comprendre AVANT de remplir.
   rappel:
-    "Tu paies par ton moyen habituel, puis tu le déclares ici. Utilise toujours la même combinaison e-mail + numéro : une autre sera refusée.",
+    "Tu paies d'abord par ton moyen habituel, puis tu notifies ton paiement ici. Utilise toujours la même combinaison e-mail + numéro : une autre sera refusée.",
   /** Les refus de la declaration, partages par le site et le serveur. */
   erreurs: {
     clos: "Les paiements sont clos.",
@@ -564,8 +585,9 @@ export const paiement = {
     preuveIllisible: "Ce fichier n'a pas pu être lu. Choisis-en un autre.",
     nom: "Ton nom, s'il te plaît.",
     pack: "Choisis ton pack.",
+    profil: "Dis-nous si tu es Alumni ou Delegate.",
     identification:
-      "Cet e-mail ou ce numéro est déjà associé à un autre paiement. À chaque paiement, utilise toujours la même combinaison e-mail + numéro. Vérifie-les, ou contacte le comité si tu penses qu'il y a une erreur.",
+      "Cet e-mail ou ce numéro est déjà associé à un autre paiement. Utilise toujours la même combinaison e-mail + numéro. Vérifie-les, ou contacte le comité si tu penses qu'il y a une erreur.",
     email: "Cette adresse e-mail n'est pas valide.",
     numero: "Ce numéro de téléphone n'est pas valide.",
     moyen: "Choisis le moyen que tu as utilisé.",

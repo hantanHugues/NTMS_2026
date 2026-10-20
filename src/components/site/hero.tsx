@@ -94,7 +94,7 @@ export async function Hero() {
               nativeButton={false}
               size="lg"
               className={`${ACTION} ${ACTION_PAIEMENT}`}
-              render={<a href="#carte-paiement" />}
+              render={<a href="#packs" />}
             >
               {hero.boutonPaiement}
             </Button>

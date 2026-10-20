@@ -6,6 +6,7 @@ import { InstagramSection } from "@/components/site/instagram-section";
 import { PhotoStrip } from "@/components/site/photo-strip";
 import { Preuve } from "@/components/site/preuve";
 import { AfficheSection } from "@/components/site/affiche-section";
+import { PricingSection } from "@/components/site/pricing-section";
 import { RegistrationCta } from "@/components/site/registration-cta";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
@@ -36,6 +37,7 @@ export default function Home() {
         <Preuve />
         <PhotoStrip />
         <RegistrationCta />
+        <PricingSection />
         <AfficheSection />
         <InstagramSection />
         <ContactSection />

@@ -30,18 +30,6 @@ export async function POST(request: Request) {
   const numero =
     typeof entree.numero === "string" ? entree.numero.trim().slice(0, 40) : "";
 
-  // Ni e-mail ni numéro : on ne demande que les packs et leurs prix,
-  // pour les afficher dès l'arrivée sur la page.
-  if (!email && !numero) {
-    try {
-      const { packs } = await situationPaiement("", "");
-      return NextResponse.json({ ok: true, packs });
-    } catch (err) {
-      console.error("Packs illisibles :", err);
-      return refus("Le service est momentanément indisponible. Réessaie.", 504);
-    }
-  }
-
   if (!emailValide(email)) return refus("Cette adresse e-mail n'est pas valide.");
   if (numero.replace(/\D/g, "").length < 8)
     return refus("Ce numéro de téléphone n'est pas valide.");

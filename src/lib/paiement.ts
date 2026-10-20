@@ -103,3 +103,49 @@ export function fuseauPour(paysTel: string) {
     return FUSEAU_BENIN;
   }
 }
+
+/**
+ * ALUMNI OU DELEGATE : la categorie d'un pack est lue dans son NOM,
+ * dans l'onglet « packs » du classeur. Aucun changement au script.
+ *
+ *   « Alumni - Pack 1 »     → categorie alumni,   libelle « Pack 1 »
+ *   « Delegate : Pack 3 »   → categorie delegate, libelle « Pack 3 »
+ *   « Pack 2 »              → aucune categorie : propose a tout le monde
+ *
+ * Le nom ENTIER (« Alumni - Pack 1 ») reste ce qui part au classeur et
+ * s'y enregistre : deux packs de meme libelle dans deux categories ne
+ * se melangent donc jamais.
+ */
+export type Categorie = "alumni" | "delegate" | "";
+
+export function analysePack(nom: string): { categorie: Categorie; libelle: string } {
+  const sansAccent = nom.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  const m = sansAccent.match(/^\s*(alumni|alumnie|alumnus|delegate|delegue)\b[\s\-–—:·|/]*/);
+  if (!m) return { categorie: "", libelle: nom };
+  const reste = nom.slice(m[0].length).trim();
+  return {
+    categorie: m[1].startsWith("alum") ? "alumni" : "delegate",
+    libelle: reste || nom,
+  };
+}
+
+/**
+ * La cle qui relie un pack de l'onglet a son descriptif (le contenu
+ * affiche sur la carte, dans `content.ts`) :
+ *
+ *   « Alumni - Package 3 » → « alumni-3 »
+ *   « Delegate - Package 1 » → « delegate-1 »
+ *   « Delegate - Standard » → « delegate-standard »
+ *
+ * Un pack sans descriptif s'affiche simplement avec son prix.
+ */
+export function clePack(categorie: Categorie, libelle: string) {
+  const numero = libelle.match(/\d+/)?.[0];
+  const mot = libelle
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `${categorie || "tous"}-${numero ?? mot}`;
+}

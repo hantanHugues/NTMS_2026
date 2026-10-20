@@ -26,6 +26,8 @@ import {
 import {
   FORMATS,
   MOYENS,
+  analysePack,
+  clePack,
   MOYEN_AUTRE,
   POIDS_MAX,
   fuseauPour,
@@ -342,32 +344,11 @@ export function FormulairePaiement({
   // donnés. Tant qu'il est null, seule l'identification s'affiche.
   const [situation, setSituation] = React.useState<Situation | null>(null);
   const [pack, setPack] = React.useState("");
+  // Alumni ou Delegate : chacun ne voit que ses packs.
+  const [profil, setProfil] = React.useState<"" | "alumni" | "delegate">("");
   const [verif, setVerif] = React.useState(false);
   // E-mail et numéro ne se correspondent pas : on montre le comité.
   const [aide, setAide] = React.useState(false);
-  // Les packs et leurs prix, affichés dès l'arrivée : on sait ce que
-  // coûte la place avant même de s'identifier.
-  const [packsVisibles, setPacksVisibles] = React.useState<
-    { nom: string; prix: number }[]
-  >([]);
-  React.useEffect(() => {
-    let vivant = true;
-    fetch("/api/paiement/situation", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: "{}",
-    })
-      .then((r) => r.json())
-      .then((r: { ok?: boolean; packs?: { nom: string; prix: number }[] }) => {
-        if (vivant && r.ok && Array.isArray(r.packs)) setPacksVisibles(r.packs);
-      })
-      .catch(() => {
-        // Confort seulement : l'identification donne les mêmes packs.
-      });
-    return () => {
-      vivant = false;
-    };
-  }, []);
   const [date, setDate] = React.useState("");
   const [remarque, setRemarque] = React.useState("");
 
@@ -382,16 +363,20 @@ export function FormulairePaiement({
   const identifie = situation !== null;
   // Déjà reconnue ET déjà dotée d'un pack : elle ne ressaisit rien.
   const reconnue = !!situation?.connu && !!situation.pack;
-  const packChoisi = situation?.packs.find((p) => p.nom === pack);
+  const aDesCategories = !!situation?.packs.some((p) => p.categorie);
+  const packsProfil = (situation?.packs ?? []).filter(
+    (p) => !p.categorie || p.categorie === profil
+  );
+  const packChoisi = packsProfil.find((p) => p.nom === pack);
   const bilan = reconnue
     ? {
-        nom: situation!.pack,
+        nom: analysePack(situation!.pack).libelle,
         du: situation!.montant_du,
         valide: situation!.valide,
         attente: situation!.attente,
       }
     : packChoisi
-      ? { nom: packChoisi.nom, du: packChoisi.prix, valide: 0, attente: 0 }
+      ? { nom: packChoisi.libelle, du: packChoisi.prix, valide: 0, attente: 0 }
       : null;
   // Tout le pack est déjà payé, ou couvert par des paiements encore
   // en attente de validation : rien de plus à déclarer.
@@ -466,7 +451,7 @@ export function FormulairePaiement({
       setSituation(complet);
       setPack("");
       if (complet.connu) setNom(complet.nom);
-      // Tranche suivante : on propose le reste à payer.
+      // Quelqu'un qui revient : on propose le reste à payer.
       setMontantPaye(
         complet.connu && complet.pack && complet.reste > 0
           ? String(complet.reste)
@@ -482,6 +467,7 @@ export function FormulairePaiement({
   async function envoyer() {
     if (!situation) return verifier();
     if (!reconnue && nom.trim().length < 2) return setErreur(msg.nom);
+    if (!reconnue && aDesCategories && !profil) return setErreur(msg.profil);
     if (!reconnue && !pack) return setErreur(msg.pack);
     if (!emailValide(email.trim()))
       return setErreur(msg.email);
@@ -576,25 +562,6 @@ export function FormulairePaiement({
         {paiement.rappel}
       </p>
 
-      {packsVisibles.length ? (
-        <div className="mt-6 rounded-2xl border border-border p-4 max-sm:p-3.5">
-          <p className="text-sm font-medium">{paiement.packsTitre}</p>
-          <ul className="mt-3 grid gap-2">
-            {packsVisibles.map((p) => (
-              <li
-                key={p.nom}
-                className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5"
-              >
-                <span className="text-sm text-muted-foreground">{p.nom}</span>
-                <span className="font-heading ml-auto text-right text-lg font-extrabold tracking-tight">
-                  {fmt(p.prix)} FCFA
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
       <div className="mt-6 flex flex-col gap-6">
         <label>
           <Libelle obligatoire>{paiement.libelleEmail}</Libelle>
@@ -655,6 +622,7 @@ export function FormulairePaiement({
             onClick={() => {
               setSituation(null);
               setPack("");
+              setProfil("");
               setErreur(null);
               setAide(false);
             }}
@@ -669,8 +637,6 @@ export function FormulairePaiement({
             {reconnue ? (
               <p className="rounded-2xl bg-accent/60 px-4 py-3 text-sm leading-relaxed text-pretty text-accent-foreground max-sm:px-3.5">
                 {paiement.retrouve} <strong>{situation!.nom}</strong>
-                {" · "}
-                {paiement.tranche} {situation!.tranche}
               </p>
             ) : (
               <>
@@ -687,29 +653,120 @@ export function FormulairePaiement({
                     maxLength={100}
                   />
                 </label>
-                <div>
-                  <Libelle obligatoire id="q-pack">
-                    {paiement.libellePack}
-                  </Libelle>
-                  <ListeDeroulante
-                    etiquette="q-pack"
-                    options={situation!.packs.map((p) => ({
-                      valeur: p.nom,
-                      libelle: `${p.nom} — ${fmt(p.prix)} FCFA`,
-                    }))}
-                    valeur={pack}
-                    onChange={(v) => {
-                      setPack(v);
-                      const prix = situation!.packs.find((p) => p.nom === v)?.prix;
-                      if (prix) setMontantPaye(String(prix));
-                    }}
-                    indication={paiement.indicationPack}
-                  />
-                </div>
+                {aDesCategories ? (
+                  <div>
+                    <Libelle obligatoire id="q-profil">
+                      {paiement.libelleProfil}
+                    </Libelle>
+                    <div
+                      role="radiogroup"
+                      aria-labelledby="q-profil"
+                      className="grid grid-cols-2 gap-3"
+                    >
+                      {(["alumni", "delegate"] as const).map((v) => (
+                        <button
+                          key={v}
+                          type="button"
+                          role="radio"
+                          aria-checked={profil === v}
+                          onClick={() => {
+                            setProfil(v);
+                            setPack("");
+                            setMontantPaye("");
+                          }}
+                          className={cn(
+                            "min-h-12 rounded-xl border px-4 py-3 text-base font-medium transition-colors max-sm:min-h-13",
+                            profil === v
+                              ? "border-primary bg-primary/10 ring-1 ring-primary"
+                              : "border-border bg-background hover:border-primary/50"
+                          )}
+                        >
+                          {v === "alumni"
+                            ? paiement.profilAlumni
+                            : paiement.profilDelegate}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {!aDesCategories || profil ? (
+                  <div>
+                    <Libelle obligatoire id="q-pack">
+                      {paiement.libellePack}
+                    </Libelle>
+                    {packsProfil.length ? (
+                      <div
+                        role="radiogroup"
+                        aria-labelledby="q-pack"
+                        className="grid gap-3 sm:grid-cols-2"
+                      >
+                        {packsProfil.map((p, i) => {
+                          const actif = p.nom === pack;
+                          const contenu = paiement.details[clePack(p.categorie, p.libelle)];
+                          return (
+                            <button
+                              key={`${i}-${p.nom}`}
+                              type="button"
+                              role="radio"
+                              aria-checked={actif}
+                              onClick={() => {
+                                setPack(p.nom);
+                                setMontantPaye(String(p.prix));
+                              }}
+                              className={cn(
+                                "relative flex flex-col items-start gap-1 rounded-2xl border p-4 text-left transition-all",
+                                actif
+                                  ? "border-primary bg-primary/10 ring-1 ring-primary"
+                                  : "border-border bg-background hover:border-primary/50"
+                              )}
+                            >
+                              <span className="text-sm text-muted-foreground">
+                                {p.libelle}
+                              </span>
+                              <span className="font-heading text-2xl font-extrabold tracking-tight">
+                                {fmt(p.prix)}
+                                <span className="ml-1 text-sm font-medium text-muted-foreground">
+                                  FCFA
+                                </span>
+                              </span>
+                              {contenu ? (
+                                <ul className="mt-2 space-y-1 border-t border-border pt-3">
+                                  {contenu.map((ligne) => (
+                                    <li
+                                      key={ligne}
+                                      className="flex items-start gap-2 text-sm text-foreground/80"
+                                    >
+                                      <Check
+                                        aria-hidden
+                                        className="mt-0.5 size-3.5 shrink-0 text-accent-text"
+                                      />
+                                      {ligne}
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : null}
+                              {actif ? (
+                                <Check
+                                  aria-hidden
+                                  className="absolute top-3 right-3 size-4 text-primary"
+                                />
+                              ) : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        {paiement.aucunPack}
+                      </p>
+                    )}
+                  </div>
+                ) : null}
               </>
             )}
 
-            {bilan ? (
+            {bilan && reconnue ? (
               <dl className="grid gap-2.5 rounded-2xl border border-border p-4 text-sm max-sm:p-3.5">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
                   <dt className="text-muted-foreground">{paiement.recapPack}</dt>
