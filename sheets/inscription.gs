@@ -1436,7 +1436,10 @@ function onOpen() {
     .addSeparator()
     .addItem("M'envoyer un aperçu du mail automatique", "testerLeMail")
     .addItem("M'envoyer un aperçu du mail manuel", "testerLeMailManuel")
-    .addItem("M'envoyer un aperçu du reçu", "testerLeRecu")
+    .addSeparator()
+    .addItem("M'envoyer un aperçu : paiement validé (il reste un solde)", "apercuRecuValide")
+    .addItem("M'envoyer un aperçu : pack soldé", "apercuRecuSolde")
+    .addItem("M'envoyer un aperçu : paiement non validé", "apercuRecuRefus")
     .addToUi();
 }
 
@@ -1566,15 +1569,36 @@ function envoyerLesMailsEnAttente() {
  */
 var CHAMPS_CONTENU = ["objet", "titre", "corps", "textecta", "liencta"];
 
-function confRecuColonne(base, colonne, heriteDeB) {
-  var col = lireConfig(MODELES.recu, colonne);
-  var r = {};
-  for (var cle in base) r[cle] = base[cle];
-  CHAMPS_CONTENU.forEach(function (c) {
-    if (col[c]) r[c] = col[c];
-    else if (!heriteDeB) r[c] = "";
+/**
+ * Les trois mails a partir des colonnes B, C et D. Une seule definition,
+ * pour l'envoi reel ET pour les apercus du menu : ils ne peuvent pas
+ * diverger.
+ */
+function preparerConfsRecu(b) {
+  var c = lireConfig(MODELES.recu, 2);
+  var d = lireConfig(MODELES.recu, 3);
+  var solde = {};
+  var refus = {};
+  for (var cle in b) {
+    solde[cle] = b[cle];
+    refus[cle] = b[cle];
+  }
+  CHAMPS_CONTENU.forEach(function (champ) {
+    if (d[champ]) solde[champ] = d[champ];
+    refus[champ] = c[champ] || "";
   });
-  return r;
+  // Le bouton du mail solde est CELUI DE D (le groupe WhatsApp), jamais
+  // celui de B. Rien en D = pas de bouton.
+  solde.textecta = d.textecta || "";
+  solde.liencta = d.liencta || "";
+  return { valide: b, solde: solde, refus: refus, refusActif: !!(refus.objet && refus.corps) };
+}
+
+/** Le bloc « facture » d'un paiement refuse. */
+function factureRefus(v) {
+  return "Paiement non retenu : " + v.paiement_actuel + " FCFA\n" +
+    "Total payé : " + v.total_paye + " FCFA\n" +
+    "Reste à payer : " + v.reste + " FCFA";
 }
 
 /**
@@ -1600,16 +1624,10 @@ function envoyerLesRecus() {
     ui.alert("L'onglet « config recu » est incomplet : remplis Objet et Corps.");
     return;
   }
-  // Colonne D : pack solde. Son bouton est CELUI DE D (le groupe
-  // WhatsApp) ; jamais celui de B, « payer la prochaine tranche »
-  // n'a plus de sens. Rien en D = pas de bouton.
-  var confSolde = confRecuColonne(conf, 3, true);
-  var colonneD = lireConfig(MODELES.recu, 3);
-  confSolde.textecta = colonneD.textecta || "";
-  confSolde.liencta = colonneD.liencta || "";
-  // Colonne C : paiement non valide. Vide = on ne previent personne.
-  var confRefus = confRecuColonne(conf, 2, false);
-  var refusActif = !!(confRefus.objet && confRefus.corps);
+  var confs = preparerConfsRecu(conf);
+  var confSolde = confs.solde;
+  var confRefus = confs.refus;
+  var refusActif = confs.refusActif;
 
   var feuille = feuillePaiements();
   var valeurs = feuille.getDataRange().getValues();
@@ -1666,10 +1684,7 @@ function envoyerLesRecus() {
       var confLigne = conf;
       if (refuse) {
         confLigne = confRefus;
-        variables.facture =
-          "Paiement non retenu : " + variables.paiement_actuel + " FCFA\n" +
-          "Total payé : " + variables.total_paye + " FCFA\n" +
-          "Reste à payer : " + variables.reste + " FCFA";
+        variables.facture = factureRefus(variables);
       } else if (variables.soldee) {
         confLigne = confSolde;
       }
@@ -1707,10 +1722,72 @@ function envoyerLesRecus() {
   );
 }
 
-/** Le meme apercu que pour les autres mails, pour le recu. */
-function testerLeRecu() {
-  testerLeMail(MODELES.recu);
+/**
+ * APERCUS DU RECU — t'envoient a toi le mail de chaque cas, avec des
+ * chiffres d'exemple, par le MEME code que l'envoi reel (variablesRecu,
+ * preparerConfsRecu). Rien n'est ecrit dans le classeur.
+ *
+ *   valide   Pack 2 = 10 000, ce paiement 4 000, reste 6 000
+ *   solde    ce paiement 6 000 solde le pack (10 000 payes)
+ *   refus    paiement de 5 000 non retenu, 4 000 deja valides
+ */
+function apercuRecu(cas) {
+  var ui = SpreadsheetApp.getUi();
+  var conf = lireConfig(MODELES.recu);
+  if (!conf.objet || !conf.corps) {
+    ui.alert("L'onglet « config recu » est incomplet : remplis Objet et Corps (colonne B).");
+    return;
+  }
+  var confs = preparerConfsRecu(conf);
+  var exemple = {
+    valide: { actuel: 4000, valides: 4000 },
+    solde: { actuel: 6000, valides: 10000 },
+    refus: { actuel: 5000, valides: 4000 },
+  }[cas];
+
+  if (cas === "refus" && !confs.refusActif) {
+    ui.alert("Colonne C vide : aucun mail de refus ne partira. Remplis Objet et Corps en colonne C.");
+    return;
+  }
+
+  var i0 = indexColonnesPaiement();
+  var ligne = COLONNES_PAIEMENT.map(function () { return ""; });
+  ligne[i0.nom] = "Test Utilisateur";
+  ligne[i0.email] = "test@example.com";
+  ligne[i0.numero] = "+229 01 00 00 00 00";
+  ligne[i0.reference_paiement] = "PAY-TEST";
+  ligne[i0.moyen] = "MTN MoMo";
+  ligne[i0.pack] = "Pack 2";
+  ligne[i0.montant_du] = 10000;
+  ligne[i0.tranche] = 2;
+  ligne[i0.montant_declare] = exemple.actuel;
+  var index = {};
+  index["test@example.com|" + chiffres(ligne[i0.numero])] = {
+    pack: "Pack 2", montant_du: 10000, total_valide: exemple.valides,
+  };
+
+  var variables = variablesRecu(ligne, i0, index);
+  var confCas = cas === "refus" ? confs.refus : cas === "solde" ? confs.solde : confs.valide;
+  if (cas === "refus") variables.facture = factureRefus(variables);
+
+  var compte = Session.getEffectiveUser().getEmail();
+  var soucis = [];
+  var options = {
+    to: compte,
+    subject: "[TEST recu " + cas + "] " + remplirTexte(confCas.objet, variables),
+    body: construireTexte(confCas, variables),
+    htmlBody: construireHtml(confCas, variables),
+    name: conf.nomexpediteur || "AIESEC in Benin",
+  };
+  var fichiers = piecesJointes(valeurPiecesJointes(conf), soucis);
+  if (fichiers.length) options.attachments = fichiers;
+  MailApp.sendEmail(options);
+  ui.alert("Aperçu envoyé", "Le mail « " + cas + " » est parti vers " + compte + ".", ui.ButtonSet.OK);
 }
+
+function apercuRecuValide() { apercuRecu("valide"); }
+function apercuRecuSolde() { apercuRecu("solde"); }
+function apercuRecuRefus() { apercuRecu("refus"); }
 
 /** Tout ce qui n'est pas « oui » reste a envoyer. */
 function nonRecu(etat) {

@@ -1,155 +1,188 @@
 import * as React from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { BadgeCheck } from "lucide-react";
+import { Check } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import { BorderBeam } from "@/components/ui/border-beam";
 import FloatingDotsCta from "@/components/ui/floating-dots-cta";
 import { contenu } from "@/lib/contenu";
-import type { Phase } from "@/lib/inscription-regles";
+import { inscriptionsOuvertes, paiementsOuverts } from "@/lib/inscription-regles";
+import { cn } from "@/lib/utils";
 
 /**
- * L'appel à l'action.
+ * L'appel à l'action : DEUX CARTES, comme une grille de tarifs.
  *
- * Carte sombre posée dans une section claire : la seule rupture de ton
- * du corps de page, et elle tombe sur le moment de conversion.
+ * Deux gestes, dans l'ordre — s'inscrire, puis payer — donc deux
+ * cartes, chacune avec son bouton (ceux du hero, avec l'effet de points
+ * flottants). Deux boutons plutôt qu'un : les dates diffèrent, et
+ * quelqu'un d'inscrit doit pouvoir payer plus tard sans repasser par
+ * l'inscription.
  *
- * AUCUN formulaire ici. L'inscription vit sur des pages dédiées, et
- * elle va plus loin qu'une adresse mail — on s'inscrit, puis on
- * rejoint le groupe WhatsApp. La colonne de droite décrit ces trois
- * étapes : c'est ce qui occupait la place du formulaire, et ça répond
- * à la question que le bouton pose forcément (« il se passe quoi si
- * je clique ? »).
+ *   inscription   carte claire, bouton orange
+ *   paiement      carte sombre à dégradé, bouton crème
  *
- * Décor volontairement sobre — une trame de points, rien de plus. Les
- * halos flous ont été retirés partout ailleurs sur le site.
+ * Chaque carte disparaît quand sa date est passée ; quand plus rien
+ * n'est ouvert, il reste le contact.
  *
- * La carte reprend la BRIQUE de la section « preuve », jetons compris,
- * plutôt que le nuit qu'elle portait : le pied de page juste en
- * dessous est en nuit, et deux blocs sombres identiques a la suite se
- * seraient confondus.
- *
- * En filigrane, le SIGLE NTMS — le logo, pas du texte. La police de la
- * marque (Magic, MrLetters) est sous licence usage personnel : la
- * poser sur un site public demanderait la licence commerciale. Le logo
- * porte exactement le meme lettrage et appartient a l'organisation,
- * donc il dit la meme chose sans le probleme.
+ * Structure inspirée d'un composant « pricing cards » (21st.dev) : nom
+ * en capitales espacées, grand chiffre léger, description sous un
+ * filet, liste à coches, bouton pleine largeur. Réécrit avec nos
+ * composants et nos jetons — pas de dépendance ajoutée.
  */
-export async function RegistrationCta({ phase = "inscription" }: { phase?: Phase }) {
-  const { affiche, cta, ctaClos, ctaPaiement, event } = await contenu();
-  // Même carte, textes de la phase en cours.
-  const textes =
-    phase === "paiement" ? ctaPaiement : phase === "clos" ? ctaClos : cta;
+export async function RegistrationCta() {
+  const { cta, ctaClos, event, hero, paiement } = await contenu();
+  const peutSInscrire = inscriptionsOuvertes();
+  const peutPayer = paiementsOuverts();
+
+  // « 24 octobre », dans la langue du site et à l'heure du Bénin.
+  const jusquau = (iso: string) => {
+    const t = Date.parse(iso);
+    if (Number.isNaN(t)) return "";
+    return new Intl.DateTimeFormat(paiement.locale, {
+      day: "numeric",
+      month: "long",
+      timeZone: "Africa/Porto-Novo",
+    }).format(t);
+  };
+
+  const cartes = [
+    peutSInscrire && {
+      cle: "inscription",
+      sombre: false,
+      ...cta.inscription,
+      limite: jusquau(event.finInscriptions),
+      bouton: hero.boutonInscription,
+      href: "/inscription",
+    },
+    peutPayer && {
+      cle: "paiement",
+      sombre: true,
+      ...cta.paiement,
+      limite: jusquau(event.finPaiements),
+      bouton: hero.boutonPaiement,
+      href: "/paiement",
+    },
+  ].filter(Boolean) as {
+    cle: string;
+    sombre: boolean;
+    nom: string;
+    prix: string;
+    jusqu: string;
+    description: string;
+    points: string[];
+    limite: string;
+    bouton: string;
+    href: string;
+  }[];
+
   return (
     <section
       id="inscription"
       className="scroll-mt-24 bg-background px-6 py-24 max-sm:px-4 max-sm:py-14 sm:py-32"
     >
-      <div
-        className="dark relative mx-auto max-w-5xl overflow-hidden rounded-4xl bg-background text-foreground shadow-2xl max-sm:rounded-3xl"
-        /* Memes valeurs que la section « preuve » — un seul brique sur
-           le site, redefini localement pour que les surfaces derivees
-           (`bg-card`, bordures) suivent. */
-        style={
-          {
-            "--background": "oklch(0.325 0.082 37)",
-            "--card": "oklch(0.375 0.078 37)",
-            "--muted-foreground": "oklch(0.84 0.03 55)",
-            "--border": "oklch(1 0 0 / 12%)",
-          } as React.CSSProperties
-        }
-      >
-        <div
-          aria-hidden
-          className="dot-grid pointer-events-none absolute inset-0 opacity-[0.12]"
-        />
-
-        {/* Filigrane : deborde volontairement du cadre, l'`overflow-hidden`
-            de la carte le rogne — c'est ce qui lui donne l'echelle. Il
-            est cale a GAUCHE : a droite, le panneau des trois etapes
-            (`bg-card/60`) en assombrissait la moitie et la coupure se
-            voyait. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-20 -left-16 w-[28rem] max-w-[60%] opacity-[0.08]"
-        >
-          <Image
-            src="/ntms-logo.png"
-            alt=""
-            width={1699}
-            height={1267}
-            className="w-full brightness-0 invert"
-          />
-        </div>
-
-        <div className="relative grid gap-12 p-9 max-sm:gap-8 max-sm:p-6 sm:p-14 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-3">
-              <span className="relative flex size-2">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-60" />
-                <span className="relative inline-flex size-2 rounded-full bg-primary" />
-              </span>
-              <span className="kicker">
-                {event.seats} {cta.seatsLabel}
-              </span>
-            </div>
-
-            <h2 className="font-heading mt-6 text-[clamp(1.75rem,8.5vw,2.25rem)] leading-[1] font-extrabold tracking-tight text-balance sm:mt-7 sm:text-5xl">
-              {textes.title}{" "}
+      <div className="mx-auto max-w-5xl">
+        <h2 className="font-heading max-w-3xl text-[clamp(2.25rem,11vw,3.25rem)] leading-[0.98] font-extrabold tracking-tight text-balance sm:text-6xl">
+          {cartes.length ? (
+            <>
+              {cta.title}{" "}
               <span className="text-accent-text">{cta.titleAccent}</span>
-            </h2>
+            </>
+          ) : (
+            ctaClos.title
+          )}
+        </h2>
+        <p className="mt-5 max-w-xl text-lg leading-relaxed text-pretty text-muted-foreground max-sm:text-base">
+          {cartes.length ? cta.lead : ctaClos.lead}
+        </p>
 
-            <p className="mt-5 text-lg leading-relaxed text-pretty text-muted-foreground max-sm:mt-4 max-sm:text-base">
-              {textes.lead}
-            </p>
+        {cartes.length ? (
+          <div
+            className={cn(
+              "mt-12 grid gap-6 max-sm:mt-9 md:gap-8",
+              cartes.length > 1 ? "md:grid-cols-2" : "max-w-md"
+            )}
+          >
+            {cartes.map((c) => (
+              <article
+                key={c.cle}
+                id={`carte-${c.cle}`}
+                className={cn(
+                  "group relative scroll-mt-24 overflow-hidden rounded-2xl border transition-all duration-500",
+                  c.sombre
+                    ? "dark border-border bg-gradient-to-b from-[oklch(0.17_0.034_234.8)] to-[oklch(0.125_0.03_234.8)] text-foreground hover:border-foreground/25 hover:shadow-[0_8px_40px_-12px_rgba(0,23,36,0.5)]"
+                    : "border-border bg-card text-foreground hover:border-foreground/25 hover:shadow-[0_8px_40px_-12px_rgba(0,23,36,0.18)]"
+                )}
+              >
+                {/* La lumiere qui fait le tour de la carte, de la couleur
+                    de SON bouton : orange sur la carte claire, creme sur
+                    la sombre. Les deux ne tournent pas en phase. */}
+                <BorderBeam
+                  size={260}
+                  duration={9}
+                  borderWidth={2}
+                  delay={c.sombre ? 4.5 : 0}
+                  colorFrom={c.sombre ? "#FFEBD1" : "#FF7A00"}
+                  colorTo={c.sombre ? "#FFD2A1" : "#FFB36B"}
+                />
+                <div className="flex h-full flex-col p-10 max-sm:p-7">
+                  <h3 className="text-lg font-medium tracking-wider uppercase">
+                    {c.nom}
+                  </h3>
 
-            {/* Bouton a points flottants : le seul du site a porter cet
-                effet, et il tombe sur le seul clic qui compte. */}
-            <FloatingDotsCta
-              className="mt-8 w-fit max-sm:mt-7 max-sm:w-full"
-              href={textes.href}
-              label={textes.button}
-            />
-
-            {/* L'affiche « J'y serai » : second rang, derriere le seul
-                clic qui compte. Elle sert surtout a qui est deja
-                inscrit, mais elle vaut aussi pour qui hesite. */}
-            <Link
-              href="/affiche"
-              /* Souligne EN PERMANENCE : sur telephone il n'y a pas de
-                 survol, et sans trait rien ne dit que c'est cliquable. */
-              className="mt-5 flex w-fit items-center gap-2 text-sm font-medium text-accent-text underline decoration-accent-text/45 decoration-2 underline-offset-4 transition-colors hover:decoration-accent-text max-sm:mt-4 max-sm:w-full max-sm:justify-center"
-            >
-              <BadgeCheck className="size-4" />
-              {affiche.depuisAccueil}
-            </Link>
-
-            <p className="mt-5 text-sm text-muted-foreground max-sm:mt-4 max-sm:text-center">
-              {event.city} — {event.dates}
-            </p>
-          </div>
-
-          <ol className="flex flex-col gap-6 rounded-3xl bg-card/60 p-7 backdrop-blur-md max-sm:gap-5 max-sm:rounded-none max-sm:border-t max-sm:border-white/12 max-sm:bg-transparent max-sm:p-0 max-sm:pt-8 max-sm:backdrop-blur-none sm:p-8">
-            {textes.steps.map((step, i) => {
-              const Icon = step.icon;
-              return (
-                <li key={step.title} className="flex gap-4">
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-primary max-sm:size-9">
-                    <Icon className="size-4" />
-                  </span>
-                  <div>
-                    <p className="font-heading leading-tight font-extrabold tracking-tight max-sm:text-sm">
-                      <span className="text-muted-foreground">{i + 1}. </span>
-                      {step.title}
-                    </p>
-                    <p className="mt-1.5 text-sm leading-relaxed text-pretty text-muted-foreground max-sm:mt-1 max-sm:text-[0.8125rem]">
-                      {step.body}
-                    </p>
+                  <div className="mt-4">
+                    <span className="block text-5xl font-light max-sm:text-4xl">
+                      {c.prix}
+                    </span>
+                    <span className="mt-2 block text-sm text-muted-foreground">
+                      {c.jusqu} {c.limite}
+                    </span>
                   </div>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
+
+                  <p className="mt-4 border-b border-border pb-6 text-sm text-muted-foreground">
+                    {c.description}
+                  </p>
+
+                  <ul className="mt-8 flex-1 space-y-4">
+                    {c.points.map((p) => (
+                      <li key={p} className="flex items-center gap-3">
+                        <Check
+                          aria-hidden
+                          className={cn(
+                            "size-4 shrink-0",
+                            c.sombre ? "text-foreground" : "text-accent-text"
+                          )}
+                        />
+                        <span className="text-sm text-foreground/80">{p}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* `dark` ramène l'orange du hero (plus clair, texte
+                      foncé) même sur la carte claire. */}
+                  <div className="dark mt-10">
+                    <FloatingDotsCta
+                      className={cn("w-full", c.sombre && "fdc-creme")}
+                      href={c.href}
+                      label={c.bouton}
+                    />
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <Button
+            nativeButton={false}
+            size="lg"
+            className="mt-10 h-13 rounded-full px-9 text-base max-sm:w-full"
+            render={<a href={ctaClos.href} />}
+          >
+            {ctaClos.button}
+          </Button>
+        )}
+
+        <p className="mt-8 text-sm text-muted-foreground">
+          {event.seats} {cta.places} · {event.city} — {event.dates}
+        </p>
       </div>
     </section>
   );

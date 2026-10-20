@@ -254,6 +254,14 @@
   --animate-rise: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-grid-pan: grid-pan 22s linear infinite;
   --animate-word-in: word-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-border-beam: border-beam calc(var(--duration) * 1s) infinite linear;
+
+  /* Bordure animee (BorderBeam) : la lumiere fait le tour de la carte. */
+  @keyframes border-beam {
+    100% {
+      offset-distance: 100%;
+    }
+  }
 
   @keyframes aurora {
     0%,
@@ -475,6 +483,13 @@ html::-webkit-scrollbar {
     box-shadow 0.45s ease,
     transform 0.3s ease,
     filter 0.3s ease;
+}
+
+/* Variante creme : memes points, meme effet, autre couleur. Les deux
+   jetons sont redefinis sur le bouton lui-meme, tout le reste suit. */
+.fdc-button.fdc-creme {
+  --primary: #ffebd1;
+  --primary-foreground: #001724;
 }
 
 .fdc-button:hover {
@@ -818,5 +833,13 @@ html::-webkit-scrollbar {
   }
   to {
     transform: translateY(3%);
+  }
+}
+
+/* Les boutons du hero et le menu renvoient a des sections de la page :
+   le defilement est doux, sauf pour qui a demande moins de mouvement. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
   }
 }

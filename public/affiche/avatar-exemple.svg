@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800" role="img" aria-label="Avatar">
+  <defs>
+    <linearGradient id="fond" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFEBD1"/>
+      <stop offset="1" stop-color="#FFC48A"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="800" fill="url(#fond)"/>
+  <!-- épaules -->
+  <path d="M110 800c0-170 120-290 290-290s290 120 290 290z" fill="#79280E"/>
+  <!-- cou -->
+  <rect x="352" y="440" width="96" height="100" rx="30" fill="#5E1D08"/>
+  <!-- tête -->
+  <circle cx="400" cy="340" r="132" fill="#79280E"/>
+</svg>

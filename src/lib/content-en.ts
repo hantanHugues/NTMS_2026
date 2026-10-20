@@ -39,7 +39,8 @@ export const navItems = [
 export const hero = {
   amorce: "AIESEC in Benin, twenty years of",
   chute: "This year, we raise the bar.",
-  bouton: "Book my seat",
+  boutonInscription: "Register",
+  boutonPaiement: "Pay for my seat",
   contact: "Contact us",
   unites: {
     jours: "d",
@@ -164,59 +165,51 @@ export const bandeau = {
 };
 
 export const cta = {
-  seatsLabel: "seats",
-  title: "Register for the",
+  title: "Your seat at the",
   titleAccent: "NTMS 2026",
-  lead: "Join the adventure, book your seat, and stay posted until we leave for Lokossa.",
-  steps: [
-    {
-      icon: fr.cta.steps[0].icon,
-      title: "You fill in the form",
-      body: "Your name, your contact, and enough to get to know you.",
-    },
-    {
-      icon: fr.cta.steps[1].icon,
-      title: "You get your confirmation",
-      body: "By email, with the link to the group of your generation.",
-    },
-    {
-      icon: fr.cta.steps[2].icon,
-      title: "You join the WhatsApp group",
-      body: "Schedule, practical information and fees are announced there.",
-    },
-  ],
-  button: "Book your seat for free",
-  href: "/inscription",
+  lead: "Two steps, in order: you register, then you pay for your seat, in one go or in instalments.",
+  inscription: {
+    nom: "Registration",
+    prix: "Free",
+    jusqu: "Open until",
+    description: "Book your seat in a few minutes.",
+    points: [
+      "A form of a few minutes",
+      "Your confirmation by email",
+      "The link to the WhatsApp group",
+    ],
+  },
+  paiement: {
+    nom: "Payment",
+    prix: "In instalments",
+    jusqu: "Open until",
+    description: "Choose your pack and pay at your own pace.",
+    points: [
+      "Mobile Money or cash",
+      "In one or several instalments",
+      "Your proof sent online",
+      "An invoice by email for every payment",
+    ],
+  },
+  places: "seats",
 };
 
-export const ctaPaiement = {
-  ...cta,
-  title: "Pay for your seat at the",
-  lead: "Registration is closed. Payment is what keeps your seat for this edition.",
-  steps: [
-    {
-      icon: fr.ctaPaiement.steps[0].icon,
-      title: "You pay for your seat",
-      body: "By MTN MoMo, Moov Money, Celtiis Cash or cash, in one go.",
-    },
-    {
-      icon: fr.ctaPaiement.steps[1].icon,
-      title: "You get your confirmation",
-      body: "By email, once the committee has checked your proof.",
-    },
-    {
-      icon: fr.ctaPaiement.steps[2].icon,
-      title: "You join the WhatsApp group",
-      body: "Schedule, practical information and the trip to Lokossa.",
-    },
+export const afficheAccueil = {
+  titre: "Your",
+  titreAccent: "“I'll be there” poster",
+  texte:
+    "Your NTMS 2026 badge, ready to post. Add your photo, check the framing, download.",
+  points: [
+    "Your photo stays on your phone",
+    "Portrait 1080 × 1350, ready for Instagram",
   ],
-  button: "Pay for my seat",
-  href: "/paiement",
+  bouton: "Create my poster",
+  lien: "Create your “I'll be there” poster",
+  alt: "Poster example: an NTMS 2026 badge with an avatar and the “I'll be there” stamp",
 };
 
 export const ctaClos = {
-  ...cta,
-  title: "This edition is closed —",
+  title: "This edition is full",
   lead: "Registration and payment are both closed. Write to us if you think this is a mistake, or follow the account for the next edition.",
   button: "Write to the committee",
   href: "#contact",
@@ -559,6 +552,5 @@ export const affiche = {
   erreurPreparation: "The poster could not be prepared. Reload the page.",
   erreurPhoto: "This image could not be read. Try a JPG or PNG photo.",
   erreurImage: "The image could not be produced. Try again.",
-  depuisAccueil: "Create your “J'y serai” poster",
   depuisInscription: "Create your “J'y serai” poster",
 };

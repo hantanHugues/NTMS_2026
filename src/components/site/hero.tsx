@@ -1,10 +1,13 @@
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Countdown } from "@/components/site/countdown";
 import { RotatingVerb } from "@/components/site/rotating-verb";
 import { ShaderBackdrop } from "@/components/site/shader-backdrop";
+import { ACTION, ACTION_PAIEMENT } from "@/components/site/actions";
 import { contenu } from "@/lib/contenu";
-import type { Phase } from "@/lib/inscription-regles";
+import { inscriptionsOuvertes, paiementsOuverts } from "@/lib/inscription-regles";
 
 /**
  * Hero d'annonce d'événement.
@@ -26,10 +29,13 @@ import type { Phase } from "@/lib/inscription-regles";
  * `clamp` retombe sur les memes valeurs qu'avant des 640 px : la vue
  * sur ordinateur est inchangee, au pixel pres.
  */
-export async function Hero({ phase = "inscription" }: { phase?: Phase }) {
-  const { boutonPhase, event, hero, rotatingVerbs } = await contenu();
-  const etape = phase;
-  const bouton = boutonPhase[phase];
+export async function Hero() {
+  const { afficheAccueil, event, hero, rotatingVerbs } = await contenu();
+  // Deux actions de MEME poids, chacune tant que sa date n'est pas
+  // passee : s'inscrire, ou payer. Quand plus rien n'est ouvert, le
+  // hero garde une porte : le contact.
+  const peutSInscrire = inscriptionsOuvertes();
+  const peutPayer = paiementsOuverts();
   return (
     <section className="dark relative isolate flex min-h-svh flex-col items-center justify-center overflow-hidden bg-background px-6 py-20 text-center sm:py-28 text-foreground">
       <ShaderBackdrop />
@@ -73,24 +79,57 @@ export async function Hero({ phase = "inscription" }: { phase?: Phase }) {
         />
 
         <div className="mt-7 flex w-full flex-col justify-center gap-3 sm:mt-9 sm:w-auto sm:flex-row">
-          <Button
-            nativeButton={false}
-            size="lg"
-            className="h-13 rounded-full px-9 text-base"
-            render={<a href={bouton.href} />}
-          >
-            {etape === "paiement" ? bouton.label : hero.bouton}
-          </Button>
-          <Button
-            nativeButton={false}
-            size="lg"
-            variant="outline"
-            className="h-13 rounded-full border-white/20 bg-white/5 px-9 text-base"
-            render={<a href="#contact" />}
-          >
-            {hero.contact}
-          </Button>
+          {peutSInscrire ? (
+            <Button
+              nativeButton={false}
+              size="lg"
+              className={ACTION}
+              render={<a href="#carte-inscription" />}
+            >
+              {hero.boutonInscription}
+            </Button>
+          ) : null}
+          {peutPayer ? (
+            <Button
+              nativeButton={false}
+              size="lg"
+              className={`${ACTION} ${ACTION_PAIEMENT}`}
+              render={<a href="#carte-paiement" />}
+            >
+              {hero.boutonPaiement}
+            </Button>
+          ) : null}
+          {!peutSInscrire && !peutPayer ? (
+            <Button
+              nativeButton={false}
+              size="lg"
+              className={ACTION}
+              render={<a href="#contact" />}
+            >
+              {hero.contact}
+            </Button>
+          ) : null}
         </div>
+
+        {/* L'affiche : un LIEN, pas un troisieme bouton. Les deux boutons
+            plus haut restent les seuls elements pleins ; la vignette du
+            badge dit ce qu'on obtient sans un mot de plus. */}
+        <Link
+          href="#affiche"
+          className="group mt-5 flex items-center gap-3 rounded-full px-3 py-2.5 text-sm text-foreground/65 transition-colors hover:text-foreground sm:mt-6"
+        >
+          <Image
+            src="/affiche/exemple.webp"
+            alt=""
+            width={28}
+            height={35}
+            className="h-[35px] w-7 -rotate-6 rounded-[3px] shadow-md ring-1 ring-white/25 transition-transform group-hover:rotate-0"
+          />
+          <span className="underline decoration-foreground/25 underline-offset-4 transition-colors group-hover:decoration-foreground/60">
+            {afficheAccueil.lien}
+          </span>
+          <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+        </Link>
       </div>
     </section>
   );

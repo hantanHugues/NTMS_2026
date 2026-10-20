@@ -1,10 +1,6 @@
 import {
-  CheckCircle2,
-  ClipboardList,
   Compass,
-  CreditCard,
   GraduationCap,
-  MessageCircle,
   Plane,
   Users,
   HeartHandshake,
@@ -80,7 +76,10 @@ export const navItems = [
 export const hero = {
   amorce: "AIESEC in Benin, vingt ans à",
   chute: "Cette année, on élève le niveau.",
-  bouton: "Réserver ma place",
+  // Les deux boutons du hero, au meme niveau : s'inscrire, ou payer.
+  boutonInscription: "Je m'inscris",
+  boutonPaiement: "Je paie ma place",
+  // Quand plus rien n'est ouvert.
   contact: "Contactez-nous",
   /** Les unites du compte a rebours, au plus court. */
   unites: {
@@ -320,87 +319,65 @@ export const bandeau = {
 };
 
 /**
- * SECTION 5 — L'appel a l'action.
+ * LA SECTION D'APPEL A L'ACTION.
  *
- * DERNIERE section du corps de page : ni « l'experience » ni les
- * « infos pratiques » ne seront publiees, l'utilisateur les a
- * abandonnees. Tout ce qui devait y figurer et qui compte encore est
- * donc rappele ici en une ligne.
- *
- * AUCUN formulaire. L'inscription se fait sur des pages dediees, et
- * elle ne se limite pas a une adresse mail : on s'inscrit, puis on
- * rejoint le groupe WhatsApp. Les trois etapes sont ecrites noir sur
- * blanc — quelqu'un qui sait ce qui l'attend clique plus volontiers.
- *
- * `href` reste une ancre interne tant que l'URL des pages de
- * formulaire n'est pas connue.
+ * Deux gestes, dans l'ordre — s'inscrire, puis payer — chacun avec son
+ * bouton, les memes que ceux du hero. Chaque bloc disparait quand sa
+ * date est passee ; quand plus rien n'est ouvert, il reste le contact.
  */
 export const cta = {
-  seatsLabel: "places",
-  title: "Inscris-toi au",
+  title: "Ta place au",
   titleAccent: "NTMS 2026",
-  // Trois verbes a l'imperatif : l'accroche pousse au clic au lieu de
-  // decrire un mecanisme. Formulation donnee par l'utilisateur.
-  lead: "Rejoins l'aventure, réserve ta place, et reste informé jusqu'au départ pour Lokossa.",
-  steps: [
-    {
-      icon: ClipboardList,
-      title: "Tu remplis le formulaire",
-      body: "Ton nom, ton contact, et de quoi te connaître un peu.",
-    },
-    {
-      icon: CheckCircle2,
-      title: "Tu reçois ta confirmation",
-      body: "Par mail, avec le lien du groupe de la promotion.",
-    },
-    {
-      icon: MessageCircle,
-      title: "Tu rejoins le groupe WhatsApp",
-      // Le formulaire sert a amener les inscrits dans le groupe : c'est
-      // LA qu'arrivent le programme et les tarifs, pas sur la landing.
-      body: "Programme, informations pratiques et tarifs y sont annoncés.",
-    },
-  ],
-  button: "Réserve ta place gratuitement",
-  href: "/inscription",
+  lead: "Deux gestes, dans l'ordre : tu t'inscris, puis tu règles ta place, en une fois ou par tranches.",
+  inscription: {
+    nom: "Inscription",
+    prix: "Gratuit",
+    jusqu: "Ouvert jusqu'au",
+    description: "Réserve ta place en quelques minutes.",
+    points: [
+      "Un formulaire de quelques minutes",
+      "Ta confirmation par mail",
+      "Le lien du groupe WhatsApp",
+    ],
+  },
+  paiement: {
+    nom: "Paiement",
+    prix: "Par tranches",
+    jusqu: "Ouvert jusqu'au",
+    description: "Choisis ton pack et règle-le à ton rythme.",
+    points: [
+      "Mobile Money ou espèces",
+      "En une ou plusieurs tranches",
+      "Ta preuve envoyée en ligne",
+      "Une facture par mail à chaque paiement",
+    ],
+  },
+  places: "places",
 };
 
 /**
- * CE QUI CHANGE UNE FOIS LES INSCRIPTIONS CLOSES.
- *
- * Même carte, même mise en page : seuls le titre, l'accroche, les
- * trois étapes et le bouton changent. Le bouton de l'en-tête et celui
- * du hero suivent, pour que le site ne promette pas une inscription
- * gratuite quand il ne reste que le paiement.
+ * LA SECTION « AFFICHE », juste apres l'appel a l'action : un exemple
+ * du badge (genere par le vrai moteur, avec un avatar generique) d'un
+ * cote, l'invitation a creer le sien de l'autre.
  */
-export const ctaPaiement = {
-  ...cta,
-  title: "Règle ta place au",
-  lead: "Les inscriptions sont closes. Il reste le paiement, qui réserve ta place pour l'édition.",
-  steps: [
-    {
-      icon: CreditCard,
-      title: "Tu règles ta place",
-      body: "Par MTN MoMo, Moov Money, Orange Money ou Wave, en une fois.",
-    },
-    {
-      icon: CheckCircle2,
-      title: "Tu reçois ta confirmation",
-      body: "Par mail, dès que l'opérateur confirme le paiement.",
-    },
-    {
-      icon: MessageCircle,
-      title: "Tu rejoins le groupe WhatsApp",
-      body: "Programme, informations pratiques et départ pour Lokossa.",
-    },
+export const afficheAccueil = {
+  titre: "Ton affiche",
+  titreAccent: "« J'y serai »",
+  texte:
+    "Ton badge du NTMS 2026, prêt à publier. Ajoute ta photo, vérifie le cadrage, télécharge.",
+  points: [
+    "Ta photo reste sur ton téléphone",
+    "Format portrait 1080 × 1350, prêt pour Instagram",
   ],
-  button: "Payer ma place",
-  href: "/paiement",
+  bouton: "Créer mon affiche",
+  // Le petit lien du hero : discret, sous les deux boutons.
+  lien: "Crée ton affiche « J'y serai »",
+  alt: "Exemple d'affiche : un badge NTMS 2026 avec un avatar et le tampon « J'y serai »",
 };
 
+/** Quand les inscriptions et les paiements sont tous deux clos. */
 export const ctaClos = {
-  ...cta,
-  title: "L'édition est complète au",
+  title: "L'édition est complète",
   lead: "Les inscriptions et les paiements sont clos. Écris-nous si tu penses que c'est une erreur, ou suis le compte pour la prochaine édition.",
   button: "Écrire au comité",
   href: "#contact",
@@ -799,8 +776,6 @@ export const affiche = {
     "L'affiche n'a pas pu être préparée. Recharge la page.",
   erreurPhoto: "Cette image n'a pas pu être lue. Essaie une photo JPG ou PNG.",
   erreurImage: "L'image n'a pas pu être produite. Réessaie.",
-  // Depuis l'accueil, sous le bouton d'inscription.
-  depuisAccueil: "Crée ton affiche « J'y serai »",
   // Depuis l'ecran de fin d'inscription.
   depuisInscription: "Crée ton affiche « J'y serai »",
 };

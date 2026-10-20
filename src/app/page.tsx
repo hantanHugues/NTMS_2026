@@ -5,6 +5,7 @@ import { Hero } from "@/components/site/hero";
 import { InstagramSection } from "@/components/site/instagram-section";
 import { PhotoStrip } from "@/components/site/photo-strip";
 import { Preuve } from "@/components/site/preuve";
+import { AfficheSection } from "@/components/site/affiche-section";
 import { RegistrationCta } from "@/components/site/registration-cta";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
@@ -28,13 +29,14 @@ export default function Home() {
     <div id="top" className="flex min-h-full flex-col">
       <SiteHeader phase={etape} />
       <main className="flex-1">
-        <Hero phase={etape} />
+        <Hero />
         <SkillMarquee />
         <Constat />
         <Solution />
         <Preuve />
         <PhotoStrip />
-        <RegistrationCta phase={etape} />
+        <RegistrationCta />
+        <AfficheSection />
         <InstagramSection />
         <ContactSection />
       </main>
