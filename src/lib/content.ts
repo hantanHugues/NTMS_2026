@@ -8,6 +8,8 @@ import {
   Rocket,
 } from "lucide-react";
 
+import { DATES } from "@/lib/dates";
+
 export const event = {
   name: "NTMS 2026",
   organisation: "AIESEC in Benin",
@@ -23,27 +25,11 @@ export const event = {
   themeSubject: "20 ans d'existence",
   themeAngle: "élever nos standards pour un meilleur impact.",
   dates: "18 – 22 novembre 2026",
-  // Vers quoi pointe le compte a rebours. Se change sans toucher au
-  // code, par NEXT_PUBLIC_DATE_NTMS dans .env.local et chez l'hebergeur
-  // (valeur inseree AU MOMENT DU BUILD : redeployer apres un changement).
-  startsAt: process.env.NEXT_PUBLIC_DATE_NTMS ?? "2026-11-18T09:00:00+01:00",
-  // Fin des inscriptions. Par defaut la meme date : quand le compte a
-  // rebours tombe a zero, le formulaire ferme et « Je m'inscris » mene
-  // a l'ecran de cloture. NEXT_PUBLIC_FIN_INSCRIPTIONS permet de
-  // fermer plus tot, sans toucher au compte a rebours.
-  finInscriptions:
-    process.env.NEXT_PUBLIC_FIN_INSCRIPTIONS ??
-    process.env.NEXT_PUBLIC_DATE_NTMS ??
-    "2026-11-18T09:00:00+01:00",
-  // Fin des PAIEMENTS : une date a part, INDEPENDANTE des inscriptions.
-  // La page /paiement est ouverte des maintenant, que le formulaire
-  // d'inscription soit ouvert ou clos, et ferme a cette date. Sans
-  // NEXT_PUBLIC_FIN_PAIEMENTS, elle ferme au debut de l'edition — jamais
-  // a la date des inscriptions.
-  finPaiements:
-    process.env.NEXT_PUBLIC_FIN_PAIEMENTS ??
-    process.env.NEXT_PUBLIC_DATE_NTMS ??
-    "2026-11-18T09:00:00+01:00",
+  // Les trois dates sont dans `lib/dates.ts` : on les ecrit a la main,
+  // dans le depot, au lieu de les regler chez l'hebergeur.
+  startsAt: DATES.evenement,
+  finInscriptions: DATES.finInscriptions,
+  finPaiements: DATES.finPaiements,
   // LIEU OFFICIEL, communique par l'utilisateur. Comme le theme, c'est
   // une information validee — a distinguer des dates et du nombre de
   // places, qui restent des propositions.
@@ -407,9 +393,8 @@ export const boutonPhase = {
  * Placee AVANT « Contactez-nous » (l'ordre a change en cours de
  * route), le pied de page fermant toujours la marche.
  *
- * ATTENTION : ce n'est PAS un flux en direct. Afficher les vraies
- * publications demande l'API Graph de Meta, donc un jeton d'acces et
- * une application declaree. La grille montre des photos du projet et
+ * ATTENTION : ce n'est PAS un flux en direct. La grille montre une
+ * liste de publications tenue a la main (`lib/instagram.ts`) et
  * renvoie sur le compte ; rien dans le texte ne pretend qu'il s'agit
  * des dernieres publications.
  *
@@ -423,9 +408,8 @@ export const instagram = {
   // qu'on tutoie depuis le debut du parcours.
   title: "Suivez-nous sur nos réseaux",
   titleAccent: "pour ne rien rater.",
-  // Formulation NEUTRE tant que le jeton n'est pas la : sans lui, les
-  // vignettes sont des photos du projet, et « nos dernieres
-  // publications » serait faux.
+  // Formulation NEUTRE : la liste est tenue a la main, et « nos
+  // dernieres publications » serait faux.
   lead: "Annonces, coulisses, photos de groupe. Le compte publie toute l'année, entre deux éditions comprises.",
   handle: "@beninnationalconference",
   url: "https://www.instagram.com/beninnationalconference",

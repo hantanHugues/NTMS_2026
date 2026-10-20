@@ -55,7 +55,7 @@ git push origin main && git push imbenin main
 
 ## Les trois phases de l'édition
 
-Deux dates commandent tout le site. Une seule fonction, `phase()` dans
+Deux dates (`src/lib/dates.ts`) commandent tout le site. Une seule fonction, `phase()` dans
 `inscription-regles.ts`, les traduit — l'en-tête, le hero et la carte
 d'appel à l'action en découlent.
 
@@ -111,11 +111,13 @@ Trois points à ne pas défaire :
    trie par la colonne.
 
 Le contenu du reçu se règle dans l'onglet **`config recu`** du
-classeur, avec les mêmes libellés que les autres mails. Variables
-disponibles : `{{nom}}`, `{{reference}}`, `{{montant}}`, `{{moyen}}`.
+classeur, en trois colonnes (validé, non validé, pack soldé), avec les
+mêmes libellés que les autres mails. Variables disponibles : `{{nom}}`,
+`{{reference}}`, `{{pack}}`, `{{moyen}}`, `{{tranche}}`, `{{facture}}`,
+`{{paiement_actuel}}`, `{{total_paye}}`, `{{reste}}`.
 
-Tant que `MONTANT_INSCRIPTION` n'est pas renseignée, `/paiement`
-répond **404**.
+Les packs et leurs prix se règlent dans l'onglet `packs` du classeur :
+il n'y a plus de montant dans les variables d'environnement.
 
 ## Variables d'environnement
 
@@ -131,22 +133,18 @@ commité) ; en ligne, le tableau de bord de l'hébergeur.
 | `INSCRIPTION_MIROIR_URL` | facultatif — copie vers un second classeur |
 | `INSCRIPTION_MIROIR_SECRET` | facultatif — si ce classeur a son propre secret |
 
-**Paiement**
-
-| variable | rôle |
-|---|---|
-| `MONTANT_INSCRIPTION` | montant attendu, en FCFA, affiché sur la page. Vide = `/paiement` répond 404. |
-
-**Dates et liens** (insérés au moment du build : redéployer après
+**Liens WhatsApp** (insérés au moment du build : redéployer après
 changement)
 
 | variable | rôle |
 |---|---|
-| `NEXT_PUBLIC_DATE_NTMS` | cible du compte à rebours |
-| `NEXT_PUBLIC_FIN_INSCRIPTIONS` | clôture du formulaire. Par défaut, la date ci-dessus. |
-| `NEXT_PUBLIC_FIN_PAIEMENTS` | clôture de la billetterie |
 | `NEXT_PUBLIC_LIEN_WHATSAPP` | invitation au groupe, affichée après l'inscription |
-| `INSTAGRAM_TOKEN` | facultatif — sans lui, la section affiche les publications listées à la main dans `src/lib/instagram.ts` |
+| `NEXT_PUBLIC_LIEN_WHATSAPP_PAIEMENT` | groupe des personnes qui ont payé, affiché après une déclaration de paiement |
+
+**Les dates ne sont pas des variables** : elles s'écrivent dans
+`src/lib/dates.ts` (début de l'édition, fin des inscriptions, fin des
+paiements), puis on commite et on pousse. Les prix des packs se règlent
+dans l'onglet `packs` du classeur.
 
 ## Page d'essai
 

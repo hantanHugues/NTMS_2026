@@ -11,7 +11,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { contenu } from "@/lib/contenu";
-import { BOUTON_PAIEMENT, paiementsOuverts } from "@/lib/inscription-regles";
+import { paiementsOuverts } from "@/lib/inscription-regles";
 
 /**
  * L'écran servi à la place du formulaire une fois les inscriptions
@@ -31,7 +31,7 @@ export async function InscriptionsCloses() {
   // Entre les deux dates, il reste quelque chose à faire : régler sa
   // place. C'est alors l'action principale, et les contacts passent
   // derrière.
-  const peutPayer = BOUTON_PAIEMENT && paiementsOuverts();
+  const peutPayer = paiementsOuverts();
   return (
     <div className="flex flex-col rounded-3xl bg-card text-center shadow-md max-sm:min-h-svh max-sm:rounded-none max-sm:bg-background max-sm:shadow-none">
       <div className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur sm:hidden">

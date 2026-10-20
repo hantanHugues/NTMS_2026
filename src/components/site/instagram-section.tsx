@@ -21,10 +21,9 @@ import { InstagramTile } from "@/components/site/instagram-tile";
  * moitié de sa hauteur, donc la boucle ne se voit pas. Aucune
  * dépendance ajoutée.
  *
- * D'où viennent les images : voir `lib/instagram.ts`. Avec un jeton,
- * ce sont les six dernières publications, en image nue. Sans jeton,
- * ce sont de vraies publications quand même — l'iframe officielle,
- * DÉCOUPÉE pour n'en garder que le carré de l'image.
+ * D'où viennent les images : voir `lib/instagram.ts`. Ce sont de vraies
+ * publications — l'iframe officielle, DÉCOUPÉE pour n'en garder que le
+ * carré de l'image.
  *
  * Le découpage : la page d'intégration mesure `largeur + 208` de haut,
  * l'image commence à 54 px et occupe un carré exact (mesuré sur les

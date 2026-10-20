@@ -193,16 +193,6 @@ export function inscriptionsOuvertes(maintenant = Date.now()) {
 }
 
 /**
- * Les boutons vers /paiement (en-tête, hero, appel à l'action, écran de
- * clôture) ne s'affichent que si NEXT_PUBLIC_BOUTON_PAIEMENT=oui.
- *
- * Sans lui, la page /paiement existe et fonctionne, mais on n'y arrive
- * que par son adresse. Aucun bouton ne s'allume tout seul à la
- * clôture des inscriptions.
- */
-export const BOUTON_PAIEMENT = process.env.NEXT_PUBLIC_BOUTON_PAIEMENT === "oui";
-
-/**
  * Vrai tant qu'on peut payer sa place.
  *
  * Seconde date, indépendante de la première : la page de paiement
@@ -229,7 +219,7 @@ export type Phase = "inscription" | "paiement" | "clos";
 
 export function phase(maintenant = Date.now()): Phase {
   if (inscriptionsOuvertes(maintenant)) return "inscription";
-  if (BOUTON_PAIEMENT && paiementsOuverts(maintenant)) return "paiement";
+  if (paiementsOuverts(maintenant)) return "paiement";
   return "clos";
 }
 
