@@ -503,6 +503,10 @@ function enMontant(v) {
  * Les packs proposes, lus dans l'onglet « packs » (tout onglet dont le
  * nom contient « pack »). Sans onglet, on le cree avec les valeurs par
  * defaut.
+ *
+ * Trois colonnes : A le nom (« Delegate - Package 3 »), B le prix, C la
+ * description (facultative) : un element par virgule ou par ligne, que
+ * le site affiche en points. Une ligne sans description reste valable.
  */
 function lirePacks() {
   var classeur = SpreadsheetApp.getActiveSpreadsheet();
@@ -513,7 +517,7 @@ function lirePacks() {
   }
   if (!feuille) {
     feuille = classeur.insertSheet("packs");
-    feuille.appendRow(["nom", "prix"]);
+    feuille.appendRow(["nom", "prix", "description"]);
     PACKS_PAR_DEFAUT.forEach(function (l) { feuille.appendRow(l); });
     feuille.setFrozenRows(1);
   }
@@ -522,7 +526,9 @@ function lirePacks() {
   for (var r = 1; r < valeurs.length; r++) {
     var nom = String(valeurs[r][0]).trim();
     var prix = enMontant(valeurs[r][1]);
-    if (nom && prix > 0) packs.push({ nom: nom, prix: prix });
+    if (nom && prix > 0) {
+      packs.push({ nom: nom, prix: prix, description: String(valeurs[r][2] || "").trim() });
+    }
   }
   return packs;
 }

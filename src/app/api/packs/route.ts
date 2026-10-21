@@ -16,7 +16,7 @@ export async function GET() {
     // Sans e-mail ni numero : le classeur ne renvoie que les packs.
     const { packs } = await situationPaiement("", "");
     return NextResponse.json(
-      { packs: packs.map(({ nom, prix }) => ({ nom, prix })) },
+      { packs },
       {
         headers: {
           "Cache-Control": "public, s-maxage=300, stale-while-revalidate=86400",

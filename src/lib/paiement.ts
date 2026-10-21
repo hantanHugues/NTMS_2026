@@ -105,47 +105,43 @@ export function fuseauPour(paysTel: string) {
 }
 
 /**
- * ALUMNI OU DELEGATE : la categorie d'un pack est lue dans son NOM,
- * dans l'onglet « packs » du classeur. Aucun changement au script.
+ * UNE LIGNE DE L'ONGLET « packs » DIT TOUT SUR LE PACK.
  *
- *   « Alumni - Pack 1 »     → categorie alumni,   libelle « Pack 1 »
- *   « Delegate : Pack 3 »   → categorie delegate, libelle « Pack 3 »
- *   « Pack 2 »              → aucune categorie : propose a tout le monde
+ *   colonne A   Delegate - Package 3          categorie et nom
+ *   colonne B   65000                          le prix
+ *   colonne C   5 jours, Chambre seule, …      la description (facultative)
  *
- * Le nom ENTIER (« Alumni - Pack 1 ») reste ce qui part au classeur et
- * s'y enregistre : deux packs de meme libelle dans deux categories ne
- * se melangent donc jamais.
+ *   « Alumni - Package 1 »   → alumni, « Package 1 »
+ *   « Package 2 »            → aucune categorie : propose a tout le monde
+ *
+ * La description s'ecrit en colonne C : un point par virgule, par point
+ * virgule, par « | » ou par retour a la ligne. Si cette colonne est
+ * vide, on la cherche encore dans le nom, apres un second tiret :
+ * « Delegate - Package 3 - Chambre seule, Restauration » — c'est la
+ * forme d'avant la colonne, gardee pour ne rien casser.
+ *
+ * Le tiret doit avoir un espace de chaque cote : « T-shirt » ne se
+ * coupe pas. Le nom de la colonne A est ce qui part au classeur et s'y
+ * enregistre : deux packs de meme nom se confondraient.
  */
 export type Categorie = "alumni" | "delegate" | "";
 
-export function analysePack(nom: string): { categorie: Categorie; libelle: string } {
+export function analysePack(
+  nom: string,
+  description = ""
+): { categorie: Categorie; libelle: string; points: string[] } {
   const sansAccent = nom.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
   const m = sansAccent.match(/^\s*(alumni|alumnie|alumnus|delegate|delegue)\b[\s\-–—:·|/]*/);
-  if (!m) return { categorie: "", libelle: nom };
-  const reste = nom.slice(m[0].length).trim();
-  return {
-    categorie: m[1].startsWith("alum") ? "alumni" : "delegate",
-    libelle: reste || nom,
-  };
-}
+  const categorie: Categorie = !m ? "" : m[1].startsWith("alum") ? "alumni" : "delegate";
+  const reste = (m ? nom.slice(m[0].length) : nom).trim();
 
-/**
- * La cle qui relie un pack de l'onglet a son descriptif (le contenu
- * affiche sur la carte, dans `content.ts`) :
- *
- *   « Alumni - Package 3 » → « alumni-3 »
- *   « Delegate - Package 1 » → « delegate-1 »
- *   « Delegate - Standard » → « delegate-standard »
- *
- * Un pack sans descriptif s'affiche simplement avec son prix.
- */
-export function clePack(categorie: Categorie, libelle: string) {
-  const numero = libelle.match(/\d+/)?.[0];
-  const mot = libelle
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-  return `${categorie || "tous"}-${numero ?? mot}`;
+  // « Package 3 - Chambre seule, … » : le premier morceau nomme, le
+  // reste (ancienne forme) decrit.
+  const [libelle, ...dansLeNom] = reste.split(/\s+[-–—]\s+/);
+  const texte = description.trim() || dansLeNom.join(" - ");
+  const points = texte
+    .split(/\s*(?:\r?\n|[,;|·])\s*/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+  return { categorie, libelle: libelle.trim() || nom, points };
 }

@@ -1,0 +1,196 @@
+NTMS 2026 — GUIDE DU CLASSEUR
+
+Ce classeur sert à deux équipes. Chacune n’a besoin de lire que sa partie.
+
+  PARTIE A — LA FINANCE (chapitres 1 à 10) : valider les paiements et envoyer les mails de paiement.
+  PARTIE B — L’ÉQUIPE MOBILISATION (chapitres 11 à 14) : les simples inscriptions et leurs mails.
+  La finance peut ignorer entièrement la partie B. L’équipe mobilisation peut ignorer la partie A.
+
+Aucune connaissance technique n’est nécessaire.
+
+═══════════════════════════════════════════════════════════
+PARTIE A — LA FINANCE
+═══════════════════════════════════════════════════════════
+
+1. L’ESSENTIEL EN QUELQUES LIGNES
+  • Le site ne prend jamais d’argent. Chaque personne paie de son côté (MTN MoMo, Moov Money, Celtiis Cash, espèces…).
+  • Ensuite, elle va sur le site, choisit son pack, écrit elle-même le montant qu’elle a payé et joint une preuve (capture d’écran ou photo du reçu).
+  • Cette déclaration arrive ici, sur une nouvelle ligne de l’onglet « payement ».
+  • TON TRAVAIL : vérifier la preuve, puis écrire « valide » ou « refuse » dans la colonne « statut ».
+  • Ensuite, un clic dans le menu NTMS envoie à chaque personne son mail. Rien ne part avant ce clic : tu peux vérifier tranquillement.
+
+2. LES ONGLETS DU CLASSEUR
+  payement        une ligne par déclaration de paiement. C’est ici que tu travailles tous les jours.         → FINANCE
+  participants    le suivi par personne : qui a payé combien, qui doit encore payer. Il se remplit tout seul.   → FINANCE
+  packs           les packs proposés sur le site, avec leurs prix. Tu peux le modifier (chapitre 7).          → FINANCE
+  config recu     le texte des mails envoyés après un paiement. Tu peux le modifier (chapitre 8).             → FINANCE
+  inscriptions, config auto, config manuel   les simples inscriptions et leurs mails (partie B).             → MOBILISATION, à ignorer
+  lisez-moi       ce document.
+
+3. VALIDER LES PAIEMENTS : LE TRAVAIL DE TOUS LES JOURS
+  1. Ouvre l’onglet « payement ». Les nouvelles déclarations ont le statut « a_verifier » (à vérifier).
+  2. Pour chaque ligne, clique sur le lien de la colonne « preuve » : la capture ou la photo envoyée s’ouvre.
+  3. Compare avec ton relevé (MoMo, Moov, Celtiis, caisse) : le montant, la date, le nom de la personne qui a envoyé.
+  4. Dans la colonne « statut », choisis dans la liste :
+       valide        la preuve est bonne : le paiement compte.
+       refuse        la preuve n’est pas bonne (illisible, montant faux, paiement introuvable) : le paiement ne compte pas.
+       a_verifier    pas encore regardé. C’est le statut de départ.
+     Choisis toujours dans la liste, n’écris pas le mot à la main : « validé » avec un accent ne serait pas reconnu.
+  5. Quand tu as fini : menu NTMS > « Envoyer les mails de paiement (validés et refusés) ».
+     Une fenêtre te dit combien de mails vont partir : confirme.
+     Chaque paiement ne reçoit son mail qu’une seule fois, même si tu relances le menu plus tard.
+
+4. L’ONGLET « payement » : CE QUE TU VOIS, COLONNE PAR COLONNE
+  horodatage            le jour et l’heure où la personne a envoyé sa déclaration.
+  reference_paiement    le numéro du paiement (PAY-0001, PAY-0002…). Utile pour en parler : « le PAY-0042 ».
+  statut                À TOI de le remplir : valide ou refuse.
+  nom, email, numero    qui a payé. L’e-mail et le numéro servent à retrouver la personne d’un paiement à l’autre.
+  moyen                 comment elle dit avoir payé (MTN MoMo, Moov Money, espèces…).
+  montant_declare       le montant que la personne a écrit elle-même. C’est ce montant qui est compté si tu valides.
+  date_paiement         le jour où elle dit avoir payé.
+  preuve                le lien vers sa capture ou sa photo.
+  remarque              ce qu’elle a voulu ajouter (facultatif).
+  pack                  le pack choisi (par exemple « Delegate - Package 3 »).
+  montant_du            le prix du pack, enregistré au premier paiement.
+  tranche               le numéro d’ordre de ce paiement pour cette personne (1, 2, 3…).
+  recu_envoye           « oui » une fois le mail envoyé pour cette ligne. recu_envoye_le : la date. erreur_recu : la raison si un envoi a échoué.
+  reference_inscription, numero_transaction   colonnes non utilisées pour l’instant : elles restent vides.
+  Ne modifie que « statut » et, si besoin, « montant_declare » (chapitre 5). Le reste est rempli par le site.
+
+5. LES CAS PARTICULIERS
+  • La personne s’est trompée de montant : corrige directement la cellule « montant_declare » avant de valider. Les totaux se recalculent.
+  • La preuve est illisible : mets « refuse ». La personne peut refaire une déclaration avec une meilleure preuve.
+  • Elle a payé moins que le prix du pack : c’est possible. Valide ce qu’elle a réellement payé. Elle pourra payer le reste plus tard
+    en utilisant le MÊME e-mail et le MÊME numéro : le site la reconnaît et lui montre ce qui reste à payer.
+  • Elle a payé plus que le prix : le « reste à payer » de l’onglet « participants » devient négatif. C’est à toi de décider
+    s’il faut rembourser ou compenser : rien n’est fait automatiquement.
+  • Paiement en espèces : demande à la personne de déclarer son paiement sur le site, en joignant une photo du reçu de caisse que tu lui as remis.
+  • La même preuve a été envoyée deux fois : le site ne le détecte pas. Compare la date et le montant avec ton relevé, et mets « refuse » sur le doublon.
+  • La personne a changé d’e-mail ou de numéro : le site la bloque et lui donne les contacts du comité. Pour la débloquer,
+    corrige son e-mail ou son numéro dans ses lignes de l’onglet « payement », pour que tout soit identique.
+  • Une personne dont le pack est entièrement payé (ou couvert par des paiements en attente de validation) ne peut plus déclarer de paiement.
+    Si tu refuses un paiement en attente, elle pourra de nouveau déclarer.
+  • Ne supprime jamais une ligne : mets « refuse ». Ainsi on garde la trace de tout.
+  • Un mail n’est pas arrivé : regarde la colonne « erreur_recu » de la ligne. Si elle est vide, demande à la personne de vérifier ses courriers indésirables.
+
+6. L’ONGLET « participants » : LE SUIVI PAR PERSONNE
+  Une ligne par personne, calculée toute seule à partir de l’onglet « payement ». Ne la modifie pas à la main.
+  nom, email, numero   la personne.        pack, montant_du   son pack et son prix.
+  total_valide         ce qu’elle a payé et que tu as validé.
+  en_attente           ce qu’elle a déclaré mais que tu n’as pas encore regardé.
+  reste_a_payer        le prix du pack moins le total validé. Négatif = elle a payé trop.
+  tranches             le nombre de paiements enregistrés pour elle.
+  statut               Soldé (tout est payé), En cours (une partie est payée), En attente de validation (rien n’est encore validé).
+  dernier_paiement     la date de sa dernière déclaration.
+  Ce tableau se met à jour à chaque déclaration et à chaque changement de statut. Au besoin : menu NTMS > Recalculer les participants.
+  Astuce : trie ou filtre la colonne « statut » pour voir d’un coup qui reste à relancer.
+
+7. L’ONGLET « packs » : CHANGER UN PRIX, AJOUTER UN PACK
+  Ce que la personne voit sur le site vient entièrement de cet onglet. Une ligne = un pack. La ligne 1 est l’en-tête : ne la change pas.
+  Colonne A   Catégorie - Nom du pack      exemple : Delegate - Package 3
+  Colonne B   Prix en FCFA                 un nombre seul : 65000 (pas de « FCFA », pas d’espace)
+  Colonne C   Description (facultative)    ce que contient le pack, un élément par virgule : 5 jours obligatoires, Chambre seule, T-shirt spécialisé, Restauration
+  • La catégorie est « Alumni » ou « Delegate ». La personne choisit la sienne sur le site et ne voit que les packs qui la concernent.
+    Un pack sans catégorie (exemple : Package 2) est proposé à tout le monde.
+  • Chaque élément de la colonne C devient une ligne avec une coche sur la carte du pack.
+  • Le tiret de la colonne A a une espace de chaque côté. Chaque nom de la colonne A doit être UNIQUE : deux lignes au même nom se mélangent.
+  • L’ordre des lignes est l’ordre d’affichage sur le site.
+  • Le site relit cet onglet toutes les cinq minutes au plus : un prix ou une description changé ici apparaît seul, sans rien d’autre à faire.
+  • Changer un prix ne touche pas les personnes déjà inscrites : leur prix est enregistré à leur premier paiement.
+  • Pour retirer un pack du site : efface sa ligne. Les personnes qui l’ont déjà payé gardent leur pack.
+
+8. L’ONGLET « config recu » : LES MAILS DE PAIEMENT
+  Trois mails différents, un par colonne :
+    colonne B   le paiement est validé et il reste encore une somme à payer.
+    colonne C   le paiement est refusé. Si cette colonne est vide, la personne refusée ne reçoit AUCUN mail.
+    colonne D   le pack est entièrement payé. Son bouton est celui du groupe WhatsApp.
+  Les lignes (colonne A) :
+    Objet            le titre du mail, tel qu’il apparaît dans la boîte de réception.
+    Titre            le grand titre en haut du mail.
+    Corps            le texte. Une ligne vide crée un nouveau paragraphe.
+    Texte CTA        le mot écrit sur le bouton.          Lien CTA   l’adresse où mène le bouton. Un bouton n’apparaît que si les DEUX sont remplis.
+    Nom expéditeur   le nom affiché comme expéditeur. Il est lu en colonne B pour les trois mails.
+  Dans le texte, tu peux écrire des mots entre doubles accolades : ils sont remplacés pour chaque personne.
+    {{nom}}               le nom de la personne.         {{reference}}   la référence du paiement.
+    {{pack}}              son pack.                      {{moyen}}       le moyen de paiement.
+    {{montant_du}}        le prix du pack.               {{paiement_actuel}}   le montant de CE paiement.
+    {{total_paye}}        ce qu’elle a payé en tout.     {{reste}}       ce qui reste à payer.
+    {{facture}}           trois lignes déjà rédigées : paiement actuel, total payé, reste à payer (ou « Pack soldé » au dernier paiement).
+  À IGNORER : les lignes CC, BCC, Images et Pièces jointes, si tu en vois. Elles sont facultatives et décrites dans la partie B.
+  Un changement de texte est pris en compte tout de suite, sans rien d’autre à faire.
+
+9. TESTER LES MAILS DE PAIEMENT, SANS RIEN ENVOYER À PERSONNE
+  Avant de valider les premiers vrais paiements, vérifie à quoi ressemblent les trois mails.
+  1. Écris ou corrige le texte dans « config recu » (chapitre 8).
+  2. Menu NTMS, puis l’un des trois choix :
+       M’envoyer un aperçu : paiement validé (il reste un solde)     → le mail de la colonne B
+       M’envoyer un aperçu : pack soldé                               → le mail de la colonne D
+       M’envoyer un aperçu : paiement non validé                      → le mail de la colonne C
+     (Le dernier te répond « colonne C vide » tant que tu n’y as rien écrit : c’est normal.)
+  3. Ouvre ta boîte mail, celle du compte Google avec lequel tu es connecté au classeur. Regarde aussi les courriers indésirables.
+     Le mail porte « [TEST recu …] » au début de son objet : tu ne le confonds pas avec un vrai.
+  4. Les chiffres du mail sont des EXEMPLES : un pack à 10 000 FCFA avec un paiement de 4 000 (validé), de 6 000 qui solde le pack (soldé),
+     ou de 5 000 refusé (non validé). Ce ne sont pas de vrais paiements.
+  5. Vérifie : l’objet, le titre, les phrases, les chiffres, et que le bouton ouvre la bonne page. Regarde-le aussi sur ton téléphone.
+  6. Pas content ? Corrige « config recu » et relance l’aperçu. Tu peux recommencer autant de fois que tu veux.
+  Ce que ça garantit : un aperçu n’écrit RIEN dans le classeur et n’envoie RIEN à personne d’autre que toi.
+  Pour un essai de bout en bout, déclare toi-même un paiement sur le site avec ton propre e-mail, mets-le en « valide » puis envoie les mails de paiement.
+  Préviens ensuite la personne qui gère le site, pour qu’elle supprime ta ligne d’essai avant l’ouverture : une ligne d’essai fausse les totaux.
+
+10. LE MENU NTMS : CE QUI TE CONCERNE
+  POUR TOI (finance) :
+    Envoyer les mails de paiement (validés et refusés)    envoie les mails des paiements « valide » ou « refuse » qui n’en ont pas encore reçu.
+    M’envoyer un aperçu : paiement validé / pack soldé / paiement non validé    t’envoie un mail d’essai (chapitre 9).
+    Recalculer les participants       refait le tableau « participants ». À utiliser si un chiffre te paraît faux.
+    Initialiser les onglets           crée les onglets manquants sans toucher à ceux qui existent. À lancer une seule fois, au tout début.
+  À IGNORER (équipe mobilisation) :
+    Envoyer le mail manuel…    Envoyer le mail automatique…    M’envoyer un aperçu du mail automatique / manuel
+  Si le menu NTMS n’apparaît pas : recharge la page du classeur.
+  Limite d’envoi : 100 mails par jour avec un compte Gmail ordinaire. Au-delà, l’envoi s’arrête et le dit. Relance le lendemain : personne ne reçoit un mail en double.
+
+═══════════════════════════════════════════════════════════
+PARTIE B — L’ÉQUIPE MOBILISATION (SIMPLES INSCRIPTIONS)
+La finance peut ignorer toute cette partie.
+═══════════════════════════════════════════════════════════
+
+11. CE QUE C’EST
+  Quand quelqu’un remplit le formulaire d’inscription du site, une ligne arrive dans l’onglet « inscriptions » et il reçoit un mail de confirmation.
+  Cela n’a rien à voir avec l’argent : le paiement est un deuxième geste, géré par la finance (partie A).
+
+12. L’ONGLET « inscriptions »
+  Le site y ajoute une ligne par inscription. Tu peux la lire, la filtrer, la trier.
+  Ne change JAMAIS l’ordre des colonnes ni les titres de la ligne 1 : si on y touche, le site ne peut plus enregistrer d’inscription.
+  Ne modifie jamais une ligne à la main.
+  Les colonnes qui suivent le mail sont remplies toutes seules : mail_envoye (oui / non), mail_envoye_le, erreur_mail,
+  et, pour le mail manuel : mail_manuel, mail_manuel_le, erreur_mail_manuel.
+  id_envoi : un numéro technique qui évite les doublons. Ne pas toucher.
+
+13. LES DEUX MAILS D’INSCRIPTION
+  « config auto »    le mail envoyé TOUT SEUL à chaque inscrit, au moment de son inscription. Son contenu se change selon la période.
+  « config manuel »  un mail qui ne part JAMAIS tout seul : seulement quand on clique, par le menu NTMS.
+  Les deux ont les mêmes lignes en colonne A :
+    Objet · Titre · Corps · Texte CTA · Lien CTA · Nom expéditeur       comme pour les mails de paiement (chapitre 8).
+    Objet et Corps sont OBLIGATOIRES : sans eux, aucun mail ne part (l’inscription est enregistrée quand même).
+  Mots remplacés pour chaque inscrit : {{prenom}} {{nom}} {{lc}} {{role}} {{reference}}
+  Options facultatives, qu’on peut laisser vides :
+    CC, BCC      adresses en copie, séparées par des virgules. Attention : un CC reçoit le mail de CHAQUE inscrit,
+                 et chaque adresse en copie compte dans la limite de 100 mails par jour.
+    Images       adresses d’images (https://…), séparées par des virgules, affichées en haut du mail.
+    Pièces jointes   liens Google Drive ou adresses https, séparés par des virgules. 25 Mo au total par mail.
+                 Un fichier introuvable n’empêche pas le mail de partir : le souci est noté dans la colonne d’erreur.
+    Nom feuille (BD)   le nom de l’onglet des inscrits. À ne pas changer.
+  Une modification est prise en compte tout de suite.
+
+14. TESTER ET ENVOYER CES MAILS
+  Tester : menu NTMS > « M’envoyer un aperçu du mail automatique » ou « …du mail manuel ». Le mail t’arrive à toi, avec de fausses données
+  (prénom « Test », référence « NTMS-TEST »). Il n’écrit rien dans le classeur et n’est envoyé à personne d’autre.
+  Envoyer à la demande :
+    Envoyer le mail manuel à tous les inscrits                           y compris ceux qui l’ont déjà reçu : à utiliser avec précaution.
+    Envoyer le mail manuel à ceux qui ne l’ont pas reçu                  le plus courant.
+    Envoyer le mail automatique à ceux qui ne l’ont pas reçu             pour rattraper un échec d’envoi ou la limite du jour.
+  Une fenêtre te demande de confirmer, puis donne le bilan : envoyés, échecs, et ce qu’il reste si la limite du jour est atteinte.
+  Limite : 100 mails par jour avec un compte Gmail ordinaire. Relance le lendemain avec « …à ceux qui ne l’ont pas reçu ».
+
+L’expéditeur de tous les mails est le compte propriétaire du classeur.
+En cas de problème, préviens la personne qui gère le site, en lui donnant la référence du paiement ou l’e-mail de la personne concernée :
+ce classeur est relié au site par un programme, et lui seul peut le corriger.

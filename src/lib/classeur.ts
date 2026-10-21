@@ -70,8 +70,15 @@ export async function enregistrerPaiement(champs: Record<string, string>) {
   return appelerScript(url, { ...champs, type: "paiement", _secret: secret });
 }
 
-/** `nom` est le nom ENTIER de l'onglet ; `libelle` et `categorie` en sont tires. */
-export type Pack = { nom: string; prix: number; categorie: Categorie; libelle: string };
+/** `nom` est le nom ENTIER de l'onglet ; le reste en est tire. */
+export type Pack = {
+  nom: string;
+  prix: number;
+  categorie: Categorie;
+  libelle: string;
+  /** La description, lue dans le nom : un point par element. */
+  points: string[];
+};
 
 /** Ce que le classeur sait d'une personne avant qu'elle paie. */
 export type Situation = {
@@ -103,13 +110,17 @@ export async function situationPaiement(
   })) as unknown as Partial<Omit<Situation, "packs">> & {
     ok?: boolean;
     message?: string;
-    packs?: { nom: string; prix: number }[];
+    packs?: { nom: string; prix: number; description?: string }[];
   };
   if (!r.ok || !Array.isArray(r.packs)) {
     throw new Error(r.message || "Situation illisible.");
   }
   return {
-    packs: r.packs.map((p) => ({ ...p, ...analysePack(p.nom) })),
+    packs: r.packs.map((p) => ({
+      nom: p.nom,
+      prix: p.prix,
+      ...analysePack(p.nom, p.description),
+    })),
     connu: !!r.connu,
     blocage: !!r.blocage,
     nom: r.nom ?? "",

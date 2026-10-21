@@ -306,8 +306,8 @@ export const bandeau = {
 
 /**
  * LA SECTION « PACKS » : les prix, avant l'appel a l'action. Les prix
- * eux-memes viennent de l'onglet « packs » du classeur ; le contenu de
- * chaque pack est dans `paiement.details`.
+ * eux-memes, comme la categorie et la description de chaque pack, viennent
+ * de l'onglet « packs » du classeur.
  */
 export const pricing = {
   titre: "Choisis ton",
@@ -502,20 +502,6 @@ export const paiement = {
     "Nouveau ici ? Renseigne ton nom et choisis ton pack.",
   packSolde: "Ton pack est soldé : il n'y a plus rien à payer. Merci !",
   packCouvert: "Tes paiements en attente de validation couvrent déjà ton pack. Tu recevras ta facture dès qu'ils sont validés.",
-  // Le contenu de chaque pack, tel qu'un invite doit le voir. Cle :
-  // « categorie-numero » (voir `clePack`). Les prix sont dans l'onglet
-  // « packs » du classeur ; ici, seulement ce qu'ils comprennent.
-  details: {
-    "alumni-1": ["Gala", "1 nuit", "T-shirt spécialisé"],
-    "alumni-2": ["Gala", "1 nuit", "T-shirt non spécialisé"],
-    "alumni-3": ["Gala", "3 jours", "T-shirt spécialisé"],
-    "alumni-4": ["Gala", "3 jours", "T-shirt non spécialisé"],
-    "delegate-1": ["5 jours obligatoires", "Chambre à 3", "T-shirt spécialisé", "Restauration"],
-    "delegate-2": ["5 jours obligatoires", "Chambre à 3", "T-shirt non spécialisé", "Restauration"],
-    "delegate-3": ["5 jours obligatoires", "Chambre seule", "T-shirt spécialisé", "Restauration"],
-    "delegate-4": ["5 jours obligatoires", "Chambre seule", "T-shirt non spécialisé", "Restauration"],
-    "delegate-6": ["Hébergement à 6 ou plus", "Gala", "Restauration 5 jours"],
-  } as Record<string, string[]>,
   libelleProfil: "Tu es…",
   profilAlumni: "Alumni",
   profilDelegate: "Delegate",

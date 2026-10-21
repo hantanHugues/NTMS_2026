@@ -4,7 +4,7 @@ import * as React from "react";
 import { Check } from "lucide-react";
 
 import FloatingDotsCta from "@/components/ui/floating-dots-cta";
-import { analysePack, clePack, type Categorie } from "@/lib/paiement";
+import type { Categorie } from "@/lib/paiement";
 import { cn } from "@/lib/utils";
 
 /**
@@ -25,7 +25,13 @@ import { cn } from "@/lib/utils";
  * pas du code : les changer dans l'onglet « packs » suffit.
  */
 
-type Pack = { nom: string; prix: number; categorie: Categorie; libelle: string };
+type Pack = {
+  nom: string;
+  prix: number;
+  categorie: Categorie;
+  libelle: string;
+  points: string[];
+};
 
 export type TextesPacks = {
   titre: string;
@@ -47,12 +53,9 @@ const ETIQUETTE =
 
 export function PricingPacks({
   textes,
-  details,
   locale,
 }: {
   textes: TextesPacks;
-  /** Le contenu de chaque pack, par cle (voir `clePack`). */
-  details: Record<string, string[]>;
   locale: string;
 }) {
   const [packs, setPacks] = React.useState<Pack[] | null>(null);
@@ -64,9 +67,9 @@ export function PricingPacks({
     let vivant = true;
     fetch("/api/packs")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((r: { packs: { nom: string; prix: number }[] }) => {
+      .then((r: { packs: Pack[] }) => {
         if (!vivant) return;
-        const liste = r.packs.map((p) => ({ ...p, ...analysePack(p.nom) }));
+        const liste = r.packs;
         if (!liste.length) return setEchec(true);
         setPacks(liste);
         // Delegate d'abord ; sinon la seule categorie qui existe.
@@ -94,7 +97,7 @@ export function PricingPacks({
     !!packs?.some((p) => p.categorie === "alumni");
   const liste = (packs ?? []).filter((p) => !p.categorie || p.categorie === onglet);
   const actuel = liste.find((p) => p.nom === choisi) ?? liste[0];
-  const contenu = actuel ? (details[clePack(actuel.categorie, actuel.libelle)] ?? []) : [];
+  const contenu = actuel?.points ?? [];
 
   function choisirOnglet(v: "delegate" | "alumni") {
     setOnglet(v);

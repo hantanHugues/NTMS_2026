@@ -27,7 +27,6 @@ import {
   FORMATS,
   MOYENS,
   analysePack,
-  clePack,
   MOYEN_AUTRE,
   POIDS_MAX,
   fuseauPour,
@@ -451,12 +450,9 @@ export function FormulairePaiement({
       setSituation(complet);
       setPack("");
       if (complet.connu) setNom(complet.nom);
-      // Quelqu'un qui revient : on propose le reste à payer.
-      setMontantPaye(
-        complet.connu && complet.pack && complet.reste > 0
-          ? String(complet.reste)
-          : ""
-      );
+      // Le montant n'est JAMAIS pré-rempli : la personne le saisit
+      // elle-même.
+      setMontantPaye("");
     } catch (err) {
       setErreur(err instanceof Error ? err.message : msg.indisponible);
     } finally {
@@ -672,7 +668,6 @@ export function FormulairePaiement({
                           onClick={() => {
                             setProfil(v);
                             setPack("");
-                            setMontantPaye("");
                           }}
                           className={cn(
                             "min-h-12 rounded-xl border px-4 py-3 text-base font-medium transition-colors max-sm:min-h-13",
@@ -703,17 +698,14 @@ export function FormulairePaiement({
                       >
                         {packsProfil.map((p, i) => {
                           const actif = p.nom === pack;
-                          const contenu = paiement.details[clePack(p.categorie, p.libelle)];
+                          const contenu = p.points;
                           return (
                             <button
                               key={`${i}-${p.nom}`}
                               type="button"
                               role="radio"
                               aria-checked={actif}
-                              onClick={() => {
-                                setPack(p.nom);
-                                setMontantPaye(String(p.prix));
-                              }}
+                              onClick={() => setPack(p.nom)}
                               className={cn(
                                 "relative flex flex-col items-start gap-1 rounded-2xl border p-4 text-left transition-all",
                                 actif

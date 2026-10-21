@@ -18,6 +18,7 @@ accepté pour l'automatique.
 |---|---|
 | `ntms-2026-base.xlsx` | le classeur à importer : `inscriptions`, `config auto`, `config manuel`, `lisez-moi` |
 | `inscription.gs` | le script à coller dans ce classeur |
+| `lisez-moi.txt` | le texte à coller dans l'onglet `lisez-moi` du classeur, à jour des paiements et des packs |
 | `README.md` | ce document |
 
 ---

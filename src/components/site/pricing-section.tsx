@@ -35,7 +35,6 @@ export async function PricingSection() {
             bouton: pricing.bouton,
             note: pricing.note,
           }}
-          details={paiement.details}
           locale={paiement.locale}
         />
       </div>
